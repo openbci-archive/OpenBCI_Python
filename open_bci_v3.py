@@ -16,6 +16,7 @@ board.start(handle_sample)
 import serial
 import struct
 import numpy as np
+import time
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = bytes(0xA0)  # start of data packet
@@ -59,24 +60,24 @@ class OpenBCIBoard(object):
         raise OSError('Cannot find OpenBCI port')
         
     self.ser = serial.Serial(port, baud)
-    self.dump_registry_data()
+    print("Serial established...")
+
+    #Initialize 32-bit board, doesn't affect 8bit board
+    self.ser.write('v');
+
+    #wait for device to be ready 
+    time.sleep(1)
+    self.print_incoming_text()
+
     self.streaming = False
     self.filtering_data = filter_data
     self.channels = 8
+    self.read_state = 0; 
 
-    self.read_state = 0;
-    # Searching for start(0), sample_count(1),read data(2), read aux(3), search last(4) 
-
-  def printIn(self):
+  def printBytesIn(self):
+    #DEBBUGING: Prints individual incoming bytes 
     if not self.streaming:
-      # if self.filtering_data:
-      #   self.warn('Enabling filter')
-      #   self.ser.write('F')
-      #   print(self.ser.readline())
-        
-      # Send an 'b' to the board to tell it to start streaming us text.
       self.ser.write('b')
-      # Dump the first line that says "Arduino: Starting..."
       self.streaming = True
     while self.streaming:
       print(struct.unpack('B',self.ser.read())[0]);
@@ -93,18 +94,10 @@ class OpenBCIBoard(object):
     
     """
     if not self.streaming:
-      # if self.filtering_data:
-      #   self.warn('Enabling filter')
-      #   self.ser.write('F')
-      #   print(self.ser.readline())
-        
-      # Send an 'b' to the board to tell it to start streaming us text.
       self.ser.write('b')
-      # Dump the first line that says "Arduino: Starting..."
-      self.ser.readline()
       self.streaming = True
+
     while self.streaming:
-      #data = self.ser.readline()
       sample = self._read_serial_binary()
       callback(sample)
 
@@ -122,27 +115,35 @@ class OpenBCIBoard(object):
 
   """ 
 
-
       SETTINGS AND HELPERS 
-
 
   """
 
-  def dump_registry_data(self):
+  def print_incoming_text(self):
     """
     
-    When starting the connection, dump all the debug data until 
-    we get to a line with something about streaming data.
+    When starting the connection, print all the debug data until 
+    we get to a line with the end sequence '$$$'.
     
     """
     line = ''
-    while 'begin streaming data' not in line:
-      line = self.ser.readline()  
+    #Wait for device to send data
+    time.sleep(0.5)
+    if self.ser.inWaiting():
+      print("-------------------")
+      line = ''
+      c = ''
+     #Look for end sequence $$$
+      while '$$$' not in line:
+        c = self.ser.read()
+        line += c   
+      print(line);
+      print("-------------------\n")
 
   def print_register_settings(self):
     self.ser.write('?')
-    for number in xrange(0, 24):
-      print(self.ser.readline())
+    time.sleep(0.5)
+    print_incoming_text();
 
   """
 
@@ -158,15 +159,24 @@ class OpenBCIBoard(object):
     self.filtering_data = False;
 
   def warn(self, text):
-    print(text)
+    print("Warning: ", text)
 
+  """
+
+    Parses incoming data packet into OpenBCISample.
+    Incoming Packet Structure:
+    Start Byte(1)|Sample ID(1)|Channel Data(24)|Aux Data(6)|End Byte(1)
+    0xA0|0-255|8, 3-byte signed ints|3 2-byte signed ints|0xC0
+
+  """
   def _read_serial_binary(self, max_bytes_to_skip=3000):
     def read(n):
       b = self.ser.read(n)
-      # print bytes(b)ar
+      # print bytes(b)
       return b
 
     for rep in xrange(max_bytes_to_skip):
+
       #Looking for start and save id when found
       if self.read_state == 0:
         b = read(1)
@@ -183,14 +193,15 @@ class OpenBCIBoard(object):
           
           self.read_state = 1
 
-      #CHECK THIS
       elif self.read_state == 1:
         channel_data = []
         for c in xrange(self.channels):
+
           #3 byte ints
           literal_read = read(3)
 
           unpacked = struct.unpack('3B', literal_read)
+
           #3byte int in 2s compliment
           if (unpacked[0] >= 127): 
             pre_fix = '\xFF'
@@ -205,12 +216,6 @@ class OpenBCIBoard(object):
           myInt = struct.unpack('>i', literal_read)
 
           channel_data.append(myInt[0]*scale_fac_uVolts_per_count)
-          
-          # # Debug
-          # unpacked_final = struct.unpack('4B', literal_read)
-          # print unpacked
-          # print unpacked_final
-          # print myInt 
         
         self.read_state = 2;
 
@@ -284,7 +289,7 @@ class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
   def __init__(self, packet_id, channel_data, aux_data):
     self.id = packet_id;
-    self.channels = channel_data;
+    self.channel_data = channel_data;
     self.aux_data = aux_data;
     
 
