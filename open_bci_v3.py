@@ -82,7 +82,7 @@ class OpenBCIBoard(object):
     while self.streaming:
       print(struct.unpack('B',self.ser.read())[0]);
 
-  def start(self, callback):
+  def startStreaming(self, callback):
     """
 
     Start handling streaming data from the board. Call a provided callback
@@ -230,7 +230,6 @@ class OpenBCIBoard(object):
     
         self.read_state = 3;
 
-
       elif self.read_state == 3:
         val = bytes(struct.unpack('B', read(1))[0])
         if (val == END_BYTE):
@@ -241,30 +240,48 @@ class OpenBCIBoard(object):
           self.warn("Warning: Unexpected END_BYTE found <%s> instead of <%s>,\
             discarted packet with id <%d>" 
             %(val, END_BYTE, packet_id))
-  
 
-  def _interprate_stream(self, b):
-    print ("interprate")
+  def test_signal(self, signal):
+    if signal == 0:
+      self.ser.write('0')
+      self.warn("Connecting all pins to ground")
+    elif signal == 1:
+      self.ser.write('p')
+      self.warn("Connecting all pins to Vcc")
+    elif signal == 2:
+      self.ser.write('-')
+      self.warn("Connecting pins to low frequency 1x amp signal")
+    elif signal == 3:
+      self.ser.write('=')
+      self.warn("Connecting pins to high frequency 1x amp signal")
+    elif signal == 4:
+      self.ser.write('[')
+      self.warn("Connecting pins to low frequency 2x amp signal")
+    elif signal == 5:
+      self.ser.write(']')
+      self.warn("Connecting pins to high frequency 2x amp signal")
+    else:
+      self.warn("%s is not a known test signal. Valid signals go from 0-5" %(signal))
 
   def set_channel(self, channel, toggle_position):
     #Commands to set toggle to on position
     if toggle_position == 1: 
       if channel is 1:
-        self.ser.write('q')
+        self.ser.write('!')
       if channel is 2:
-        self.ser.write('w')
+        self.ser.write('@')
       if channel is 3:
-        self.ser.write('e')
+        self.ser.write('#')
       if channel is 4:
-        self.ser.write('r')
+        self.ser.write('$')
       if channel is 5:
-        self.ser.write('t')
+        self.ser.write('%')
       if channel is 6:
-        self.ser.write('y')
+        self.ser.write('^')
       if channel is 7:
-        self.ser.write('u')
+        self.ser.write('&')
       if channel is 8:
-        self.ser.write('i')
+        self.ser.write('*')
     #Commands to set toggle to off position
     elif toggle_position == 0: 
       if channel is 1:
