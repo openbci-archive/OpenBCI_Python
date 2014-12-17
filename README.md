@@ -12,7 +12,7 @@ Numpy 1.7 or later (http://www.numpy.org/)
 
 OpenBCI 8 and 32 bit board with 8 channels.
 
-This library includes the main open_bci_v3 class definition that instantiates an OpenBCI Board object. This object will initialize communiction with the board and get the enviornment ready for data streaming. This library is designed to work with iOS and Linux distrubitions. To use a Windows OS, change the __init__ function in open_bci_v3.py to establish a serial connection in Windows. 
+This library includes the main open_bci_v3 class definition that instantiates an OpenBCI Board object. This object will initialize communication with the board and get the environment ready for data streaming. This library is designed to work with iOS and Linux distributions. To use a Windows OS, change the __init__ function in open_bci_v3.py to establish a serial connection in Windows. 
 
 For additional details on connecting your board visit: http://docs.openbci.com/tutorials/01-GettingStarted
 
