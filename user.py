@@ -1,3 +1,5 @@
+#!/usr/bin/env python2.7
+import argparse # new in Python2.7
 import open_bci_v3 as bci
 import os
 import time
@@ -13,14 +15,27 @@ def printData(sample):
 
 
 if __name__ == '__main__':
-	port = '/dev/ttyUSB0'
-	baud = 115200
-	board = bci.OpenBCIBoard(port=port)
+	parser = argparse.ArgumentParser(description="OpenBCI 'user'")
+	parser.add_argument('-p', '--port', required=True,
+				help="Port to connect to OpenBCI Dongle " +
+				"( ex /dev/ttyUSB0 or /dev/tty.usbserial-* )")
+	# baud rate is not currently used
+	parser.add_argument('-b', '--baud', default=115200, type=int,
+				help="Baud rate (not currently used)")
+	parser.add_argument('-c', '--cvs', action="store_true",
+				help="write cvs data")
+	args = parser.parse_args()
 
-	#fun = csv_collect.csv_collect();
-	fun = printData;
+	if args.cvs:
+		fun = csv_collect.csv_collect();
+	else:
+		fun = printData;
 
-	print "User serial interface enabled..." 
+	print "User serial interface enabled..."
+	print "Connecting to ", args.port
+
+	board = bci.OpenBCIBoard(port=args.port)
+
 	print "View command map at http://docs.openbci.com."
 	print "Type start to run. Type exit to exit."
 
@@ -50,4 +65,3 @@ if __name__ == '__main__':
 
 		#Take user input
 		s = raw_input('--> ');
-		
