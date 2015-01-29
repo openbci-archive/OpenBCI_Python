@@ -41,7 +41,7 @@ scale_fac_uVolts_per_count = ADS1299_Vref/(pow(2,23)-1)/(ADS1299_gain*1000000.);
 # command_biasAuto = "`";
 # command_biasFixed = "~";
 
-        
+
 class OpenBCIBoard(object):
   """
 
@@ -53,29 +53,31 @@ class OpenBCIBoard(object):
 
   """
 
-  def __init__(self, port=None, baud=115200, filter_data=True):
+  def __init__(self, port=None, baud=115200, filter_data=True,
+    scaled_output=True):
     if not port:
       port = find_port()
       if not port:
         raise OSError('Cannot find OpenBCI port')
-        
+
     self.ser = serial.Serial(port, baud)
     print("Serial established...")
 
     #Initialize 32-bit board, doesn't affect 8bit board
     self.ser.write('v');
 
-    #wait for device to be ready 
+    #wait for device to be ready
     time.sleep(1)
     self.print_incoming_text()
 
     self.streaming = False
     self.filtering_data = filter_data
+    self.scaling_output = scaled_output
     self.channels = 8
-    self.read_state = 0; 
+    self.read_state = 0;
 
   def printBytesIn(self):
-    #DEBBUGING: Prints individual incoming bytes 
+    #DEBBUGING: Prints individual incoming bytes
     if not self.streaming:
       self.ser.write('b')
       self.streaming = True
@@ -91,7 +93,7 @@ class OpenBCIBoard(object):
     Args:
       callback: A callback function that will receive a single argument of the
           OpenBCISample object captured.
-    
+
     """
     if not self.streaming:
       self.ser.write('b')
@@ -113,18 +115,18 @@ class OpenBCIBoard(object):
     self.ser.close()
     self.streaming = False
 
-  """ 
+  """
 
-      SETTINGS AND HELPERS 
+      SETTINGS AND HELPERS
 
   """
 
   def print_incoming_text(self):
     """
-    
-    When starting the connection, print all the debug data until 
+
+    When starting the connection, print all the debug data until
     we get to a line with the end sequence '$$$'.
-    
+
     """
     line = ''
     #Wait for device to send data
@@ -136,7 +138,7 @@ class OpenBCIBoard(object):
      #Look for end sequence $$$
       while '$$$' not in line:
         c = self.ser.read()
-        line += c   
+        line += c
       print(line);
       print("-------------------\n")
 
@@ -148,7 +150,7 @@ class OpenBCIBoard(object):
   """
 
   Adds a filter at 60hz to cancel out ambient electrical noise.
-  
+
   """
   def enable_filters(self):
     self.ser.write('f')
@@ -190,7 +192,7 @@ class OpenBCIBoard(object):
           if(rep != 0):
             self.warn('Skipped %d bytes before start found' %(rep))
           packet_id = struct.unpack('B', read(1))[0] #packet id goes from 0-255
-          
+
           self.read_state = 1
 
       elif self.read_state == 1:
@@ -203,20 +205,23 @@ class OpenBCIBoard(object):
           unpacked = struct.unpack('3B', literal_read)
 
           #3byte int in 2s compliment
-          if (unpacked[0] >= 127): 
+          if (unpacked[0] >= 127):
             pre_fix = '\xFF'
           else:
             pre_fix = '\x00'
-          
 
-          literal_read = pre_fix + literal_read; 
+
+          literal_read = pre_fix + literal_read;
 
           #unpack little endian(>) signed integer(i)
           #also makes unpacking platform independent
-          myInt = struct.unpack('>i', literal_read)
+          myInt = struct.unpack('>i', literal_read)[0]
 
-          channel_data.append(myInt[0]*scale_fac_uVolts_per_count)
-        
+          if self.scaling_output:
+            channel_data.append(myInt*scale_fac_uVolts_per_count)
+          else:
+            channel_data.append(myInt)
+
         self.read_state = 2;
 
 
@@ -224,10 +229,10 @@ class OpenBCIBoard(object):
         aux_data = []
         for a in xrange(3):
 
-          #short(h) 
+          #short(h)
           acc = struct.unpack('h', read(2))[0]
           aux_data.append(acc)
-    
+
         self.read_state = 3;
 
       elif self.read_state == 3:
@@ -238,7 +243,7 @@ class OpenBCIBoard(object):
           return sample
         else:
           self.warn("Warning: Unexpected END_BYTE found <%s> instead of <%s>,\
-            discarted packet with id <%d>" 
+            discarted packet with id <%d>"
             %(val, END_BYTE, packet_id))
 
   def test_signal(self, signal):
@@ -265,7 +270,7 @@ class OpenBCIBoard(object):
 
   def set_channel(self, channel, toggle_position):
     #Commands to set toggle to on position
-    if toggle_position == 1: 
+    if toggle_position == 1:
       if channel is 1:
         self.ser.write('!')
       if channel is 2:
@@ -283,7 +288,7 @@ class OpenBCIBoard(object):
       if channel is 8:
         self.ser.write('*')
     #Commands to set toggle to off position
-    elif toggle_position == 0: 
+    elif toggle_position == 0:
       if channel is 1:
         self.ser.write('1')
       if channel is 2:
@@ -308,6 +313,6 @@ class OpenBCISample(object):
     self.id = packet_id;
     self.channel_data = channel_data;
     self.aux_data = aux_data;
-    
+
 
 
