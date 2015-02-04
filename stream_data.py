@@ -11,6 +11,7 @@ NB_CHANNELS = 8
 
 # typically 1.024 to go from 250Hz to 256Hz
 SAMPLING_FACTOR = 1.024
+SAMPLING_RATE = 256
 
 SERVER_PORT=12347
 SERVER_IP="localhost"
@@ -32,6 +33,8 @@ leftover_duplications = 0
 
 # current drift
 drift = 0.0
+
+tick=time.time()
 
 reset_tick = False
 
@@ -88,16 +91,29 @@ def streamData(sample):
   global nb_samples_in, nb_samples_out
   nb_samples_in = nb_samples_in + 1
   
-  # check for duplication
+  # check for duplication, by default 1 (...which is *no* duplication of the one current sample)
   global leftover_duplications
-  needed_duplications = SAMPLING_FACTOR + leftover_duplications
-  nb_duplications = round(needed_duplications)
+  needed_duplications = 1
+  
+  # first method with sampling rate and elapsed time (depends on system clock accuracy)
+  if (SAMPLING_RATE > 0):
+    global tick
+    # elapsed time since last call, update tick
+    now = time.time()
+    elapsed_time = now - tick;
+    # now we have to compute how many times we should send data to keep up with sample rate (oversampling)
+    needed_duplications = SAMPLING_RATE * elapsed_time + leftover_duplications
+    tick = now
+  # second method with a samplin factor (depends on openbci accuracy)
+  elif SAMPLING_FACTOR > 0:
+    needed_duplications = needed_duplications * SAMPLING_FACTOR + leftover_duplications
+  nb_duplications = int(round(needed_duplications))
   leftover_duplications = needed_duplications - nb_duplications
   #print "needed_duplications: ", needed_duplications, "leftover_duplications: ", leftover_duplications
   # If we need to insert values, will interpolate between current packet and last one
-  # FIXME: ok, at the moment because we do packet per packet treatment, only handles nb_duplications == 1 or 2
+  # FIXME: ok, at the moment because we do packet per packet treatment, only handles nb_duplications == 1 or 2, for more interpolation is bad
+  print  sample.id, ": elapsed_time: ", elapsed_time, ", leftover_duplications: ", leftover_duplications, ", needed_duplications: ", needed_duplications, "nb_duplications: ", nb_duplications
   if (nb_duplications >= 2):
-    #print "duplicate"
     interpol_values = list(last_values)
     for i in range(0,len(interpol_values)):
       # OK, it's a very rough interpolation
