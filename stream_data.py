@@ -55,7 +55,6 @@ class Monitor(Thread):
 
     def run(self):
       while True:
-        print "yo"
         # check FPS + listen for new connections
         new_tick = time.time()
         elapsed_time = new_tick - self.tick
@@ -93,7 +92,6 @@ def streamData(sample):
   
   # check for duplication, by default 1 (...which is *no* duplication of the one current sample)
   global leftover_duplications
-  needed_duplications = 1
   
   # first method with sampling rate and elapsed time (depends on system clock accuracy)
   if (SAMPLING_RATE > 0):
@@ -102,18 +100,16 @@ def streamData(sample):
     now = time.time()
     elapsed_time = now - tick;
     # now we have to compute how many times we should send data to keep up with sample rate (oversampling)
-    needed_duplications = SAMPLING_RATE * elapsed_time + leftover_duplications
+    leftover_duplications = SAMPLING_RATE * elapsed_time + leftover_duplications - 1
     tick = now
   # second method with a samplin factor (depends on openbci accuracy)
   elif SAMPLING_FACTOR > 0:
-    needed_duplications = needed_duplications * SAMPLING_FACTOR + leftover_duplications
-  nb_duplications = int(round(needed_duplications))
-  leftover_duplications = needed_duplications - nb_duplications
+    leftover_duplications = SAMPLING_FACTOR + leftover_duplications - 1
   #print "needed_duplications: ", needed_duplications, "leftover_duplications: ", leftover_duplications
   # If we need to insert values, will interpolate between current packet and last one
-  # FIXME: ok, at the moment because we do packet per packet treatment, only handles nb_duplications == 1 or 2, for more interpolation is bad
-  print  sample.id, ": elapsed_time: ", elapsed_time, ", leftover_duplications: ", leftover_duplications, ", needed_duplications: ", needed_duplications, "nb_duplications: ", nb_duplications
-  if (nb_duplications >= 2):
+  # FIXME: ok, at the moment because we do packet per packet treatment, only handles nb_duplications == 1 for more interpolation is bad and sends nothing
+  if (leftover_duplications > 1):
+    leftover_duplications = leftover_duplications - 1
     interpol_values = list(last_values)
     for i in range(0,len(interpol_values)):
       # OK, it's a very rough interpolation
@@ -141,7 +137,7 @@ if __name__ == '__main__':
   # init server
   server = tcp_server.TCPServer(ip=SERVER_IP, port=SERVER_PORT, nb_channels=NB_CHANNELS)
   # init board
-  port = '/dev/ttyUSB0'
+  port = '/dev/ttyUSB1'
   baud = 115200
   monit = Monitor()
   # daemonize theard to terminate it altogether with the main when time will come
