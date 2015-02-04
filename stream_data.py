@@ -13,7 +13,7 @@ NB_CHANNELS = 8
 SAMPLING_FACTOR = 1.024
 SAMPLING_RATE = 256
 
-SERVER_PORT=12347
+SERVER_PORT=12345
 SERVER_IP="localhost"
 
 DEBUG=False
@@ -75,16 +75,18 @@ class Monitor(Thread):
 def streamData(sample):
   
   global last_values
-    
+  
+  global tick
+      
   # check packet skipped
-  #global last_id
+  global last_id
   # TODO: duplicate packet if skipped to stay sync
-  #if sample.id != last_id + 1:
-  #  print "time", new_tick, ": paquet skipped!"
-  #if sample.id == 255:
-  #  last_id = -1
-  #else:
-  #  last_id = sample.id
+  if sample.id != last_id + 1:
+    print "time", tick, ": paquet skipped!"
+  if sample.id == 255:
+    last_id = -1
+  else:
+    last_id = sample.id
   
   # update counters
   global nb_samples_in, nb_samples_out
@@ -95,7 +97,6 @@ def streamData(sample):
   
   # first method with sampling rate and elapsed time (depends on system clock accuracy)
   if (SAMPLING_RATE > 0):
-    global tick
     # elapsed time since last call, update tick
     now = time.time()
     elapsed_time = now - tick;
