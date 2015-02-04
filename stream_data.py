@@ -2,6 +2,7 @@ import open_bci_v3 as bci
 import tcp_server
 import os
 import time
+from threading import Thread
 
 # Transmit data to openvibe acquisition server, intelpolating data (well, sort of) from 250Hz to 256Hz
 # Listen to new connections every second
@@ -33,9 +34,47 @@ last_values = [0] * NB_CHANNELS
 # counter to trigger duplications...
 leftover_duplications = 0
 
-def printData(sample):
+# current drift
+drift = 0.0
+
+reset_tick = False
+
+import random
+import sys
+from threading import Thread
+import time
+
+# try to ease work for main loop
+class Monitor(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.nb_samples_in = -1
+        self.nb_samples_out = -1
+
+    def run(self):
+      while True:
+        print "yo"
+        # check FPS + listen for new connections
+        global tick
+        new_tick = time.time()
+        elapsed_time = new_tick - tick
+        if elapsed_time >= 1:
+          current_samples_in =  nb_samples_in
+          current_samples_out = nb_samples_out
+          print "--- at t: ", (new_tick - start_tick), " ---"
+          print "elapsed_time: ", elapsed_time
+          print "nb_samples_in: ", current_samples_in - self.nb_samples_in
+          print "nb_samples_out: ", current_samples_out - self.nb_samples_out
+          tick = new_tick
+          self.nb_samples_in = nb_samples_in
+          self.nb_samples_out = nb_samples_out
+          # time to get some feedback
+          server.check_connections()
+        time.sleep(1)
+
+def streamData(sample):
+  
   global last_values
-  new_tick = time.time()
     
   # check packet skipped
   global last_id
@@ -46,12 +85,6 @@ def printData(sample):
     last_id = -1
   else:
     last_id = sample.id
-  
-  #print "----------------"
-  #print("%f" %(sample.id))
-  #print sample.channel_data
-  #print sample.aux_data
-  #print "----------------"
   
   # update counters
   global nb_samples_in, nb_samples_out
@@ -85,19 +118,7 @@ def printData(sample):
   # save current values for possible interpolation
   last_values = list(sample.channel_data)
     
-  # check FPS + listen for new connections
-  global tick
-  elapsed_time = new_tick - tick
-  if elapsed_time >= 1:
-    print "--- at t: ", (new_tick - start_tick), " ---"
-    print "elapsed_time: ", elapsed_time
-    print "nb_samples_in: ", nb_samples_in
-    print "nb_samples_out: ", nb_samples_out
-    tick = new_tick
-    nb_samples_in = -1
-    nb_samples_out = -1
-    # time to get some feedback
-    server.check_connections()
+
 
 if __name__ == '__main__':
   # init server
@@ -105,6 +126,7 @@ if __name__ == '__main__':
   # init board
   port = '/dev/ttyUSB0'
   baud = 115200
+  monit = Monitor()
+  monit.start()
   board = bci.OpenBCIBoard(port=port, baud=baud, filter_data=False)
-  board.startStreaming(printData)
-
+  board.startStreaming(streamData)
