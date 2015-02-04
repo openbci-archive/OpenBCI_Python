@@ -55,3 +55,6 @@ target/
 
 # Vim temp files
 .*.swp
+
+# CSV
+*.csv
