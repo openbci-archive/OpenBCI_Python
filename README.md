@@ -37,25 +37,30 @@ OpenBCISample members:
 For initial testing, this code provides a simple user interface (called user.py). To use it, connect the board to your computer using the dongle (see http://docs.openbci.com/tutorials/01-GettingStarted for details). 
 
 Then simply run the code given as an argument the port your board is connected to:
-> python user.py -p /dev/ttyUSB0 
+> $python user.py -p /dev/ttyUSB0 
 
 The program should establish a serial connection and reset the board to default settings. When a '-->' appears, you can type a character (character map http://docs.openbci.com/software/01-OpenBCI_SDK)  that will be sent to the board using ser.write. This allows you to change the settings on the board. A good first test is to type:
 
---> ?
+>--> ?
 
 This should output the current configuration settings on the board.
 
 Another test would be to change the board settings so that all the pins in the board are internally connected to a test (square) wave. To do this, type:
 
---> [
+>--> [
 
 Alternatively, there are 6 test signals pre configured:
 
 > /test1 (connect all pins to ground) 
+
 > /test2 (connect all pins to vcc)
+
 > /test3 (Connecting pins to low frequency 1x amp signal)
+
 > /test4 (Connecting pins to high frequency 1x amp signal)
+
 > /test5 (Connecting pins to low frequency 2x amp signal)
+
 > /test6 (Connecting pins to high frequency 2x amp signal)
 
 The / is used in the interface to execute a pre-configured command. Writing anything without a '/' will automatically write those characters, one by one, to the board.
@@ -77,6 +82,7 @@ start (Start EEG streaming using the most recently defined callback, printData b
 Adding the argument "T:number" will set a timeout on the start command. 
 For example, to record CSV data for 5 seconds type:
 >-->/csv
+
 >-->/start T:5
 
 To use your own function as a callback just define your function and substitute in line 31 like so:
@@ -87,7 +93,7 @@ To use your own function as a callback just define your function and substitute 
 
 #### Useful commands:
 
-Writting to SD card:
+Writting to SD card a high frequency square wave (test5):
 ```
 $ python user.py -p /dev/ttyUSB0
 User serial interface enabled...
