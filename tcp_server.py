@@ -2,7 +2,7 @@
 
 import socket, select, struct
 
-# Simple TCP server to broadcast data to clients, handling deconnections. Binary format use network endianness (i.e., big-endian), float64
+# Simple TCP server to broadcast data to clients, handling deconnections. Binary format use network endianness (i.e., big-endian), float32
 
 # TODO: does not listen for anything at the moment, could use it to set options
 
@@ -28,8 +28,8 @@ class TCPServer():
     self.ip = ip
     self.port = port
     self.nb_channels=nb_channels
-    # format for binary data, network endian (big) and double (float64)
-    self.packer = struct.Struct('!%sd' % self.nb_channels)
+    # format for binary data, network endian (big) and float (float32)
+    self.packer = struct.Struct('!%sf' % self.nb_channels)
     self.initialize()
 
   # the initialize method reads settings and outputs the first header
