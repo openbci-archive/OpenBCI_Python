@@ -55,9 +55,18 @@ The user interface will also accept a function “fun.” When the interface rec
 
 By default, this code runs the printData function defined in user.py, but also includes the csv_collect function that can be set to run by toggling lines 19 and 20:
 
+```
 fun = csv_collect.csv_collect();
 #fun = printData;
+```
 
 Both these functions are good examples of how to write callback functions for OpenBCI.
 
+## openvibelink branch
+
+This branch adds the script "stream_data.py", which will send over the network the samples. Then it could be acquired with OpenViBE acquisition server, selecting telnet, big endian, float 32 bits.
+
+### TODO
+
+* the algo to resample from 250Hz to 256Hz is wrong, should do some filtering to avoid data corruption
 
