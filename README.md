@@ -32,7 +32,7 @@ OpenBCISample members:
 	3 int array with current auxiliary data. (0s by default)
 
 
-###User.py? 
+###User.py
 
 For initial testing, this code provides a simple user interface (called user.py). To use it, connect the board to your computer using the dongle (see http://docs.openbci.com/tutorials/01-GettingStarted for details). 
 
@@ -51,7 +51,7 @@ Another test would be to change the board settings so that all the pins in the b
 
 Alternatively, there are 6 test signals pre configured:
 
-> /test1 (connect all pins to ground) 
+> --> /test1 (connect all pins to ground) 
 
 > --> /test2 (connect all pins to vcc)
 
