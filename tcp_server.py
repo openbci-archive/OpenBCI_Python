@@ -81,15 +81,13 @@ class TCPServer():
     for sock in self.CONNECTION_LIST:
       # If one error should happen, we remove socket from the list
       try:
-        nb_sent = 0
         if as_string:
-          nb_sent = sock.send(str(values) + "\n")
+          sock.send(str(values) + "\n")
         else:
           # convert values to bytes
           packed_data = self.packer.pack(*values)
-          nb_sent = sock.send(packed_data)
+          sock.send(packed_data)
         # TODO: should check if the correct number of bytes passed through
-        # print("Nb bytes sent: "), nb_sent
       except:
         # sometimes (always?) it's only during the second write to a close socket that an error is raised?
         print "Something bad happened, will close socket"
