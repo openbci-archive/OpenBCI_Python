@@ -1,13 +1,20 @@
 import open_bci_v3 as bci
+import tcp_server
 import os
 import time
 
 # Transmit data to openvibe acquisition server, intelpolating data (well, sort of) from 250Hz to 256Hz
+# Listen to new connections every second
 
 NB_CHANNELS = 8
 
 # typically 1.024 to go from 250Hz to 256Hz
 SAMPLING_FACTOR = 1.024
+
+SERVER_PORT=12345
+SERVER_IP="localhost"
+
+DEBUG=False
 
 # check packet drop
 last_id = -1
@@ -27,6 +34,7 @@ last_values = [0] * NB_CHANNELS
 leftover_duplications = 0
 
 def printData(sample):
+  global last_values
   new_tick = time.time()
     
   # check packet skipped
@@ -38,10 +46,6 @@ def printData(sample):
     last_id = -1
   else:
     last_id = sample.id
-    
-  # save current values for possible interpolation
-  global last_values
-  last_values = list(sample.channel_data)
   
   #print "----------------"
   #print("%f" %(sample.id))
@@ -52,8 +56,7 @@ def printData(sample):
   # update counters
   global nb_samples_in, nb_samples_out
   nb_samples_in = nb_samples_in + 1
-  nb_samples_out = nb_samples_out + 1
-
+  
   # check for duplication
   global leftover_duplications
   needed_duplications = SAMPLING_FACTOR + leftover_duplications
@@ -61,18 +64,28 @@ def printData(sample):
   leftover_duplications = needed_duplications - nb_duplications
   # If we need to insert values, will interpolate between current packet and last one
   # FIXME: ok, at the moment because we do packet per packet treatment, only handles nb_duplications == 1 or 2
-  if (nb_duplications > 1):
+  if (nb_duplications >= 2):
     interpol_values = list(last_values)
     for i in range(0,len(interpol_values)):
       # OK, it's a very rough interpolation
       interpol_values[i] = (last_values[i] + sample.channel_data[i]) / 2
-    print "  --"
-    print "  last values: ", last_values
-    print "  interpolation: ", interpol_values
-    print "  current sample: ", sample.channel_data
+    if DEBUG:
+      print "  --"
+      print "  last values: ", last_values
+      print "  interpolation: ", interpol_values
+      print "  current sample: ", sample.channel_data
+    # send to clients interpolated sample
+    server.broadcast_values(interpol_values)
     nb_samples_out = nb_samples_out + 1
     
-  # check FPS
+  # send to clients current sample
+  server.broadcast_values(sample.channel_data)
+  nb_samples_out = nb_samples_out + 1
+  
+  # save current values for possible interpolation
+  last_values = list(sample.channel_data)
+    
+  # check FPS + listen for new connections
   global tick
   elapsed_time = new_tick - tick
   if elapsed_time >= 1:
@@ -83,8 +96,13 @@ def printData(sample):
     tick = new_tick
     nb_samples_in = -1
     nb_samples_out = -1
+    # time to get some feedback
+    server.check_connections()
 
 if __name__ == '__main__':
+  # init server
+  server = tcp_server.TCPServer(ip=SERVER_IP, port=SERVER_PORT, nb_channels=NB_CHANNELS)
+  # init board
   port = '/dev/ttyUSB0'
   baud = 115200
   board = bci.OpenBCIBoard(port=port, baud=baud, filter_data=False)
