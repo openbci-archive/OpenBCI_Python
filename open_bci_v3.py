@@ -84,24 +84,29 @@ class OpenBCIBoard(object):
     while self.streaming:
       print(struct.unpack('B',self.ser.read())[0]);
 
-  def startStreaming(self, callback):
+  def startStreaming(self, callback, lapse=-1):
     """
-
     Start handling streaming data from the board. Call a provided callback
     for every single sample that is processed.
 
     Args:
       callback: A callback function that will receive a single argument of the
           OpenBCISample object captured.
-
     """
     if not self.streaming:
       self.ser.write('b')
       self.streaming = True
 
+    start_time = time.time()
+
     while self.streaming:
       sample = self._read_serial_binary()
       callback(sample)
+      if(lapse > 0 and time.time() - start_time > lapse):
+        self.streaming = False
+
+    #If exited, stop streaming
+    self.ser.write('s')
 
   """
 
@@ -109,12 +114,14 @@ class OpenBCIBoard(object):
 
   """
   def stop(self):
+    self.warn("Stopping streaming")
     self.streaming = False
 
   def disconnect(self):
+    self.stop()
+    self.warn("Closing Serial")
     self.ser.close()
-    self.streaming = False
-
+  
   """
 
       SETTINGS AND HELPERS
@@ -161,7 +168,7 @@ class OpenBCIBoard(object):
     self.filtering_data = False;
 
   def warn(self, text):
-    print("Warning: ", text)
+    print("Warning: %s" % text)
 
   """
 
