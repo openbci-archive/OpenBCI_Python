@@ -53,15 +53,15 @@ Alternatively, there are 6 test signals pre configured:
 
 > /test1 (connect all pins to ground) 
 
-> /test2 (connect all pins to vcc)
+> --> /test2 (connect all pins to vcc)
 
-> /test3 (Connecting pins to low frequency 1x amp signal)
+> --> /test3 (Connecting pins to low frequency 1x amp signal)
 
-> /test4 (Connecting pins to high frequency 1x amp signal)
+> --> /test4 (Connecting pins to high frequency 1x amp signal)
 
-> /test5 (Connecting pins to low frequency 2x amp signal)
+> --> /test5 (Connecting pins to low frequency 2x amp signal)
 
-> /test6 (Connecting pins to high frequency 2x amp signal)
+> --> /test6 (Connecting pins to high frequency 2x amp signal)
 
 The / is used in the interface to execute a pre-configured command. Writing anything without a '/' will automatically write those characters, one by one, to the board.
 
@@ -73,10 +73,15 @@ will do the following:
 
 Pre-configured commands that use the / prefix are:
 test (As explained above) 
+
 > --> /test4
+
 csv (Set the start command to record data to a CSV file)
+
 > --> /csv
+
 start (Start EEG streaming using the most recently defined callback, printData by default)
+
 > --> /start
 
 Adding the argument "T:number" will set a timeout on the start command. 
@@ -93,7 +98,7 @@ To use your own function as a callback just define your function and substitute 
 
 #### Useful commands:
 
-Writting to SD card a high frequency square wave (test5):
+Writting to SD card a high frequency square wave (test5) for 3 seconds:
 ```
 $ python user.py -p /dev/ttyUSB0
 User serial interface enabled...
