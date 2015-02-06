@@ -1,6 +1,5 @@
 import open_bci_v3 as bci
 import tcp_server
-import os
 import time
 from threading import Thread
 
@@ -9,8 +8,9 @@ from threading import Thread
 
 NB_CHANNELS = 8
 
-# typically 1.024 to go from 250Hz to 256Hz
-SAMPLING_FACTOR = 1.024
+# If > 0 will interpolate based on samples count, typically 1.024 to go from 250Hz to 256Hz
+SAMPLING_FACTOR = -1.024
+# If > 0 will interbolate based on elapsed time
 SAMPLING_RATE = 256
 
 SERVER_PORT=12345
@@ -31,17 +31,7 @@ last_values = [0] * NB_CHANNELS
 # counter to trigger duplications...
 leftover_duplications = 0
 
-# current drift
-drift = 0.0
-
 tick=time.time()
-
-reset_tick = False
-
-import random
-import sys
-from threading import Thread
-import time
 
 # try to ease work for main loop
 class Monitor(Thread):
@@ -131,8 +121,6 @@ def streamData(sample):
   
   # save current values for possible interpolation
   last_values = list(sample.channel_data)
-    
-
 
 if __name__ == '__main__':
   # init server
