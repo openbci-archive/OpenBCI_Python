@@ -18,7 +18,7 @@ For additional details on connecting your board visit: http://docs.openbci.com/t
 
 ##Audience:
 
-This python code is meant to be used by people familiar with python and programming in general. It's purpose is to allow for programers to interface with OpenBCI technology directly, both to acquire data and to write programs that can use that data on a live setting, using python. 
+This python code is meant to be used by people familiar with python and programming in general. It's purpose is to allow for programmers to interface with OpenBCI technology directly, both to acquire data and to write programs that can use that data on a live setting, using python. 
 
 If this is not what you are looking for, you can visit http://openbci.com/downloads and browse other OpenBCI software that will fit your needs.
 
@@ -70,7 +70,7 @@ Alternatively, there are 6 test signals pre configured:
 
 > --> /test6 (Connecting pins to high frequency 2x amp signal)
 
-The / is used in the interface to execute a pre-configured command. Writing anything without a preciding '/' will automatically write those characters, one by one, to the board.
+The / is used in the interface to execute a pre-configured command. Writing anything without a preceding '/' will automatically write those characters, one by one, to the board.
 
 For example, writing 
 > -->x3020000X 
