@@ -16,6 +16,7 @@ board.start(handle_sample)
 import serial
 import struct
 import numpy as np
+import time
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = bytes(0xA0)  # start of data packet
@@ -40,7 +41,7 @@ scale_fac_uVolts_per_count = ADS1299_Vref/(pow(2,23)-1)/(ADS1299_gain*1000000.);
 # command_biasAuto = "`";
 # command_biasFixed = "~";
 
-        
+
 class OpenBCIBoard(object):
   """
 
@@ -52,61 +53,60 @@ class OpenBCIBoard(object):
 
   """
 
-  def __init__(self, port=None, baud=115200, filter_data=True):
+  def __init__(self, port=None, baud=115200, filter_data=True,
+    scaled_output=True):
     if not port:
       port = find_port()
       if not port:
         raise OSError('Cannot find OpenBCI port')
-        
+
     self.ser = serial.Serial(port, baud)
-    self.dump_registry_data()
+    print("Serial established...")
+
+    #Initialize 32-bit board, doesn't affect 8bit board
+    self.ser.write('v');
+
+    #wait for device to be ready
+    time.sleep(1)
+    self.print_incoming_text()
+
     self.streaming = False
     self.filtering_data = filter_data
+    self.scaling_output = scaled_output
     self.channels = 8
-
     self.read_state = 0;
-    # Searching for start(0), sample_count(1),read data(2), read aux(3), search last(4) 
 
-  def printIn(self):
+  def printBytesIn(self):
+    #DEBBUGING: Prints individual incoming bytes
     if not self.streaming:
-      # if self.filtering_data:
-      #   self.warn('Enabling filter')
-      #   self.ser.write('F')
-      #   print(self.ser.readline())
-        
-      # Send an 'b' to the board to tell it to start streaming us text.
       self.ser.write('b')
-      # Dump the first line that says "Arduino: Starting..."
       self.streaming = True
     while self.streaming:
       print(struct.unpack('B',self.ser.read())[0]);
 
-  def start(self, callback):
+  def startStreaming(self, callback, lapse=-1):
     """
-
     Start handling streaming data from the board. Call a provided callback
     for every single sample that is processed.
 
     Args:
       callback: A callback function that will receive a single argument of the
           OpenBCISample object captured.
-    
     """
     if not self.streaming:
-      # if self.filtering_data:
-      #   self.warn('Enabling filter')
-      #   self.ser.write('F')
-      #   print(self.ser.readline())
-        
-      # Send an 'b' to the board to tell it to start streaming us text.
       self.ser.write('b')
-      # Dump the first line that says "Arduino: Starting..."
-      self.ser.readline()
       self.streaming = True
+
+    start_time = time.time()
+
     while self.streaming:
-      #data = self.ser.readline()
       sample = self._read_serial_binary()
       callback(sample)
+      if(lapse > 0 and time.time() - start_time > lapse):
+        self.streaming = False
+
+    #If exited, stop streaming
+    self.ser.write('s')
 
   """
 
@@ -114,40 +114,50 @@ class OpenBCIBoard(object):
 
   """
   def stop(self):
+    self.warn("Stopping streaming")
     self.streaming = False
 
   def disconnect(self):
+    self.stop()
+    self.warn("Closing Serial")
     self.ser.close()
-    self.streaming = False
+  
+  """
 
-  """ 
-
-
-      SETTINGS AND HELPERS 
-
+      SETTINGS AND HELPERS
 
   """
 
-  def dump_registry_data(self):
+  def print_incoming_text(self):
     """
-    
-    When starting the connection, dump all the debug data until 
-    we get to a line with something about streaming data.
-    
+
+    When starting the connection, print all the debug data until
+    we get to a line with the end sequence '$$$'.
+
     """
     line = ''
-    while 'begin streaming data' not in line:
-      line = self.ser.readline()  
+    #Wait for device to send data
+    time.sleep(0.5)
+    if self.ser.inWaiting():
+      print("-------------------")
+      line = ''
+      c = ''
+     #Look for end sequence $$$
+      while '$$$' not in line:
+        c = self.ser.read()
+        line += c
+      print(line);
+      print("-------------------\n")
 
   def print_register_settings(self):
     self.ser.write('?')
-    for number in xrange(0, 24):
-      print(self.ser.readline())
+    time.sleep(0.5)
+    print_incoming_text();
 
   """
 
   Adds a filter at 60hz to cancel out ambient electrical noise.
-  
+
   """
   def enable_filters(self):
     self.ser.write('f')
@@ -158,15 +168,24 @@ class OpenBCIBoard(object):
     self.filtering_data = False;
 
   def warn(self, text):
-    print(text)
+    print("Warning: %s" % text)
 
+  """
+
+    Parses incoming data packet into OpenBCISample.
+    Incoming Packet Structure:
+    Start Byte(1)|Sample ID(1)|Channel Data(24)|Aux Data(6)|End Byte(1)
+    0xA0|0-255|8, 3-byte signed ints|3 2-byte signed ints|0xC0
+
+  """
   def _read_serial_binary(self, max_bytes_to_skip=3000):
     def read(n):
       b = self.ser.read(n)
-      # print bytes(b)ar
+      # print bytes(b)
       return b
 
     for rep in xrange(max_bytes_to_skip):
+
       #Looking for start and save id when found
       if self.read_state == 0:
         b = read(1)
@@ -180,38 +199,36 @@ class OpenBCIBoard(object):
           if(rep != 0):
             self.warn('Skipped %d bytes before start found' %(rep))
           packet_id = struct.unpack('B', read(1))[0] #packet id goes from 0-255
-          
+
           self.read_state = 1
 
-      #CHECK THIS
       elif self.read_state == 1:
         channel_data = []
         for c in xrange(self.channels):
+
           #3 byte ints
           literal_read = read(3)
 
           unpacked = struct.unpack('3B', literal_read)
+
           #3byte int in 2s compliment
-          if (unpacked[0] >= 127): 
+          if (unpacked[0] >= 127):
             pre_fix = '\xFF'
           else:
             pre_fix = '\x00'
-          
 
-          literal_read = pre_fix + literal_read; 
+
+          literal_read = pre_fix + literal_read;
 
           #unpack little endian(>) signed integer(i)
           #also makes unpacking platform independent
-          myInt = struct.unpack('>i', literal_read)
+          myInt = struct.unpack('>i', literal_read)[0]
 
-          channel_data.append(myInt[0]*scale_fac_uVolts_per_count)
-          
-          # # Debug
-          # unpacked_final = struct.unpack('4B', literal_read)
-          # print unpacked
-          # print unpacked_final
-          # print myInt 
-        
+          if self.scaling_output:
+            channel_data.append(myInt*scale_fac_uVolts_per_count)
+          else:
+            channel_data.append(myInt)
+
         self.read_state = 2;
 
 
@@ -219,12 +236,11 @@ class OpenBCIBoard(object):
         aux_data = []
         for a in xrange(3):
 
-          #short(h) 
+          #short(h)
           acc = struct.unpack('h', read(2))[0]
           aux_data.append(acc)
-    
-        self.read_state = 3;
 
+        self.read_state = 3;
 
       elif self.read_state == 3:
         val = bytes(struct.unpack('B', read(1))[0])
@@ -234,34 +250,52 @@ class OpenBCIBoard(object):
           return sample
         else:
           self.warn("Warning: Unexpected END_BYTE found <%s> instead of <%s>,\
-            discarted packet with id <%d>" 
+            discarted packet with id <%d>"
             %(val, END_BYTE, packet_id))
-  
 
-  def _interprate_stream(self, b):
-    print ("interprate")
+  def test_signal(self, signal):
+    if signal == 0:
+      self.ser.write('0')
+      self.warn("Connecting all pins to ground")
+    elif signal == 1:
+      self.ser.write('p')
+      self.warn("Connecting all pins to Vcc")
+    elif signal == 2:
+      self.ser.write('-')
+      self.warn("Connecting pins to low frequency 1x amp signal")
+    elif signal == 3:
+      self.ser.write('=')
+      self.warn("Connecting pins to high frequency 1x amp signal")
+    elif signal == 4:
+      self.ser.write('[')
+      self.warn("Connecting pins to low frequency 2x amp signal")
+    elif signal == 5:
+      self.ser.write(']')
+      self.warn("Connecting pins to high frequency 2x amp signal")
+    else:
+      self.warn("%s is not a known test signal. Valid signals go from 0-5" %(signal))
 
   def set_channel(self, channel, toggle_position):
     #Commands to set toggle to on position
-    if toggle_position == 1: 
+    if toggle_position == 1:
       if channel is 1:
-        self.ser.write('q')
+        self.ser.write('!')
       if channel is 2:
-        self.ser.write('w')
+        self.ser.write('@')
       if channel is 3:
-        self.ser.write('e')
+        self.ser.write('#')
       if channel is 4:
-        self.ser.write('r')
+        self.ser.write('$')
       if channel is 5:
-        self.ser.write('t')
+        self.ser.write('%')
       if channel is 6:
-        self.ser.write('y')
+        self.ser.write('^')
       if channel is 7:
-        self.ser.write('u')
+        self.ser.write('&')
       if channel is 8:
-        self.ser.write('i')
+        self.ser.write('*')
     #Commands to set toggle to off position
-    elif toggle_position == 0: 
+    elif toggle_position == 0:
       if channel is 1:
         self.ser.write('1')
       if channel is 2:
@@ -284,8 +318,8 @@ class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
   def __init__(self, packet_id, channel_data, aux_data):
     self.id = packet_id;
-    self.channels = channel_data;
+    self.channel_data = channel_data;
     self.aux_data = aux_data;
-    
+
 
 
