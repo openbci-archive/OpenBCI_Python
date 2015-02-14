@@ -1,6 +1,5 @@
 import open_bci_v3 as bci
 import tcp_server
-import os
 import time
 from threading import Thread
 
