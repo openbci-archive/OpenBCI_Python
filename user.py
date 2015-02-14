@@ -13,7 +13,6 @@ def printData(sample):
 	print sample.channel_data
 	print sample.aux_data
 
-
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="OpenBCI 'user'")
 	parser.add_argument('-p', '--port', required=True,
@@ -27,9 +26,9 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	if args.cvs:
-		fun = csv_collect.csv_collect();
+		fun = csv_collect.csv_collect()
 	else:
-		fun = printData;
+		fun = printData
 
 	print "User serial interface enabled..."
 	print "Connecting to ", args.port
@@ -44,12 +43,32 @@ if __name__ == '__main__':
 
 	while(s != "exit"):
 		#Send char and wait for registers to set
-		if("help" in s): print "View command map at: http://docs.openbci.com/software/01-OpenBCI_SDK.\nFor user interface, read README or view https://github.com/OpenBCI/OpenBCI_Python"
-		elif(s == "/start"): board.startStreaming(fun);
+		if (not s): pass
 
-		elif('test' in s):
-			test = int(s[string.find(s,"test")+4:])
-			board.test_signal(test);
+		elif("help" in s): print "View command map at: \
+			http://docs.openbci.com/software/01-OpenBCI_SDK.\n\
+			For user interface, read README or view \
+			https://github.com/OpenBCI/OpenBCI_Python"
+
+		elif('/' == s[0]):
+			s = s[1:]
+
+			if("T:" in s):
+				lapse = int(s[string.find(s,"T:")+2:])
+			else:
+				lapse = -1
+
+			if("start" in s): 
+				board.startStreaming(fun, lapse)
+
+			elif(s == 'csv'):
+				print("/start will run csv_collect")
+				fun = csv_collect.csv_collect()
+
+			elif('test' in s):
+				test = int(s[string.find(s,"test")+4:])
+				board.test_signal(test)
+
 		
 		elif s:
 			for c in s:
@@ -57,11 +76,17 @@ if __name__ == '__main__':
 				time.sleep(0.035)
 
 		line = ''
+		time.sleep(0.1) #Wait to see if the board has anything to report
 		while board.ser.inWaiting():
 			c = board.ser.read()
 			line += c
-			time.sleep(0.001)		
-		print(line);
+			time.sleep(0.001)	
+			if (c == '\n'):
+				print(line[:-1])
+				line = ''
+		print(line)
 
 		#Take user input
 		s = raw_input('--> ');
+
+	board.disconnect()
