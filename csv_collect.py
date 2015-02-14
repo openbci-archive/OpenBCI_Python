@@ -12,7 +12,7 @@ class csv_collect(object):
 	def __call__(self, sample):
 		t = time.time() - self.start_time
 
-		#Print timeSinceStart|Sample Id
+		#print timeSinceStart|Sample Id
 		print("%f | %d" %(t,sample.id))
 
 		row = ''
