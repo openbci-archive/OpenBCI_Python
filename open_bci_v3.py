@@ -313,6 +313,22 @@ class OpenBCIBoard(object):
         self.ser.write('&')
       if channel is 8:
         self.ser.write('*')
+      if channel is 9 and self.daisy:
+        self.ser.write('Q')
+      if channel is 10 and self.daisy:
+        self.ser.write('W')
+      if channel is 11 and self.daisy:
+        self.ser.write('E')
+      if channel is 12 and self.daisy:
+        self.ser.write('R')
+      if channel is 13 and self.daisy:
+        self.ser.write('T')
+      if channel is 14 and self.daisy:
+        self.ser.write('Y')
+      if channel is 15 and self.daisy:
+        self.ser.write('U')
+      if channel is 16 and self.daisy:
+        self.ser.write('I')
     #Commands to set toggle to off position
     elif toggle_position == 0:
       if channel is 1:
@@ -331,7 +347,22 @@ class OpenBCIBoard(object):
         self.ser.write('7')
       if channel is 8:
         self.ser.write('8')
-
+      if channel is 9 and self.daisy:
+        self.ser.write('q')
+      if channel is 10 and self.daisy:
+        self.ser.write('w')
+      if channel is 11 and self.daisy:
+        self.ser.write('e')
+      if channel is 12 and self.daisy:
+        self.ser.write('r')
+      if channel is 13 and self.daisy:
+        self.ser.write('t')
+      if channel is 14 and self.daisy:
+        self.ser.write('y')
+      if channel is 15 and self.daisy:
+        self.ser.write('u')
+      if channel is 16 and self.daisy:
+        self.ser.write('i')
 
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
