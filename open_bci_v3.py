@@ -11,6 +11,10 @@ board = OpenBCIBoard()
 board.print_register_settings()
 board.start(handle_sample)
 
+NOTE: If daisy modules is enabled, the callback will occur every two samples, hence "packet_id" will only contain even numbers. As a side effect, the sampling rate will be divided by 2.
+
+FIXME: at the moment we can just force daisy mode, do not check that the module is detected.
+
 
 """
 import serial
@@ -50,11 +54,11 @@ class OpenBCIBoard(object):
   Args:
     port: The port to connect to.
     baud: The baud of the serial connection.
-
+    daisy: Enable or disable daisy module and 16 chans readings
   """
 
   def __init__(self, port=None, baud=115200, filter_data=True,
-    scaled_output=True):
+    scaled_output=True, daisy=False):
     if not port:
       port = find_port()
       if not port:
@@ -73,8 +77,10 @@ class OpenBCIBoard(object):
     self.streaming = False
     self.filtering_data = filter_data
     self.scaling_output = scaled_output
-    self.channels = 8
+    self.channels = 8 # number of channels per sample *from the board*
     self.read_state = 0;
+    self.daisy = daisy
+    self.last_odd_sample = OpenBCISample(-1, [], []) # used for daisy
 
   def printBytesIn(self):
     #DEBBUGING: Prints individual incoming bytes
@@ -87,7 +93,7 @@ class OpenBCIBoard(object):
   def startStreaming(self, callback, lapse=-1):
     """
     Start handling streaming data from the board. Call a provided callback
-    for every single sample that is processed.
+    for every single sample that is processed (every two samples with daisy module).
 
     Args:
       callback: A callback function that will receive a single argument of the
@@ -100,8 +106,21 @@ class OpenBCIBoard(object):
     start_time = time.time()
 
     while self.streaming:
+      # read current sample
       sample = self._read_serial_binary()
-      callback(sample)
+      # if a daisy module is attached, wait to concatenate two samples (main board + daisy) before passing it to callback
+      if self.daisy:
+        # odd sample: daisy sample, save for later
+        if ~sample.id % 2:
+          self.last_odd_sample = sample
+        # even sample: concatenate and send if last sample was the fist part, otherwise drop the packet
+        elif sample.id - 1 == self.last_odd_sample.id:
+          # the aux data will be the average between the two samples, as the channel samples themselves have been averaged by the board
+          avg_aux_data = list((np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data))/2)
+          whole_sample = OpenBCISample(sample.id, sample.channel_data + self.last_odd_sample.channel_data, avg_aux_data)
+          callback(whole_sample)
+      else:
+        callback(sample)
       if(lapse > 0 and time.time() - start_time > lapse):
         self.streaming = False
 

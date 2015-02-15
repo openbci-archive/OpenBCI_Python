@@ -23,6 +23,9 @@ if __name__ == '__main__':
 				help="Baud rate (not currently used)")
 	parser.add_argument('-c', '--cvs', action="store_true",
 				help="write cvs data")
+	parser.add_argument('-d', '--daisy', dest='daisy', action='store_true',
+				help="Force daisy mode (beta feature)")
+	parser.set_defaults(daisy=False)
 	args = parser.parse_args()
 
 	if args.cvs:
@@ -32,8 +35,14 @@ if __name__ == '__main__':
 
 	print "User serial interface enabled..."
 	print "Connecting to ", args.port
+	
+	
+	if args.daisy:
+	  print "Force daisy mode"
+	else:
+	  print "No daisy"
 
-	board = bci.OpenBCIBoard(port=args.port)
+	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy)
 
 	print "View command map at http://docs.openbci.com."
 	print "Type start to run. Type exit to exit."
