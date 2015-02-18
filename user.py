@@ -5,6 +5,13 @@ import os
 import time
 import csv_collect
 import string
+import tcp_server
+import streamer
+
+# Config for TCP streaming
+# FIXME: let user configure
+SERVER_PORT=12345
+SERVER_IP="localhost"
 
 def printData(sample):
 	#os.system('clear')
@@ -21,27 +28,45 @@ if __name__ == '__main__':
 	# baud rate is not currently used
 	parser.add_argument('-b', '--baud', default=115200, type=int,
 				help="Baud rate (not currently used)")
-	parser.add_argument('-c', '--cvs', action="store_true",
-				help="write cvs data")
 	parser.add_argument('-d', '--daisy', dest='daisy', action='store_true',
 				help="Force daisy mode (beta feature)")
 	parser.set_defaults(daisy=False)
+	# callback selection. FIXME: first flag use wins
+	parser.add_argument('-c', '--cvs', action="store_true",
+				help="write cvs data")
+	parser.add_argument('-s', '--stream', action="store_true",
+				help="stream data to TCP")
+	
 	args = parser.parse_args()
-
-	if args.cvs:
-		fun = csv_collect.csv_collect()
+	
+	#  Configure number of output channels
+	nb_channels=8
+	if args.daisy:
+	  nb_channels=16
+	  print "Force daisy mode:", nb_channels, "channels."
 	else:
+	  print "No daisy:", nb_channels, "channels."
+	  
+	if args.cvs:
+		print "selecting CSV export"
+		fun = csv_collect.csv_collect()
+	elif args.stream:
+		print "selecting streaming"
+		# init server
+		server = tcp_server.TCPServer(ip=SERVER_IP, port=SERVER_PORT, nb_channels=nb_channels)
+		monit = streamer.Streamer(server)
+		# daemonize theard to terminate it altogether with the main when time will come
+		monit.daemon = True
+		fun = monit.send
+		# launch monitor
+		monit.start()
+	else:
+		print "Selecting printData"
 		fun = printData
 
 	print "User serial interface enabled..."
 	print "Connecting to ", args.port
 	
-	
-	if args.daisy:
-	  print "Force daisy mode"
-	else:
-	  print "No daisy"
-
 	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy)
 
 	print "View command map at http://docs.openbci.com."
