@@ -6,6 +6,8 @@ from threading import Thread
 # Transmit data to openvibe acquisition server, intelpolating data (well, sort of) from 250Hz to 256Hz
 # Listen to new connections every second using a separate thread.
 
+# NB: Left here for resampling algorithm, prefer the use of user.py.
+
 NB_CHANNELS = 8
 
 # If > 0 will interpolate based on samples count, typically 1.024 to go from 250Hz to 256Hz

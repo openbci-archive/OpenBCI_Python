@@ -136,13 +136,6 @@ NOTES:
 When writing to the board and expecting a response, give the board a second. It sometimes lags and requires
 the user to hit enter on the user.py script until you get a response. 
 
-
-
 ### openvibelink branch
 
-This branch adds the script "stream_data.py", which will send over the network the samples. Then it could be acquired with OpenViBE acquisition server, selecting telnet, big endian, float 32 bits.
-
-#### TODO
-
-* the algo to resample from 250Hz to 256Hz is wrong, should do some filtering to avoid data corruption
-
+Adding streaming capability to user.py with "-s" switch. Then it could be acquired with OpenViBE acquisition server, selecting telnet, big endian, float 32 bits, forcing 250 sampling rate.
