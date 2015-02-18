@@ -8,11 +8,6 @@ import string
 import tcp_server
 import streamer
 
-# Config for TCP streaming
-# FIXME: let user configure
-SERVER_PORT=12345
-SERVER_IP="localhost"
-
 def printData(sample):
 	#os.system('clear')
 	print "----------------"
@@ -34,11 +29,18 @@ if __name__ == '__main__':
 	parser.add_argument('-d', '--daisy', dest='daisy', action='store_true',
 				help="Force daisy mode (beta feature)")
 	parser.set_defaults(daisy=False)
-	# callback selection. FIXME: first flag use wins
+	# callback selection. FIXME: first flag tested wins
 	parser.add_argument('-c', '--cvs', action="store_true",
 				help="write cvs data")
 	parser.add_argument('-s', '--stream', action="store_true",
 				help="stream data to TCP")
+	# options for streaming server
+	parser.add_argument('-si', '--stream-ip', default="localhost",
+			help="IP address for TCP streaming server " +
+			"(default: localhost)")
+	parser.add_argument('-sp', '--stream-port', default=12345, type=int,
+			help="Port for TCP streaming server " +
+			"(default: 12345)")
 	
 	args = parser.parse_args()
 	
@@ -56,9 +58,9 @@ if __name__ == '__main__':
 		print "selecting CSV export"
 		fun = csv_collect.csv_collect()
 	elif args.stream:
-		print "selecting streaming"
+		print "Selecting streaming. IP: ", args.stream_ip, ", port: ", args.stream_port
 		# init server
-		server = tcp_server.TCPServer(ip=SERVER_IP, port=SERVER_PORT, nb_channels=nb_channels)
+		server = tcp_server.TCPServer(ip=args.stream_ip, port=args.stream_port, nb_channels=nb_channels)
 		monit = streamer.Streamer(server)
 		# daemonize theard to terminate it altogether with the main when time will come
 		monit.daemon = True
