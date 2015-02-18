@@ -4,7 +4,7 @@ import time
 from threading import Thread
 
 # Transmit data to openvibe acquisition server, intelpolating data (well, sort of) from 250Hz to 256Hz
-# Listen to new connections every second
+# Listen to new connections every second using a separate thread.
 
 NB_CHANNELS = 8
 
