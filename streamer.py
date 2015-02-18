@@ -30,7 +30,7 @@ class Streamer(Thread):
 				print "--- at t: ", (new_tick - self.start_tick), " ---"
 				print "elapsed_time: ", elapsed_time
 				print "nb_samples_out: ", current_samples_out - self.last_samples_out
-				sampling_rate = (current_samples_out - self.nb_samples_out)  / elapsed_time
+				sampling_rate = (current_samples_out - self.last_samples_out)  / elapsed_time
 				print "sampling rate: ", sampling_rate
 				self.last_samples_out = current_samples_out
 			self.tick = new_tick
