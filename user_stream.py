@@ -123,7 +123,7 @@ if __name__ == '__main__':
 		elif s:
 			for c in s:
 				board.ser.write(c)
-				time.sleep(0.035)
+				time.sleep(0.100)
 
 		line = ''
 		time.sleep(0.1) #Wait to see if the board has anything to report
