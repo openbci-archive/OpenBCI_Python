@@ -28,6 +28,9 @@ if __name__ == '__main__':
 	# baud rate is not currently used
 	parser.add_argument('-b', '--baud', default=115200, type=int,
 				help="Baud rate (not currently used)")
+	parser.add_argument('--no-filtering', dest='filtering', action='store_false',
+				help="Disable notch filtering")
+	parser.set_defaults(filtering=True)
 	parser.add_argument('-d', '--daisy', dest='daisy', action='store_true',
 				help="Force daisy mode (beta feature)")
 	parser.set_defaults(daisy=False)
@@ -38,6 +41,8 @@ if __name__ == '__main__':
 				help="stream data to TCP")
 	
 	args = parser.parse_args()
+	
+	print "Notch filtering:", args.filtering
 	
 	#  Configure number of output channels
 	nb_channels=8
@@ -67,7 +72,7 @@ if __name__ == '__main__':
 	print "User serial interface enabled..."
 	print "Connecting to ", args.port
 	
-	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy)
+	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering)
 
 	print "View command map at http://docs.openbci.com."
 	print "Type start to run. Type exit to exit."
