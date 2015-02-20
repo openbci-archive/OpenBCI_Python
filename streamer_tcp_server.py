@@ -6,7 +6,7 @@ import socket, select, struct
 # TODO: does not listen for anything at the moment, could use it to set options
 
 # let's define a new box class that inherits from OVBox
-class TCPServer(Streamer):
+class StreamerTCPServer(Streamer):
   """
 
   Relay OpenBCI values to TCP clients

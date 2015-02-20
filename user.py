@@ -5,8 +5,7 @@ import os
 import time
 import csv_collect
 import string
-import tcp_server
-import streamer
+import streamer, streamer_tcp_server
 
 def printData(sample):
 	#os.system('clear')
@@ -60,7 +59,7 @@ if __name__ == '__main__':
 	elif args.stream:
 		print "Selecting streaming. IP: ", args.stream_ip, ", port: ", args.stream_port
 		# init server
-		server = tcp_server.TCPServer(ip=args.stream_ip, port=args.stream_port, nb_channels=nb_channels)
+		server = streamer_tcp_server.StreamerTCPServer(ip=args.stream_ip, port=args.stream_port, nb_channels=nb_channels)
 		monit = streamer.MonitorStreamer(server)
 		# daemonize theard to terminate it altogether with the main when time will come
 		monit.daemon = True
