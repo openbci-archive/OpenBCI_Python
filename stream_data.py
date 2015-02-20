@@ -1,6 +1,6 @@
 import open_bci_v3 as bci
 import tcp_server
-import time
+import time, timeit
 from threading import Thread
 
 # Transmit data to openvibe acquisition server, intelpolating data (well, sort of) from 250Hz to 256Hz
