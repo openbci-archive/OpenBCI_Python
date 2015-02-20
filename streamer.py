@@ -6,7 +6,7 @@ class Streamer():
 	def check_connections(self):
 		 raise NotImplementedError( "Should have implemented this" )
 	
-	def broadcast_values(self, values, as_string=False):
+	def broadcast_values(self, values):
 		 raise NotImplementedError( "Should have implemented this" )
 
 # 
