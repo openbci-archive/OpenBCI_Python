@@ -140,6 +140,19 @@ the user to hit enter on the user.py script until you get a response.
 
 Connects to the board and fetch data, computing every 10 seconds the average sampling rate.
 
-### openvibelink branch
+### Streaming data
 
-Adding streaming capability to user.py with "-s" switch. Then it could be acquired with OpenViBE acquisition server, selecting telnet, big endian, float 32 bits, forcing 250 sampling rate.
+Adding streaming capability to user.py with `-s` switch. Default port: `12345` (`--stream-port` option). Default IP: `localhost` (`--stream-ip` option).
+
+### OpenViBE support (raw TCP)
+
+By default the a raw TCP protocol is selected, that could then be acquired with OpenViBE acquisition server, selecting telnet, big endian, float 32 bits, forcing 250 sampling rate (125 if daisy mode is used).
+
+### OSC support
+
+With `--stream-protocol osc` data is sent through OSC (UDP layer). Default stream name: `/openbci` (`--stream-osc-address` option).
+
+Requires pyosc: on linux either `pip install --pre pyosc` as root, or `pip install --pre --user`.
+
+Example: `user.py -p /dev/ttyUSB0 -s --stream-protocol osc` will send data to `localhost/openbci:12345`.
+

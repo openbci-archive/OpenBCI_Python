@@ -5,7 +5,7 @@ import os
 import time
 import csv_collect
 import string
-import streamer, streamer_tcp_server
+import streamer, streamer_tcp_server, streamer_osc
 
 def printData(sample):
 	#os.system('clear')
@@ -32,13 +32,17 @@ if __name__ == '__main__':
 	parser.add_argument('-c', '--cvs', action="store_true",
 				help="write cvs data")
 	parser.add_argument('-s', '--stream', action="store_true",
-				help="stream data to TCP")
-	# options for streaming server
+				help="stream data to network (see help for options)")
+	# options for streamer
+	parser.add_argument('--stream-protocol', default="tcp",
+				help="Select streaming protocol; 'tcp' for raw TCP, 'osc' for OSC protocol (default: 'tcp')" )
+	parser.add_argument('--stream-osc-address', default="/openbci",
+				help="Select target address for OSC streaming protocol (default: '/openbci')" )
 	parser.add_argument('-si', '--stream-ip', default="localhost",
-			help="IP address for TCP streaming server " +
+			help="IP address for streaming" +
 			"(default: localhost)")
 	parser.add_argument('-sp', '--stream-port', default=12345, type=int,
-			help="Port for TCP streaming server " +
+			help="Port for streaming data, either as client (TCP) or to server (OSC)" +
 			"(default: 12345)")
 	
 	args = parser.parse_args()
@@ -58,10 +62,16 @@ if __name__ == '__main__':
 		fun = csv_collect.csv_collect()
 	elif args.stream:
 		print "Selecting streaming. IP: ", args.stream_ip, ", port: ", args.stream_port
-		# init server
-		server = streamer_tcp_server.StreamerTCPServer(ip=args.stream_ip, port=args.stream_port, nb_channels=nb_channels)
+		# init right protocol
+		server = None
+		if args.stream_protocol == "tcp":
+			print "Protocol: TCP"
+			server = streamer_tcp_server.StreamerTCPServer(ip=args.stream_ip, port=args.stream_port, nb_channels=nb_channels)
+		else:
+			print "Protocol: OSC, address: ", args.stream_osc_address
+			server = streamer_osc.StreamerOSC(ip=args.stream_ip, port=args.stream_port, address=args.stream_osc_address)
+		# init and daemonize thread to terminate it altogether with the main when time will come monit.daemon = True
 		monit = streamer.MonitorStreamer(server)
-		# daemonize theard to terminate it altogether with the main when time will come
 		monit.daemon = True
 		fun = monit.send
 		# launch monitor
