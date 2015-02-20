@@ -61,7 +61,7 @@ if __name__ == '__main__':
 		print "Selecting streaming. IP: ", args.stream_ip, ", port: ", args.stream_port
 		# init server
 		server = tcp_server.TCPServer(ip=args.stream_ip, port=args.stream_port, nb_channels=nb_channels)
-		monit = streamer.Streamer(server)
+		monit = streamer.MonitorStreamer(server)
 		# daemonize theard to terminate it altogether with the main when time will come
 		monit.daemon = True
 		fun = monit.send

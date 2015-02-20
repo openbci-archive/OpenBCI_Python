@@ -1,15 +1,12 @@
- 
-
+from streamer import Streamer
 import socket, select, struct
 
 # Simple TCP server to broadcast data to clients, handling deconnections. Binary format use network endianness (i.e., big-endian), float32
 
 # TODO: does not listen for anything at the moment, could use it to set options
 
-
-
 # let's define a new box class that inherits from OVBox
-class TCPServer():
+class TCPServer(Streamer):
   """
 
   Relay OpenBCI values to TCP clients
