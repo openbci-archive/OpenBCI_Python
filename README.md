@@ -136,6 +136,10 @@ NOTES:
 When writing to the board and expecting a response, give the board a second. It sometimes lags and requires
 the user to hit enter on the user.py script until you get a response. 
 
+### test_sample_rate.py
+
+Connects to the board and fetch data, computing every 10 seconds the average sampling rate.
+
 ### openvibelink branch
 
 Adding streaming capability to user.py with "-s" switch. Then it could be acquired with OpenViBE acquisition server, selecting telnet, big endian, float 32 bits, forcing 250 sampling rate.
