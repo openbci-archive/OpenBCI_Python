@@ -33,7 +33,7 @@ last_values = [0] * NB_CHANNELS
 # counter to trigger duplications...
 leftover_duplications = 0
 
-tick=time.time()
+tick=timeit.default_timer()
 
 # try to ease work for main loop
 class Monitor(Thread):
@@ -42,13 +42,13 @@ class Monitor(Thread):
         self.nb_samples_in = -1
         self.nb_samples_out = -1
         # Init time to compute sampling rate
-        self.tick = time.time()
+        self.tick = timeit.default_timer()
         self.start_tick = self.tick
 
     def run(self):
       while True:
         # check FPS + listen for new connections
-        new_tick = time.time()
+        new_tick = timeit.default_timer()
         elapsed_time = new_tick - self.tick
         current_samples_in =  nb_samples_in
         current_samples_out = nb_samples_out
@@ -90,7 +90,7 @@ def streamData(sample):
   # first method with sampling rate and elapsed time (depends on system clock accuracy)
   if (SAMPLING_RATE > 0):
     # elapsed time since last call, update tick
-    now = time.time()
+    now = timeit.default_timer()
     elapsed_time = now - tick;
     # now we have to compute how many times we should send data to keep up with sample rate (oversampling)
     leftover_duplications = SAMPLING_RATE * elapsed_time + leftover_duplications - 1

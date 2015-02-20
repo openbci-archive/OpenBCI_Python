@@ -1,4 +1,4 @@
-import time
+import time, timeit
 import tcp_server
 from threading import Thread
 
@@ -10,7 +10,7 @@ class Streamer(Thread):
 		self.nb_samples_out = 0
 		self.last_samples_out = 0
 		# Init time to compute sampling rate
-		self.tick = time.time()
+		self.tick = timeit.default_timer()
 		self.start_tick = self.tick
 		# bind to server
 		self.server = tcp_server
@@ -22,7 +22,7 @@ class Streamer(Thread):
 		# run until we DIE
 		while True:
 			# check FPS + listen for new connections
-			new_tick = time.time()
+			new_tick = timeit.default_timer()
 			if self.receiving:
 				# could be updated at the same time, retreived current value
 				current_samples_out = self.nb_samples_out
