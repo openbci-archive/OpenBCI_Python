@@ -1,16 +1,16 @@
 import csv
-import time
+import timeit
 
 class csv_collect(object):
 	def __init__(self, file_name="collect.csv", delim = ","):
 		self.file_name = file_name
-		self.start_time = time.time()
+		self.start_time = timeit.default_timer()
 		self.delim = delim
 
 		open(self.file_name, 'w').close()
 
 	def __call__(self, sample):
-		t = time.time() - self.start_time
+		t = timeit.default_timer() - self.start_time
 
 		#print timeSinceStart|Sample Id
 		print("%f | %d" %(t,sample.id))
