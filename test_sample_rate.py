@@ -1,5 +1,6 @@
 import open_bci_v3 as bci
 import time
+import timeit
 from threading import Thread
 
 # counter for sampling rate
