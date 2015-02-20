@@ -11,13 +11,13 @@ class Monitor(Thread):
         Thread.__init__(self)
         self.nb_samples_out = -1
         # Init time to compute sampling rate
-        self.tick = time.time()
+        self.tick = timeit.default_timer()
         self.start_tick = self.tick
 
     def run(self):
       while True:
         # check FPS + listen for new connections
-        new_tick = time.time()
+        new_tick = timeit.default_timer()
         elapsed_time = new_tick - self.tick
         current_samples_out = nb_samples_out
         print "--- at t: ", (new_tick - self.start_tick), " ---"
