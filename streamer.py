@@ -1,19 +1,27 @@
 import time, timeit
-import tcp_server
 from threading import Thread
 
-# Launch and monitor TCP server (incoming connections, current sampling rate).
-class Streamer(Thread):
+class Streamer():
+	"""Abstraction for different protocol layers"""
+	def check_connections(self):
+		 raise NotImplementedError( "Should have implemented this" )
+	
+	def broadcast_values(self, values):
+		 raise NotImplementedError( "Should have implemented this" )
+
+# 
+class MonitorStreamer(Thread):
+	"""Launch and monitor a "Streamer" entity (incoming connections if implemented, current sampling rate)."""
 	# tcp_server: the TCPServer instance that will be used
-	def __init__(self, tcp_server):
+	def __init__(self, streamer):
 		Thread.__init__(self)
 		self.nb_samples_out = 0
 		self.last_samples_out = 0
 		# Init time to compute sampling rate
 		self.tick = timeit.default_timer()
 		self.start_tick = self.tick
-		# bind to server
-		self.server = tcp_server
+		# bind to Streamer entity
+		self.server = streamer
 		# wait for first values before it computes sampling rate
 		self.receiving = False
 		

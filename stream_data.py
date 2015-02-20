@@ -1,5 +1,5 @@
 import open_bci_v3 as bci
-import tcp_server
+import streamer_tcp_server
 import time, timeit
 from threading import Thread
 
@@ -126,7 +126,7 @@ def streamData(sample):
 
 if __name__ == '__main__':
   # init server
-  server = tcp_server.TCPServer(ip=SERVER_IP, port=SERVER_PORT, nb_channels=NB_CHANNELS)
+  server = streamer_tcp_server.StreamerTCPServer(ip=SERVER_IP, port=SERVER_PORT, nb_channels=NB_CHANNELS)
   # init board
   port = '/dev/ttyUSB1'
   baud = 115200
