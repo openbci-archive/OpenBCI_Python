@@ -11,7 +11,7 @@ class Monitor(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.nb_samples_out = -1
-        
+
         # Init time to compute sampling rate
         self.tick = timeit.default_timer()
         self.start_tick = self.tick
@@ -46,4 +46,4 @@ if __name__ == '__main__':
   monit.daemon = True
   monit.start()
   board = bci.OpenBCIBoard(port=port, baud=baud, filter_data=False)
-  board.startStreaming(count)
+  board.start_streaming(count)
