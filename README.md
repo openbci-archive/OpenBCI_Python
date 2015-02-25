@@ -136,6 +136,6 @@ NOTES:
 When writing to the board and expecting a response, give the board a second. It sometimes lags and requires
 the user to hit enter on the user.py script until you get a response. 
 
+### test_sample_rate.py
 
-
-
+Connects to the board and fetch data, computing every 10 seconds the average sampling rate.

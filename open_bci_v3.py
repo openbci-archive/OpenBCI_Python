@@ -17,6 +17,7 @@ import serial
 import struct
 import numpy as np
 import time
+import timeit
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = bytes(0xA0)  # start of data packet
@@ -97,12 +98,12 @@ class OpenBCIBoard(object):
       self.ser.write('b')
       self.streaming = True
 
-    start_time = time.time()
+    start_time = timeit.default_timer()
 
     while self.streaming:
       sample = self._read_serial_binary()
       callback(sample)
-      if(lapse > 0 and time.time() - start_time > lapse):
+      if(lapse > 0 and timeit.default_timer() - start_time > lapse):
         self.streaming = False
 
     #If exited, stop streaming
