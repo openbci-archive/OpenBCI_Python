@@ -36,6 +36,10 @@ OpenBCISample members:
 -aux_data:
 	3 int array with current auxiliary data. (0s by default)
 
+###upd_server.py and client
+
+See https://github.com/OpenBCI/OpenBCI_Node for implementation example. 
+
 
 ###User.py
 
