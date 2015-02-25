@@ -39,11 +39,12 @@ def count(sample):
 
 if __name__ == '__main__':
   # init board
-  port = '/dev/ttyUSB0'
+  port = '/dev/tty.usbserial-DN0095RE'
   baud = 115200
   monit = Monitor()
+  laspe = 60;
   # daemonize thread to terminate it altogether with the main when time will come
   monit.daemon = True
   monit.start()
   board = bci.OpenBCIBoard(port=port, baud=baud, filter_data=False)
-  board.start_streaming(count)
+  board.start_streaming(count, lapse)

@@ -15,6 +15,7 @@ import struct
 import numpy as np
 import time
 import timeit
+import atexit
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = bytes(0xA0)  # start of data packet
@@ -76,8 +77,11 @@ class OpenBCIBoard(object):
     self.channels = 8
     self.read_state = 0;
 
+    #atexit.register(disconnect)
+
+
+  #DEBBUGING: Prints individual incoming bytes
   def print_bytes_in(self):
-    #DEBBUGING: Prints individual incoming bytes
     if not self.streaming:
       self.ser.write('b')
       self.streaming = True
@@ -103,19 +107,21 @@ class OpenBCIBoard(object):
       sample = self._read_serial_binary()
       callback(sample)
       if(lapse > 0 and timeit.default_timer() - start_time > lapse):
-        self.streaming = False
+        self.stop();
 
     #If exited, stop streaming
-    self.ser.write('s')
+    #self.ser.write('s')
 
   """
 
   Turn streaming off without disconnecting from the board
 
   """
+
   def stop(self):
     self.warn("Stopping streaming")
     self.streaming = False
+    self.ser.write('s')
 
   def disconnect(self):
     self.stop()

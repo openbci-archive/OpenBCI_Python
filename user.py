@@ -6,7 +6,7 @@ import time
 import string
 
 import csv_collect
-import test_sample_rate
+import test_sample_rate as rate
 
 def printData(sample):
 	#os.system('clear')
