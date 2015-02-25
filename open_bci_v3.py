@@ -77,7 +77,8 @@ class OpenBCIBoard(object):
     self.channels = 8
     self.read_state = 0;
 
-    #atexit.register(disconnect)
+    #Disconnects from board when terminated
+    atexit.register(self.disconnect)
 
 
   #DEBBUGING: Prints individual incoming bytes
