@@ -11,6 +11,7 @@ class Monitor(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.nb_samples_out = -1
+        
         # Init time to compute sampling rate
         self.tick = timeit.default_timer()
         self.start_tick = self.tick

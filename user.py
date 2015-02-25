@@ -3,8 +3,10 @@ import argparse # new in Python2.7
 import open_bci_v3 as bci
 import os
 import time
-import csv_collect
 import string
+
+import csv_collect
+import test_sample_rate
 
 def printData(sample):
 	#os.system('clear')
@@ -59,16 +61,19 @@ if __name__ == '__main__':
 				lapse = -1
 
 			if("start" in s): 
-				board.startStreaming(fun, lapse)
-
-			elif(s == 'csv'):
-				print("/start will run csv_collect")
-				fun = csv_collect.csv_collect()
+				board.start_streaming(fun, lapse)
 
 			elif('test' in s):
 				test = int(s[string.find(s,"test")+4:])
 				board.test_signal(test)
 
+			elif("csv" in s):
+				print("/start will run csv_collect")
+				fun = csv_collect.csv_collect()
+
+			elif("rate" in s):
+				print("/start will run csv_collect")
+				fun = csv_collect.csv_collect()
 		
 		elif s:
 			for c in s:

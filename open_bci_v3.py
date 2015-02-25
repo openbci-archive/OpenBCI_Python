@@ -1,5 +1,4 @@
 """
-
 Core OpenBCI object for handling connections and samples from the board.
 
 EXAMPLE USE:
@@ -10,8 +9,6 @@ def handle_sample(sample):
 board = OpenBCIBoard()
 board.print_register_settings()
 board.start(handle_sample)
-
-
 """
 import serial
 import struct
@@ -25,6 +22,8 @@ END_BYTE = bytes(0xC0)  # end of data packet
 ADS1299_Vref = 4.5;  #reference voltage for ADC in ADS1299.  set by its hardware
 ADS1299_gain = 24.0;  #assumed gain setting for ADS1299.  set by its Arduino code
 scale_fac_uVolts_per_count = ADS1299_Vref/(pow(2,23)-1)/ADS1299_gain*1000000.;
+
+# Commands for in SDK http://docs.openbci.com/software/01-OpenBCI_SDK:
 
 # command_stop = "s";
 # command_startText = "x";
@@ -77,7 +76,7 @@ class OpenBCIBoard(object):
     self.channels = 8
     self.read_state = 0;
 
-  def printBytesIn(self):
+  def print_bytes_in(self):
     #DEBBUGING: Prints individual incoming bytes
     if not self.streaming:
       self.ser.write('b')
@@ -85,7 +84,7 @@ class OpenBCIBoard(object):
     while self.streaming:
       print(struct.unpack('B',self.ser.read())[0]);
 
-  def startStreaming(self, callback, lapse=-1):
+  def start_streaming(self, callback, lapse=-1):
     """
     Start handling streaming data from the board. Call a provided callback
     for every single sample that is processed.
