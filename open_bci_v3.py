@@ -23,7 +23,7 @@ START_BYTE = bytes(0xA0)  # start of data packet
 END_BYTE = bytes(0xC0)  # end of data packet
 ADS1299_Vref = 4.5;  #reference voltage for ADC in ADS1299.  set by its hardware
 ADS1299_gain = 24.0;  #assumed gain setting for ADS1299.  set by its Arduino code
-scale_fac_uVolts_per_count = ADS1299_Vref/(pow(2,23)-1)/(ADS1299_gain*1000000.);
+scale_fac_uVolts_per_count = ADS1299_Vref/(pow(2,23)-1)/ADS1299_gain*1000000.;
 
 # command_stop = "s";
 # command_startText = "x";
