@@ -1,5 +1,4 @@
 """
-
 Core OpenBCI object for handling connections and samples from the board.
 
 EXAMPLE USE:
@@ -22,6 +21,7 @@ import struct
 import numpy as np
 import time
 import timeit
+import atexit
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = bytes(0xA0)  # start of data packet
@@ -29,6 +29,8 @@ END_BYTE = bytes(0xC0)  # end of data packet
 ADS1299_Vref = 4.5;  #reference voltage for ADC in ADS1299.  set by its hardware
 ADS1299_gain = 24.0;  #assumed gain setting for ADS1299.  set by its Arduino code
 scale_fac_uVolts_per_count = ADS1299_Vref/(pow(2,23)-1)/ADS1299_gain*1000000.;
+
+# Commands for in SDK http://docs.openbci.com/software/01-OpenBCI_SDK:
 
 # command_stop = "s";
 # command_startText = "x";
@@ -83,15 +85,19 @@ class OpenBCIBoard(object):
     self.daisy = daisy
     self.last_odd_sample = OpenBCISample(-1, [], []) # used for daisy
 
-  def printBytesIn(self):
-    #DEBBUGING: Prints individual incoming bytes
+    #Disconnects from board when terminated
+    atexit.register(self.disconnect)
+
+
+  #DEBBUGING: Prints individual incoming bytes
+  def print_bytes_in(self):
     if not self.streaming:
       self.ser.write('b')
       self.streaming = True
     while self.streaming:
       print(struct.unpack('B',self.ser.read())[0]);
 
-  def startStreaming(self, callback, lapse=-1):
+  def start_streaming(self, callback, lapse=-1):
     """
     Start handling streaming data from the board. Call a provided callback
     for every single sample that is processed (every two samples with daisy module).
@@ -123,19 +129,21 @@ class OpenBCIBoard(object):
       else:
         callback(sample)
       if(lapse > 0 and timeit.default_timer() - start_time > lapse):
-        self.streaming = False
+        self.stop();
 
     #If exited, stop streaming
-    self.ser.write('s')
+    #self.ser.write('s')
 
   """
 
   Turn streaming off without disconnecting from the board
 
   """
+
   def stop(self):
     self.warn("Stopping streaming")
     self.streaming = False
+    self.ser.write('s')
 
   def disconnect(self):
     self.stop()
