@@ -1,12 +1,11 @@
-from streamer import Streamer, MonitorStreamer
+
 # requires pyosc
 from OSC import OSCClient, OSCMessage
 from yapsy.IPlugin import IPlugin
 
 # Use OSC protocol to broadcast data (UDP layer), using "/openbci" stream. (NB. does not check numbers of channel as TCP server)
-# FIXME: no need of a "Streamer" entity anymore with multiple plugins activated
 
-class StreamerOSC(Streamer, IPlugin):
+class StreamerOSC(IPlugin):
 	"""
 
 	Relay OpenBCI values to OSC clients
@@ -34,37 +33,24 @@ class StreamerOSC(Streamer, IPlugin):
 		# init network
 		print "Selecting OSC streaming. IP: ", self.ip, ", port: ", self.port, ", address: ", self.address
 		self.client = OSCClient()
-		self.client.connect( (self.ip, self.port) )
-		
-		# init the daemon that monitors connections
-		
-		self.monit = MonitorStreamer(self)
-		self.monit.daemon = True
-		# launch monitor
-		self.monit.start()
-			
+		self.client.connect( (self.ip, self.port) )	
 			
 		return True
 
 	# From IPlugin: close connections, send message to client
 	def deactivate(self):
 		self.client.send(OSCMessage("/quit") )
-	  
-	# from Streamer: stub for API compability
-	def check_connections(self):
-		return
 	    
-	# from Streamer: send channels values
-	# as_string: many for debug, send values with a nice "[34.45, 30.4, -38.0]"-like format
-	def broadcast_values(self, values):
-		mes = OSCMessage(self.address)
-		mes.append(values)
-		self.client.send(mes)
-	
-	# call MonitorStreamer, that will call Streamer, that will call in here
+	# send channels values
 	def __call__(self, sample):
-		self.monit.send(sample)
-	
+		mes = OSCMessage(self.address)
+		mes.append(sample.channel_data)
+		# silently pass if connection drops
+		try:
+			self.client.send(mes)
+		except:
+			return
+
 	def show_help(self):
 	  	print """Optional arguments: [ip [port [address]]]
 	  	\t ip: target IP address (default: 'localhost')
