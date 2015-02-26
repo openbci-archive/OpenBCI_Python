@@ -5,3 +5,4 @@
 * send command for daisy (c/C)
 * separate thread for the board
 * handle termination, call deactivate
+* make a proper package

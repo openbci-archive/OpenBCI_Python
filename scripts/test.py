@@ -15,4 +15,4 @@ if __name__ == '__main__':
 	port = '/dev/ttyUSB0'
 	baud = 115200
 	board = bci.OpenBCIBoard(port=port)
-	board.startStreaming(printData)
+	board.start_streaming(printData)

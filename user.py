@@ -5,26 +5,22 @@ import os
 import time
 import string
 
-# import "plugins"
-import csv_collect
-import test_sample_rate as rate
-import streamer, streamer_tcp_server
+from yapsy.PluginManager import PluginManager
 
-# pyOSC may not be present on the system
-plugin_streamer_osc = True
-try:
-    import streamer_osc
-except:
-    plugin_streamer_osc = False
+import logging
+logging.basicConfig(level=logging.DEBUG) 
 
-def printData(sample):
-	#os.system('clear')
-	print "----------------"
-	print("%f" %(sample.id))
-	print sample.channel_data
-	print sample.aux_data
+# Load the plugins from the plugin directory.
+manager = PluginManager()
+manager.setPluginPlaces(["plugins"])
+manager.collectPlugins()
 
 if __name__ == '__main__':
+	# Loop round the plugins and print their names.
+	print "Found plugins:",
+	for plugin in manager.getAllPlugins():
+		print "[", plugin.name, "]",
+	print
 	parser = argparse.ArgumentParser(description="OpenBCI 'user'")
 	parser.add_argument('-p', '--port', required=True,
 				help="Port to connect to OpenBCI Dongle " +
@@ -38,63 +34,48 @@ if __name__ == '__main__':
 	parser.add_argument('-d', '--daisy', dest='daisy', action='store_true',
 				help="Force daisy mode (beta feature)")
 	parser.set_defaults(daisy=False)
-	# callback selection. FIXME: first flag tested wins
-	parser.add_argument('-c', '--cvs', action="store_true",
-				help="write cvs data")
-	parser.add_argument('-s', '--stream', action="store_true",
-				help="stream data to network (see help for options)")
-	# options for streamer
-	parser.add_argument('--stream-protocol', default="tcp",
-				help="Select streaming protocol; 'tcp' for raw TCP, 'osc' for OSC protocol (default: 'tcp')" )
-	parser.add_argument('--stream-osc-address', default="/openbci",
-				help="Select target address for OSC streaming protocol (default: '/openbci')" )
-	parser.add_argument('-si', '--stream-ip', default="localhost",
-			help="IP address for streaming" +
-			"(default: localhost)")
-	parser.add_argument('-sp', '--stream-port', default=12345, type=int,
-			help="Port for streaming data, either as client (TCP) or to server (OSC)" +
-			"(default: 12345)")
+	
+	# first argument: plugin name, then parameters for plugin
+	parser.add_argument('--add', required=True, action='append', nargs='+',
+			help="Select which plugins to activate and set parameters.")
 	
 	args = parser.parse_args()
 	
 	print "Notch filtering:", args.filtering
-	
+
 	#  Configure number of output channels
 	nb_channels=8
 	if args.daisy:
-	  nb_channels=16
-	  print "Force daisy mode:", nb_channels, "channels."
+		nb_channels=16
+		print "Force daisy mode:", nb_channels, "channels."
 	else:
-	  print "No daisy:", nb_channels, "channels."
-	  
-	if args.cvs:
-		print "selecting CSV export"
-		fun = csv_collect.csv_collect()
-	elif args.stream:
-		print "Selecting streaming. IP: ", args.stream_ip, ", port: ", args.stream_port
-		# init right protocol
-		server = None
-		if args.stream_protocol == "tcp":
-			print "Protocol: TCP"
-			server = streamer_tcp_server.StreamerTCPServer(ip=args.stream_ip, port=args.stream_port, nb_channels=nb_channels)
-		else:
-			if not plugin_streamer_osc:
-				print "Error: OSC streamer disabled, check pyosc dependency."
-			else:
-				plugin_streamer_osc
-				print "Protocol: OSC, address: ", args.stream_osc_address
-				server = streamer_osc.StreamerOSC(ip=args.stream_ip, port=args.stream_port, address=args.stream_osc_address)
-		if server != None:
-			# init and daemonize thread to terminate it altogether with the main when time will come monit.daemon = True
-			monit = streamer.MonitorStreamer(server)
-			monit.daemon = True
-			fun = monit.send
-			# launch monitor
-			monit.start()
-	else:
-		print "Selecting printData"
-		fun = printData
+		print "No daisy:", nb_channels, "channels."
 
+	# Fetch plugins, try to activate them, add to the list if OK
+	plug_list = []
+	for plug_candidate in args.add:
+		# first value: plugin name, then optional arguments
+		plug_name=plug_candidate[0]
+		plug_args=plug_candidate[1:]
+		# Try to find name
+		plug=manager.getPluginByName(plug_name)
+		if plug == None:
+			# eg: if an import fail inside a plugin, yapsy skip it
+			print "Error: [", plug_name, "] not found or could not be loaded. Check name and requirements."
+		else:
+			if not plug.plugin_object.activate(plug_args):
+				print "Error while activating [", plug_name, "], check output for more info."
+			else:
+				print "Plugin [", plug_name, "] added to the list"
+				plug_list.append(plug.plugin_object)
+
+	if len(plug_list) == 0:
+		print "WARNING: no plugin selected, you will only be able to communicate with the board."
+		fun = None
+	#TODO: a list of functions...
+	else:
+		fun = plug_list[0]
+	
 	print "User serial interface enabled..."
 	print "Connecting to ", args.port
 	
@@ -129,16 +110,7 @@ if __name__ == '__main__':
 			elif('test' in s):
 				test = int(s[string.find(s,"test")+4:])
 				board.test_signal(test)
-
-			elif("csv" in s):
-				print("/start will run csv_collect")
-				fun = csv_collect.csv_collect()
-
-			elif("rate" in s):
-				print("/start will run test_sample_rate")
-				rate.init()
-				fun = rate.count
-		
+			
 		elif s:
 			for c in s:
 				board.ser.write(c)
@@ -158,4 +130,7 @@ if __name__ == '__main__':
 		#Take user input
 		s = raw_input('--> ');
 
+	# We're all set, disconnect board, switch off plugins
 	board.disconnect()
+	for plug in plug_list:
+		plug.deactivate()
