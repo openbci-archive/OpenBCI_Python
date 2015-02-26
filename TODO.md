@@ -1,6 +1,7 @@
  
 * reset board on startup
-* default set of instructions in command line
+* default set of instructions to send to the board on startup via command line
 * show list plugins + help for each
-* set command for daisy
+* send command for daisy (c/C)
 * separate thread for the board
+* handle termination, call deactivate
