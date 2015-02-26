@@ -4,10 +4,18 @@ import open_bci_v3 as bci
 import os
 import time
 import string
-import streamer, streamer_tcp_server, streamer_osc
 
+# import "plugins"
 import csv_collect
 import test_sample_rate as rate
+import streamer, streamer_tcp_server
+
+# pyOSC may not be present on the system
+plugin_streamer_osc = True
+try:
+    import streamer_osc
+except:
+    plugin_streamer_osc = False
 
 def printData(sample):
 	#os.system('clear')
@@ -70,14 +78,19 @@ if __name__ == '__main__':
 			print "Protocol: TCP"
 			server = streamer_tcp_server.StreamerTCPServer(ip=args.stream_ip, port=args.stream_port, nb_channels=nb_channels)
 		else:
-			print "Protocol: OSC, address: ", args.stream_osc_address
-			server = streamer_osc.StreamerOSC(ip=args.stream_ip, port=args.stream_port, address=args.stream_osc_address)
-		# init and daemonize thread to terminate it altogether with the main when time will come monit.daemon = True
-		monit = streamer.MonitorStreamer(server)
-		monit.daemon = True
-		fun = monit.send
-		# launch monitor
-		monit.start()
+			if not plugin_streamer_osc:
+				print "Error: OSC streamer disabled, check pyosc dependency."
+			else:
+				plugin_streamer_osc
+				print "Protocol: OSC, address: ", args.stream_osc_address
+				server = streamer_osc.StreamerOSC(ip=args.stream_ip, port=args.stream_port, address=args.stream_osc_address)
+		if server != None:
+			# init and daemonize thread to terminate it altogether with the main when time will come monit.daemon = True
+			monit = streamer.MonitorStreamer(server)
+			monit.daemon = True
+			fun = monit.send
+			# launch monitor
+			monit.start()
 	else:
 		print "Selecting printData"
 		fun = printData
