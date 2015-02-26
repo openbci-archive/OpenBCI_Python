@@ -5,4 +5,3 @@
 * separate thread for the board (?)
 * handle termination, call deactivate
 * make a proper package
-* fix nb channels for TCP

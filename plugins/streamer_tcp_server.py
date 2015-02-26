@@ -33,19 +33,15 @@ class StreamerTCPServer(IPlugin):
 	Args:
 	  port: Port of the server
 	  ip: IP address of the server
-	  nb_channels: number of channels of the device
 	  
 	"""
 	    
-	def __init__(self, ip='localhost', port=12345, nb_channels=8):
+	def __init__(self, ip='localhost', port=12345):
 	  # list of socket clients
 	  self.CONNECTION_LIST = []
 	  # connection infos
 	  self.ip = ip
 	  self.port = port
-	  self.nb_channels=nb_channels
-	  # format for binary data, network endian (big) and float (float32)
-	  self.packer = struct.Struct('!%sf' % self.nb_channels)
 
 	# From IPlugin
 	def activate(self, args):
@@ -106,11 +102,6 @@ class StreamerTCPServer(IPlugin):
 	# as_string: many for debug, send values with a nice "[34.45, 30.4, -38.0]"-like format
 	def __call__(self, sample, as_string=False):
 		values=sample.channel_data
-		# We expect a certain amount of data to send in correct format
-		# TODO: raise error
-		if len(values) != self.nb_channels:
-			print "ERROR: ", self.nb_channels, " channels configured but ", len(values), " values given"
-			return
 		# save sockets that are closed to remove them later on
 		outdated_list = []
 		for sock in self.CONNECTION_LIST:
@@ -119,8 +110,11 @@ class StreamerTCPServer(IPlugin):
 				if as_string:
 					sock.send(str(values) + "\n")
 				else:
+					nb_channels=len(values)
+					# format for binary data, network endian (big) and float (float32)
+					packer = struct.Struct('!%sf' % nb_channels)
 					# convert values to bytes
-					packed_data = self.packer.pack(*values)
+					packed_data = packer.pack(*values)
 					sock.send(packed_data)
 					# TODO: should check if the correct number of bytes passed through
 			except:
