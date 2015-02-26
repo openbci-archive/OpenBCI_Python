@@ -1,0 +1,9 @@
+
+[Core]
+Name = streamer_osc
+Module = streamer_osc
+
+[Documentation]
+Author = Various
+Version = 0.1
+Description = Use OSC protocol to broadcast data (UDP layer). Requires pyosc.

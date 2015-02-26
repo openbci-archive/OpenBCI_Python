@@ -4,7 +4,8 @@
 Features:
   - Stream data over TCP (OpenViBE telnet reader format) or OSC
   - 16 channels support (daisy module)
-  - script: test sampling rate
+  - test sampling rate
+  - plugin system
 
 Bugfixes:
   - scale factor
