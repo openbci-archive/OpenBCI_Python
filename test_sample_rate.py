@@ -36,15 +36,19 @@ def count(sample):
   # update counters
   global nb_samples_out
   nb_samples_out = nb_samples_out + 1
-
-if __name__ == '__main__':
-  # init board
-  port = '/dev/tty.usbserial-DN0095RE'
-  baud = 115200
+  
+# Instanciate "monitor" thread
+def init():
   monit = Monitor()
-  laspe = 60;
   # daemonize thread to terminate it altogether with the main when time will come
   monit.daemon = True
   monit.start()
+  
+if __name__ == '__main__':
+  # init board
+  port = '/dev/ttyUSB0'
+  baud = 115200
+  lapse = 60;
+  init()
   board = bci.OpenBCIBoard(port=port, baud=baud, filter_data=False)
   board.start_streaming(count, lapse)
