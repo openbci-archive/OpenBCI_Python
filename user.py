@@ -72,8 +72,9 @@ if __name__ == '__main__':
 				fun = csv_collect.csv_collect()
 
 			elif("rate" in s):
-				print("/start will run csv_collect")
-				fun = csv_collect.csv_collect()
+				print("/start will run test_sample_rate")
+				rate.init()
+				fun = rate.count
 		
 		elif s:
 			for c in s:
