@@ -1,12 +1,31 @@
-from streamer import Streamer, MonitorStreamer
-import socket, select, struct
+from threading import Thread
+import socket, select, struct, time
 from yapsy.IPlugin import IPlugin
 
 # Simple TCP server to "broadcast" data to clients, handling deconnections. Binary format use network endianness (i.e., big-endian), float32
 
 # TODO: does not listen for anything at the moment, could use it to set options
 
-class StreamerTCPServer(Streamer, IPlugin):
+# Handling new client in separate thread
+class MonitorStreamer(Thread):
+	"""Launch and monitor a "Streamer" entity (incoming connections if implemented, current sampling rate)."""
+	# tcp_server: the TCPServer instance that will be used
+	def __init__(self, streamer):
+		Thread.__init__(self)
+		# bind to Streamer entity
+		self.server = streamer
+	
+	def run(self):
+		# run until we DIE
+		while True:
+			# check FPS + listen for new connections
+			# FIXME: not so great with threads -- use a lock?
+			# TODO: configure interval
+			self.server.check_connections()
+			time.sleep(1)
+
+
+class StreamerTCPServer(IPlugin):
 	"""
 
 	Relay OpenBCI values to TCP clients
@@ -83,9 +102,10 @@ class StreamerTCPServer(Streamer, IPlugin):
 		# close server socket
 		self.server_socket.close();
       
-	# from Streamer: broadcast channels values to all clients
+	# broadcast channels values to all clients
 	# as_string: many for debug, send values with a nice "[34.45, 30.4, -38.0]"-like format
-	def broadcast_values(self, values, as_string=False):
+	def __call__(self, sample, as_string=False):
+		values=sample.channel_data
 		# We expect a certain amount of data to send in correct format
 		# TODO: raise error
 		if len(values) != self.nb_channels:
@@ -113,10 +133,6 @@ class StreamerTCPServer(Streamer, IPlugin):
 			self.CONNECTION_LIST.remove(bad_sock)
 			# not very costly to be polite
 			bad_sock.close()
-  
-	# call MonitorStreamer, that will call Streamer, that will call in here
-	def __call__(self, sample):
-		self.monit.send(sample)
 	
 	def show_help(self):
 	  	print """Optional arguments: [ip [port]]
