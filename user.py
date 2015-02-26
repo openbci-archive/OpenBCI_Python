@@ -16,13 +16,13 @@ manager.setPluginPlaces(["plugins"])
 manager.collectPlugins()
 
 if __name__ == '__main__':
-	# Loop round the plugins and print their names.
-	print "Found plugins:",
-	for plugin in manager.getAllPlugins():
-		print "[", plugin.name, "]",
-	print
+
 	parser = argparse.ArgumentParser(description="OpenBCI 'user'")
-	parser.add_argument('-p', '--port', required=True,
+	parser.add_argument('-l', '--list', action='store_true',
+				help="List available plugins.")
+	parser.add_argument('-i', '--info', metavar='PLUGIN',
+				help="Show more information about a plugin.")
+	parser.add_argument('-p', '--port',
 				help="Port to connect to OpenBCI Dongle " +
 				"( ex /dev/ttyUSB0 or /dev/tty.usbserial-* )")
 	# baud rate is not currently used
@@ -34,12 +34,38 @@ if __name__ == '__main__':
 	parser.add_argument('-d', '--daisy', dest='daisy', action='store_true',
 				help="Force daisy mode (beta feature)")
 	parser.set_defaults(daisy=False)
-	
 	# first argument: plugin name, then parameters for plugin
-	parser.add_argument('--add', required=True, action='append', nargs='+',
+	parser.add_argument('-a', '--add', metavar=('PLUGIN', 'PARAM'), action='append', nargs='+',
 			help="Select which plugins to activate and set parameters.")
 	
 	args = parser.parse_args()
+	
+	if not (args.port or args.list or args.info):
+		parser.error('No action requested. Use `--port serial_port` to connect to the bord; `--list` to show available plugins or `--info [plugin_name]` to get more information.')
+	
+	# Print list of available plugins and exit
+	if args.list:
+		print "Available plugins:"
+		for plugin in manager.getAllPlugins():
+			print "\t-", plugin.name
+		exit()
+	
+	# User wants more info about a plugin...
+	if args.info:
+		plug=manager.getPluginByName(plug_name)
+		if plug == None:
+			# eg: if an import fail inside a plugin, yapsy skip it
+			print "Error: [", plug_name, "] not found or could not be loaded. Check name and requirements."
+		else:
+			print "yes"
+	
+	
+	# Loop round the plugins and print their names.
+	print "Found plugins:",
+	for plugin in manager.getAllPlugins():
+		print "[", plugin.name, "]",
+	print
+	
 	
 	print "Notch filtering:", args.filtering
 
