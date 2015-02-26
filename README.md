@@ -7,10 +7,11 @@ Please direct any questions, suggestions and bug reports to the github repo at: 
 
 ## Dependancies:
 
-Python 2.7 or later (https://www.python.org/download/releases/2.7/)
-Numpy 1.7 or later (http://www.numpy.org/)
+* Python 2.7 or later (https://www.python.org/download/releases/2.7/)
+* Numpy 1.7 or later (http://www.numpy.org/)
+* Yapsy -- if using pluging via `user.py` (http://yapsy.sourceforge.net/)
 
-OpenBCI 8 and 32 bit board with 8 channels.
+OpenBCI 8 and 32 bit board with 8 or 16 channels.
 
 This library includes the main open_bci_v3 class definition that instantiates an OpenBCI Board object. This object will initialize communication with the board and get the environment ready for data streaming. This library is designed to work with iOS and Linux distributions. To use a Windows OS, change the __init__ function in open_bci_v3.py to establish a serial connection in Windows.
 
@@ -127,7 +128,7 @@ the user to hit enter on the user.py script until you get a response.
 
 ### Plugins
 
-### Use plugins
+#### Use plugins
 
 Select the print plugin:
 
@@ -139,7 +140,7 @@ Plugin with optional parameter:
 
 Select several plugins, e.g. streaming to OSC and displaying effective sample rate:
 
-> $python user.py -p /dev/ttyUSB0 --add streamer_osc record.csv --add sample_rate
+> $python user.py -p /dev/ttyUSB0 --add streamer_osc --add sample_rate
 
 Note: type `/start` to launch the selected plugins.
 
