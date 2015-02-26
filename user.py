@@ -8,7 +8,7 @@ import string
 from yapsy.PluginManager import PluginManager
 
 import logging
-logging.basicConfig(level=logging.DEBUG) 
+logging.basicConfig(level=logging.CRITICAL) # DEBUG for dev
 
 # Load the plugins from the plugin directory.
 manager = PluginManager()
@@ -52,12 +52,14 @@ if __name__ == '__main__':
 	
 	# User wants more info about a plugin...
 	if args.info:
-		plug=manager.getPluginByName(plug_name)
-		if plug == None:
+		plugin=manager.getPluginByName(args.info)
+		if plugin == None:
 			# eg: if an import fail inside a plugin, yapsy skip it
-			print "Error: [", plug_name, "] not found or could not be loaded. Check name and requirements."
+			print "Error: [", args.info, "] not found or could not be loaded. Check name and requirements."
 		else:
-			print "yes"
+			print plugin.description
+			plugin.plugin_object.show_help()
+		exit()
 	
 	
 	# Loop round the plugins and print their names.
