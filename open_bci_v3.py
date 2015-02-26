@@ -103,7 +103,7 @@ class OpenBCIBoard(object):
     for every single sample that is processed (every two samples with daisy module).
 
     Args:
-      callback: A callback function that will receive a single argument of the
+      callback: A callback function -- or a list of functions -- that will receive a single argument of the
           OpenBCISample object captured.
     """
     if not self.streaming:
@@ -112,6 +112,10 @@ class OpenBCIBoard(object):
 
     start_time = timeit.default_timer()
 
+    # Enclose callback funtion in a list if it comes alone
+    if not isinstance(callback, list):
+      callback = [callback]
+    
     while self.streaming:
       # read current sample
       sample = self._read_serial_binary()
@@ -125,9 +129,11 @@ class OpenBCIBoard(object):
           # the aux data will be the average between the two samples, as the channel samples themselves have been averaged by the board
           avg_aux_data = list((np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data))/2)
           whole_sample = OpenBCISample(sample.id, sample.channel_data + self.last_odd_sample.channel_data, avg_aux_data)
-          callback(whole_sample)
+          for call in callback:
+            call(whole_sample)
       else:
-        callback(sample)
+        for call in callback:
+          call(sample)
       if(lapse > 0 and timeit.default_timer() - start_time > lapse):
         self.stop();
 

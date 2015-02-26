@@ -1,0 +1,9 @@
+
+[Core]
+Name = streamer_tcp
+Module = streamer_tcp_server
+
+[Documentation]
+Author = Various
+Version = 0.1
+Description = Simple TCP server to "broadcast" data to clients, handling deconnections. Binary format use network endianness (i.e., big-endian), float32. Could be used with OpenViBE acquisition server by selecting "Telnet reader".

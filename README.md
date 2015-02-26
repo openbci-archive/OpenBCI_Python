@@ -5,24 +5,26 @@ The Python software library designed to work with OpenBCI hardware.
 
 Please direct any questions, suggestions and bug reports to the github repo at: https://github.com/OpenBCI/OpenBCI_Python
 
-##Dependancies: 
+## Dependancies:
 
-Python 2.7 or later (https://www.python.org/download/releases/2.7/)	
+Python 2.7 or later (https://www.python.org/download/releases/2.7/)
 Numpy 1.7 or later (http://www.numpy.org/)
 
 OpenBCI 8 and 32 bit board with 8 channels.
 
-This library includes the main open_bci_v3 class definition that instantiates an OpenBCI Board object. This object will initialize communication with the board and get the environment ready for data streaming. This library is designed to work with iOS and Linux distributions. To use a Windows OS, change the __init__ function in open_bci_v3.py to establish a serial connection in Windows. 
+This library includes the main open_bci_v3 class definition that instantiates an OpenBCI Board object. This object will initialize communication with the board and get the environment ready for data streaming. This library is designed to work with iOS and Linux distributions. To use a Windows OS, change the __init__ function in open_bci_v3.py to establish a serial connection in Windows.
 
 For additional details on connecting your board visit: http://docs.openbci.com/tutorials/01-GettingStarted
 
-##Audience:
+## Audience:
 
-This python code is meant to be used by people familiar with python and programming in general. It's purpose is to allow for programmers to interface with OpenBCI technology directly, both to acquire data and to write programs that can use that data on a live setting, using python. 
+This python code is meant to be used by people familiar with python and programming in general. It's purpose is to allow for programmers to interface with OpenBCI technology directly, both to acquire data and to write programs that can use that data on a live setting, using python.
 
 If this is not what you are looking for, you can visit http://openbci.com/downloads and browse other OpenBCI software that will fit your needs.
 
-##Functionality: 
+## Functionality
+
+### Basic usage
 
 The startStreaming function of the Board object takes a callback function and begins streaming data from the board. Each packet it receives is then parsed as an OpenBCISample which is passed to the callback function as an argument. 
 
@@ -36,14 +38,9 @@ OpenBCISample members:
 -aux_data:
 	3 int array with current auxiliary data. (0s by default)
 
-###upd_server.py and client
+### user.py
 
-See https://github.com/OpenBCI/OpenBCI_Node for implementation example. 
-
-
-###User.py
-
-For initial testing, this code provides a simple user interface (called user.py). To use it, connect the board to your computer using the dongle (see http://docs.openbci.com/tutorials/01-GettingStarted for details). 
+This code provides a simple user interface (called user.py) to handle various plugins and communicate with the board. To use it, connect the board to your computer using the dongle (see http://docs.openbci.com/tutorials/01-GettingStarted for details). 
 
 Then simply run the code given as an argument the port your board is connected to:
 Ex Linux:
@@ -62,7 +59,7 @@ Another test would be to change the board settings so that all the pins in the b
 
 Alternatively, there are 6 test signals pre configured:
 
-> --> /test1 (connect all pins to ground) 
+> --> /test1 (connect all pins to ground)
 
 > --> /test2 (connect all pins to vcc)
 
@@ -88,25 +85,13 @@ test (As explained above)
 
 > --> /test4
 
-csv (Set the start command to record data to a CSV file)
-
-> --> /csv
-
-start (Start EEG streaming using the most recently defined callback, printData by default)
+start selected plugins (see below)
 
 > --> /start
 
-Adding the argument "T:number" will set a timeout on the start command. 
-For example, to record CSV data for 5 seconds type:
->-->/csv
+Adding the argument "T:number" will set a timeout on the start command.
 
 >-->/start T:5
-
-To use your own function as a callback just define your function and substitute in line 31 like so:
-
-```python
-		fun = yourFunction()
-```
 
 #### Useful commands:
 
@@ -138,25 +123,107 @@ Corresponding SD file OBCI_18.TXT$$$
 NOTES:
 
 When writing to the board and expecting a response, give the board a second. It sometimes lags and requires
-the user to hit enter on the user.py script until you get a response. 
+the user to hit enter on the user.py script until you get a response.
 
-### test_sample_rate.py
+### Plugins
 
-Connects to the board and fetch data, computing every 10 seconds the average sampling rate.
+### Use plugins
 
-### Streaming data
+Select the print plugin:
 
-Adding streaming capability to user.py with `-s` switch. Default port: `12345` (`--stream-port` option). Default IP: `localhost` (`--stream-ip` option).
+> $python user.py -p /dev/ttyUSB0 --add print
 
-### OpenViBE support (raw TCP)
+Plugin with optional parameter:
 
-By default the a raw TCP protocol is selected, that could then be acquired with OpenViBE acquisition server, selecting telnet, big endian, float 32 bits, forcing 250 sampling rate (125 if daisy mode is used).
+> $python user.py -p /dev/ttyUSB0 --add csv_collect record.csv
 
-### OSC support
+Select several plugins, e.g. streaming to OSC and displaying effective sample rate:
 
-With `--stream-protocol osc` data is sent through OSC (UDP layer). Default stream name: `/openbci` (`--stream-osc-address` option).
+> $python user.py -p /dev/ttyUSB0 --add streamer_osc record.csv --add sample_rate
 
-Requires pyosc: on linux either `pip install --pre pyosc` as root, or `pip install --pre --user`.
+Note: type `/start` to launch the selected plugins.
 
-Example: `user.py -p /dev/ttyUSB0 -s --stream-protocol osc` will send data to `localhost/openbci:12345`.
+#### Create new plugins
 
+Add new functionalities to user.py by creating new scripts inside the `plugins` folder. You class must inherit from yapsy.IPlugin, see below a minimal example with `print` plugin:
+
+```python
+	from yapsy.IPlugin import IPlugin
+
+	class PluginPrint(IPlugin):
+		# args: passed by command line
+		def activate(self, args):
+			print "I'm activated"
+			# tell outside world that init went good
+			return True
+	    
+		def deactivate(self):
+			print "Goodbye"
+		
+		def show_help(self):
+			print "I do not need any parameter, just printing stuff."
+		
+		# called with each new sample
+		def __call__(self, sample):
+			print "----------------"
+			print("%f" %(sample.id))
+			print sample.channel_data
+			print sample.aux_data
+```
+
+Describe your plugin with a corresponding `print.yapsy-plugin`:
+
+```
+	[Core]
+	Name = print
+	Module = print
+
+	[Documentation]
+	Author = Various
+	Version = 0.1
+	Description = Print board values on stdout
+```
+
+
+You're done, your plugin should be automatically detected by `user.py`.
+
+#### Existing plugins
+
+##### csv_collect
+
+Export data to a csv file.
+
+##### print
+
+Display sample values -- *verbose* output!
+
+##### sample_rate
+
+Print effective sampling rate averaged over XX seconds (default: 10).
+
+##### streamer_tcp
+
+Acts as a TCP server, using a "raw" protocol to send value. The stream can be acquired with [OpenViBE](http://openvibe.inria.fr/) acquisition server, selecting telnet, big endian, float 32 bits, forcing 250 sampling rate (125 if daisy mode is used).
+
+Default IP: localhost, default port: 12345
+
+##### streamer_osc
+
+Data is sent through OSC (UDP layer).
+
+Default IP: localhost, default port: 12345, default stream name: `/openbci`
+
+Note: requires pyosc. On linux type either `pip install --pre pyosc` as root, or `pip install --pre --user`.
+
+Type `python user.py --list` to list available plugins and `python user.py --help [plugin_name]` to get more information.
+
+
+### Scripts
+
+In the `scripts` folder you will find code snippets that use directly the `OpenBCIBoard` class from `open_bci_v3.py`.
+
+Note: copy `open_bci_v3.py` there if you want to run the code -- no proper package yet.
+
+* `test.py`: minimal example, printing values.
+* `upd_server.py` and client: see https://github.com/OpenBCI/OpenBCI_Node for implementation example.
+* `stream_data.py` a version of a TCP streaming server that somehow oversamples OpenBCI from 250 to 256Hz.
