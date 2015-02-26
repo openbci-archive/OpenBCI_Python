@@ -9,6 +9,12 @@ def handle_sample(sample):
 board = OpenBCIBoard()
 board.print_register_settings()
 board.start(handle_sample)
+
+NOTE: If daisy modules is enabled, the callback will occur every two samples, hence "packet_id" will only contain even numbers. As a side effect, the sampling rate will be divided by 2.
+
+FIXME: at the moment we can just force daisy mode, do not check that the module is detected.
+
+
 """
 import serial
 import struct
@@ -51,11 +57,11 @@ class OpenBCIBoard(object):
   Args:
     port: The port to connect to.
     baud: The baud of the serial connection.
-
+    daisy: Enable or disable daisy module and 16 chans readings
   """
 
   def __init__(self, port=None, baud=115200, filter_data=True,
-    scaled_output=True):
+    scaled_output=True, daisy=False):
     if not port:
       port = find_port()
       if not port:
@@ -74,8 +80,10 @@ class OpenBCIBoard(object):
     self.streaming = False
     self.filtering_data = filter_data
     self.scaling_output = scaled_output
-    self.channels = 8
+    self.channels = 8 # number of channels per sample *from the board*
     self.read_state = 0;
+    self.daisy = daisy
+    self.last_odd_sample = OpenBCISample(-1, [], []) # used for daisy
 
     #Disconnects from board when terminated
     atexit.register(self.disconnect)
@@ -92,7 +100,7 @@ class OpenBCIBoard(object):
   def start_streaming(self, callback, lapse=-1):
     """
     Start handling streaming data from the board. Call a provided callback
-    for every single sample that is processed.
+    for every single sample that is processed (every two samples with daisy module).
 
     Args:
       callback: A callback function that will receive a single argument of the
@@ -105,8 +113,21 @@ class OpenBCIBoard(object):
     start_time = timeit.default_timer()
 
     while self.streaming:
+      # read current sample
       sample = self._read_serial_binary()
-      callback(sample)
+      # if a daisy module is attached, wait to concatenate two samples (main board + daisy) before passing it to callback
+      if self.daisy:
+        # odd sample: daisy sample, save for later
+        if ~sample.id % 2:
+          self.last_odd_sample = sample
+        # even sample: concatenate and send if last sample was the fist part, otherwise drop the packet
+        elif sample.id - 1 == self.last_odd_sample.id:
+          # the aux data will be the average between the two samples, as the channel samples themselves have been averaged by the board
+          avg_aux_data = list((np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data))/2)
+          whole_sample = OpenBCISample(sample.id, sample.channel_data + self.last_odd_sample.channel_data, avg_aux_data)
+          callback(whole_sample)
+      else:
+        callback(sample)
       if(lapse > 0 and timeit.default_timer() - start_time > lapse):
         self.stop();
 
@@ -301,6 +322,22 @@ class OpenBCIBoard(object):
         self.ser.write('&')
       if channel is 8:
         self.ser.write('*')
+      if channel is 9 and self.daisy:
+        self.ser.write('Q')
+      if channel is 10 and self.daisy:
+        self.ser.write('W')
+      if channel is 11 and self.daisy:
+        self.ser.write('E')
+      if channel is 12 and self.daisy:
+        self.ser.write('R')
+      if channel is 13 and self.daisy:
+        self.ser.write('T')
+      if channel is 14 and self.daisy:
+        self.ser.write('Y')
+      if channel is 15 and self.daisy:
+        self.ser.write('U')
+      if channel is 16 and self.daisy:
+        self.ser.write('I')
     #Commands to set toggle to off position
     elif toggle_position == 0:
       if channel is 1:
@@ -319,7 +356,22 @@ class OpenBCIBoard(object):
         self.ser.write('7')
       if channel is 8:
         self.ser.write('8')
-
+      if channel is 9 and self.daisy:
+        self.ser.write('q')
+      if channel is 10 and self.daisy:
+        self.ser.write('w')
+      if channel is 11 and self.daisy:
+        self.ser.write('e')
+      if channel is 12 and self.daisy:
+        self.ser.write('r')
+      if channel is 13 and self.daisy:
+        self.ser.write('t')
+      if channel is 14 and self.daisy:
+        self.ser.write('y')
+      if channel is 15 and self.daisy:
+        self.ser.write('u')
+      if channel is 16 and self.daisy:
+        self.ser.write('i')
 
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
