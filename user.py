@@ -81,28 +81,30 @@ if __name__ == '__main__':
 
 	# Fetch plugins, try to activate them, add to the list if OK
 	plug_list = []
-	for plug_candidate in args.add:
-		# first value: plugin name, then optional arguments
-		plug_name=plug_candidate[0]
-		plug_args=plug_candidate[1:]
-		# Try to find name
-		plug=manager.getPluginByName(plug_name)
-		if plug == None:
-			# eg: if an import fail inside a plugin, yapsy skip it
-			print "Error: [", plug_name, "] not found or could not be loaded. Check name and requirements."
-		else:
-			if not plug.plugin_object.activate(plug_args):
-				print "Error while activating [", plug_name, "], check output for more info."
+	callback_list = []
+	if args.add:
+		for plug_candidate in args.add:
+			# first value: plugin name, then optional arguments
+			plug_name=plug_candidate[0]
+			plug_args=plug_candidate[1:]
+			# Try to find name
+			plug=manager.getPluginByName(plug_name)
+			if plug == None:
+				# eg: if an import fail inside a plugin, yapsy skip it
+				print "Error: [", plug_name, "] not found or could not be loaded. Check name and requirements."
 			else:
-				print "Plugin [", plug_name, "] added to the list"
-				plug_list.append(plug.plugin_object)
+				if not plug.plugin_object.activate(plug_args):
+					print "Error while activating [", plug_name, "], check output for more info."
+				else:
+					print "Plugin [", plug_name, "] added to the list"
+					plug_list.append(plug.plugin_object)
+					callback_list.append(plug.plugin_object)
 
 	if len(plug_list) == 0:
 		print "WARNING: no plugin selected, you will only be able to communicate with the board."
 		fun = None
-	#TODO: a list of functions...
 	else:
-		fun = plug_list[0]
+		fun = callback_list
 	
 	print "User serial interface enabled..."
 	print "Connecting to ", args.port
@@ -132,7 +134,7 @@ if __name__ == '__main__':
 			else:
 				lapse = -1
 
-			if("start" in s): 
+			if("start" in s and fun != None): 
 				board.start_streaming(fun, lapse)
 
 			elif('test' in s):

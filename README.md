@@ -137,9 +137,9 @@ Plugin with optional parameter:
 
 > $python user.py -p /dev/ttyUSB0 --add csv_collect record.csv
 
-Select several plugins, e.g. export to CSV and displaying effective sample rate:
+Select several plugins, e.g. streaming to OSC and displaying effective sample rate:
 
-> $python user.py -p /dev/ttyUSB0 --add csv_collect record.csv --add sample_rate
+> $python user.py -p /dev/ttyUSB0 --add streamer_osc record.csv --add sample_rate
 
 Note: type `/start` to launch the selected plugins.
 

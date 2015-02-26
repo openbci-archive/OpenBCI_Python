@@ -6,6 +6,7 @@ Features:
   - 16 channels support (daisy module)
   - test sampling rate
   - plugin system
+  - several different callback functions
 
 Bugfixes:
   - scale factor
