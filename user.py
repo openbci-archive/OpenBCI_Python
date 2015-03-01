@@ -159,8 +159,6 @@ if __name__ == '__main__':
 
 		#Take user input
 		s = raw_input('--> ');
-
-	# We're all set, disconnect board, switch off plugins
-	board.disconnect()
+		
 	for plug in plug_list:
 		plug.deactivate()

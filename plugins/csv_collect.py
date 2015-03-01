@@ -1,17 +1,26 @@
 import csv
 import timeit
+import datetime
+
 
 from yapsy.IPlugin import IPlugin
 
 class PluginCSVCollect(IPlugin):
 	def __init__(self, file_name="collect.csv", delim = ","):
-		self.file_name = file_name
+		now = datetime.datetime.now()
+		self.time_stamp = '%d-%d-%d_%d-%d-%d'%(now.year,now.month,now.day,now.hour,now.minute,now.second)
+		self.file_name = self.time_stamp
 		self.start_time = timeit.default_timer()
 		self.delim = delim
 
 	def activate(self, args):
 		if len(args) > 0:
-			self.file_name = args[0]
+			if len(args) > 1 and args[1] == 'no_time':
+				self.file_name = args[0]
+			else:
+				self.file_name = args[0] + '_' + self.file_name;
+
+		self.file_name = self.file_name + '.csv'
 		print "Will export CSV to:", self.file_name
 		open(self.file_name, 'w').close()
 		return True

@@ -1,4 +1,3 @@
-
 [Core]
 Name = csv_collect
 Module = csv_collect
