@@ -103,7 +103,7 @@ User serial interface enabled...
 Connecting to  /dev/ttyUSB0
 Serial established...
 View command map at http://docs.openbci.com.
-Type start to run. Type exit to exit.
+Type start to run. Type /exit to exit.
 
 --> 
 OpenBCI V3 8bit Board

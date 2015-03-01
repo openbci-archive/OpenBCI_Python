@@ -68,7 +68,7 @@ class OpenBCIBoard(object):
       if not port:
         raise OSError('Cannot find OpenBCI port')
 
-    print("Conencting to board through port: %s" %(port))
+    print("Conencting to %s" %(port))
     self.ser = serial.Serial(port, baud)
     print("Serial established...")
 
@@ -140,7 +140,7 @@ class OpenBCIBoard(object):
     print("Warning: %s" % text)
 
   def stop(self):
-    self.warn("Stopping streaming...")
+    self.warn("Stopping streaming...\nWait for buffer to flush...")
     self.streaming = False
     self.ser.write('s')
 
@@ -251,7 +251,6 @@ class OpenBCIBoard(object):
     #Wait for device to send data
     time.sleep(0.5)
     if self.ser.inWaiting():
-      print("-------------------")
       line = ''
       c = ''
      #Look for end sequence $$$
@@ -259,7 +258,6 @@ class OpenBCIBoard(object):
         c = self.ser.read()
         line += c
       print(line);
-      print("-------------------\n")
 
   def print_register_settings(self):
     self.ser.write('?')
