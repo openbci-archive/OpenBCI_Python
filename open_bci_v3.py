@@ -30,24 +30,25 @@ ADS1299_Vref = 4.5;  #reference voltage for ADC in ADS1299.  set by its hardware
 ADS1299_gain = 24.0;  #assumed gain setting for ADS1299.  set by its Arduino code
 scale_fac_uVolts_per_count = ADS1299_Vref/(pow(2,23)-1)/ADS1299_gain*1000000.;
 
-# Commands for in SDK http://docs.openbci.com/software/01-OpenBCI_SDK:
+'''
+#Commands for in SDK http://docs.openbci.com/software/01-OpenBCI_SDK:
 
-# command_stop = "s";
-# command_startText = "x";
-# command_startBinary = "b";
-# command_startBinary_wAux = "n";
-# command_startBinary_4chan = "v";
-# command_activateFilters = "F";
-# command_deactivateFilters = "g";
-# command_deactivate_channel = {"1", "2", "3", "4", "5", "6", "7", "8"};
-# command_activate_channel = {"q", "w", "e", "r", "t", "y", "u", "i"};
-# command_activate_leadoffP_channel = {"!", "@", "#", "$", "%", "^", "&", "*"};  //shift + 1-8
-# command_deactivate_leadoffP_channel = {"Q", "W", "E", "R", "T", "Y", "U", "I"};   //letters (plus shift) right below 1-8
-# command_activate_leadoffN_channel = {"A", "S", "D", "F", "G", "H", "J", "K"}; //letters (plus shift) below the letters below 1-8
-# command_deactivate_leadoffN_channel = {"Z", "X", "C", "V", "B", "N", "M", "<"};   //letters (plus shift) below the letters below the letters below 1-8
-# command_biasAuto = "`";
-# command_biasFixed = "~";
-
+command_stop = "s";
+command_startText = "x";
+command_startBinary = "b";
+command_startBinary_wAux = "n";
+command_startBinary_4chan = "v";
+command_activateFilters = "F";
+command_deactivateFilters = "g";
+command_deactivate_channel = {"1", "2", "3", "4", "5", "6", "7", "8"};
+command_activate_channel = {"q", "w", "e", "r", "t", "y", "u", "i"};
+command_activate_leadoffP_channel = {"!", "@", "#", "$", "%", "^", "&", "*"};  //shift + 1-8
+command_deactivate_leadoffP_channel = {"Q", "W", "E", "R", "T", "Y", "U", "I"};   //letters (plus shift) right below 1-8
+command_activate_leadoffN_channel = {"A", "S", "D", "F", "G", "H", "J", "K"}; //letters (plus shift) below the letters below 1-8
+command_deactivate_leadoffN_channel = {"Z", "X", "C", "V", "B", "N", "M", "<"};   //letters (plus shift) below the letters below the letters below 1-8
+command_biasAuto = "`";
+command_biasFixed = "~";
+'''
 
 class OpenBCIBoard(object):
   """
@@ -137,8 +138,6 @@ class OpenBCIBoard(object):
       if(lapse > 0 and timeit.default_timer() - start_time > lapse):
         self.stop();
 
-    #If exited, stop streaming
-    #self.ser.write('s')
 
   """
 
@@ -153,8 +152,9 @@ class OpenBCIBoard(object):
 
   def disconnect(self):
     self.stop()
-    self.warn("Closing Serial")
-    self.ser.close()
+    if (self.ser):
+      self.warn("Closing Serial")
+      self.ser.close()
   
   """
 
