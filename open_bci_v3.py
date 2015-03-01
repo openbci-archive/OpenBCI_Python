@@ -68,6 +68,7 @@ class OpenBCIBoard(object):
       if not port:
         raise OSError('Cannot find OpenBCI port')
 
+    print("Conencting to board through port: %s" %(port))
     self.ser = serial.Serial(port, baud)
     print("Serial established...")
 
@@ -88,15 +89,6 @@ class OpenBCIBoard(object):
 
     #Disconnects from board when terminated
     atexit.register(self.disconnect)
-
-
-  #DEBBUGING: Prints individual incoming bytes
-  def print_bytes_in(self):
-    if not self.streaming:
-      self.ser.write('b')
-      self.streaming = True
-    while self.streaming:
-      print(struct.unpack('B',self.ser.read())[0]);
 
   def start_streaming(self, callback, lapse=-1):
     """
@@ -141,71 +133,27 @@ class OpenBCIBoard(object):
 
   """
 
-  Turn streaming off without disconnecting from the board
+  Used by exit clean up function (atexit)
 
   """
+  def warn(self, text):
+    print("Warning: %s" % text)
 
   def stop(self):
-    self.warn("Stopping streaming")
+    self.warn("Stopping streaming...")
     self.streaming = False
     self.ser.write('s')
 
   def disconnect(self):
-    self.stop()
-    if (self.ser):
-      self.warn("Closing Serial")
+    if(self.streaming == True):
+      self.stop()
+    if (self.ser.isOpen()):
+      self.warn("Closing Serial...")
       self.ser.close()
   
+  
   """
-
-      SETTINGS AND HELPERS
-
-  """
-
-  def print_incoming_text(self):
-    """
-
-    When starting the connection, print all the debug data until
-    we get to a line with the end sequence '$$$'.
-
-    """
-    line = ''
-    #Wait for device to send data
-    time.sleep(0.5)
-    if self.ser.inWaiting():
-      print("-------------------")
-      line = ''
-      c = ''
-     #Look for end sequence $$$
-      while '$$$' not in line:
-        c = self.ser.read()
-        line += c
-      print(line);
-      print("-------------------\n")
-
-  def print_register_settings(self):
-    self.ser.write('?')
-    time.sleep(0.5)
-    print_incoming_text();
-
-  """
-
-  Adds a filter at 60hz to cancel out ambient electrical noise.
-
-  """
-  def enable_filters(self):
-    self.ser.write('f')
-    self.filtering_data = True;
-
-  def disable_filters(self):
-    self.ser.write('g')
-    self.filtering_data = False;
-
-  def warn(self, text):
-    print("Warning: %s" % text)
-
-  """
-
+    PARSER:
     Parses incoming data packet into OpenBCISample.
     Incoming Packet Structure:
     Start Byte(1)|Sample ID(1)|Channel Data(24)|Aux Data(6)|End Byte(1)
@@ -254,8 +202,7 @@ class OpenBCIBoard(object):
 
           literal_read = pre_fix + literal_read;
 
-          #unpack little endian(>) signed integer(i)
-          #also makes unpacking platform independent
+          #unpack little endian(>) signed integer(i) (makes unpacking platform independent)
           myInt = struct.unpack('>i', literal_read)[0]
 
           if self.scaling_output:
@@ -270,7 +217,7 @@ class OpenBCIBoard(object):
         aux_data = []
         for a in xrange(3):
 
-          #short(h)
+          #short = h
           acc = struct.unpack('h', read(2))[0]
           aux_data.append(acc)
 
@@ -286,6 +233,55 @@ class OpenBCIBoard(object):
           self.warn("Warning: Unexpected END_BYTE found <%s> instead of <%s>,\
             discarted packet with id <%d>"
             %(val, END_BYTE, packet_id))
+
+  """
+
+      SETTINGS AND HELPERS
+
+  """
+
+  def print_incoming_text(self):
+    """
+
+    When starting the connection, print all the debug data until
+    we get to a line with the end sequence '$$$'.
+
+    """
+    line = ''
+    #Wait for device to send data
+    time.sleep(0.5)
+    if self.ser.inWaiting():
+      print("-------------------")
+      line = ''
+      c = ''
+     #Look for end sequence $$$
+      while '$$$' not in line:
+        c = self.ser.read()
+        line += c
+      print(line);
+      print("-------------------\n")
+
+  def print_register_settings(self):
+    self.ser.write('?')
+    time.sleep(0.5)
+    print_incoming_text();
+
+  #DEBBUGING: Prints individual incoming bytes
+  def print_bytes_in(self):
+    if not self.streaming:
+      self.ser.write('b')
+      self.streaming = True
+    while self.streaming:
+      print(struct.unpack('B',self.ser.read())[0]);
+
+  #Adds a filter at 60hz to cancel out ambient electrical noise
+  def enable_filters(self):
+    self.ser.write('f')
+    self.filtering_data = True;
+
+  def disable_filters(self):
+    self.ser.write('g')
+    self.filtering_data = False;
 
   def test_signal(self, signal):
     if signal == 0:
