@@ -6,27 +6,32 @@ import datetime
 from yapsy.IPlugin import IPlugin
 
 class PluginCSVCollect(IPlugin):
-	def __init__(self, file_name="collect.csv", delim = ","):
+	def __init__(self, file_name="collect.csv", delim = ",", verbose=False):
 		now = datetime.datetime.now()
 		self.time_stamp = '%d-%d-%d_%d-%d-%d'%(now.year,now.month,now.day,now.hour,now.minute,now.second)
 		self.file_name = self.time_stamp
 		self.start_time = timeit.default_timer()
 		self.delim = delim
+		self.verbose = verbose
 
 	def activate(self, args):
 		if len(args) > 0:
-			if len(args) > 1 and args[1] == 'no_time':
+			if 'no_time' in args:
 				self.file_name = args[0]
 			else:
 				self.file_name = args[0] + '_' + self.file_name;
+			if 'verbose' in args:
+				self.verbose = True
 
 		self.file_name = self.file_name + '.csv'
 		print "Will export CSV to:", self.file_name
-		open(self.file_name, 'w').close()
+		#Open in append mode
+		with open(self.file_name, 'a') as f:
+			f.write('%'+self.time_stamp + '\n')
 		return True
 		
 	def deactivate(self):
-		#TODO: flush?
+		print "Closing, CSV saved to:", self.file_name
 		return
 
 	def show_help(self):
@@ -36,7 +41,8 @@ class PluginCSVCollect(IPlugin):
 		t = timeit.default_timer() - self.start_time
 
 		#print timeSinceStart|Sample Id
-		print("%f | %d" %(t,sample.id))
+		if self.verbose:
+			print("CSV: %f | %d" %(t,sample.id))
 
 		row = ''
 		row += str(t)

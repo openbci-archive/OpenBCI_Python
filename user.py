@@ -4,6 +4,7 @@ import open_bci_v3 as bci
 import os
 import time
 import string
+import atexit
 
 from yapsy.PluginManager import PluginManager
 
@@ -15,8 +16,18 @@ manager = PluginManager()
 manager.setPluginPlaces(["plugins"])
 manager.collectPlugins()
 
+def cleanUp():
+	board.disconnect()
+	print "Deactivating Plugins..."
+	for plug in plug_list:
+		plug.deactivate()
+	print "User.py exiting..."
+
+atexit.register(cleanUp)
+
 if __name__ == '__main__':
 
+	print "			USER.py"	
 	parser = argparse.ArgumentParser(description="OpenBCI 'user'")
 	parser.add_argument('-l', '--list', action='store_true',
 				help="List available plugins.")
@@ -61,23 +72,13 @@ if __name__ == '__main__':
 			plugin.plugin_object.show_help()
 		exit()
 	
-	
+	print "\n------------PLUGINS--------------"
 	# Loop round the plugins and print their names.
 	print "Found plugins:",
 	for plugin in manager.getAllPlugins():
 		print "[", plugin.name, "]",
 	print
 	
-	
-	print "Notch filtering:", args.filtering
-
-	#  Configure number of output channels
-	nb_channels=8
-	if args.daisy:
-		nb_channels=16
-		print "Force daisy mode:", nb_channels, "channels."
-	else:
-		print "No daisy:", nb_channels, "channels."
 
 	# Fetch plugins, try to activate them, add to the list if OK
 	plug_list = []
@@ -93,6 +94,7 @@ if __name__ == '__main__':
 				# eg: if an import fail inside a plugin, yapsy skip it
 				print "Error: [", plug_name, "] not found or could not be loaded. Check name and requirements."
 			else:
+				print "\nActivating [", plug_name, "] plugin..."
 				if not plug.plugin_object.activate(plug_args):
 					print "Error while activating [", plug_name, "], check output for more info."
 				else:
@@ -105,41 +107,67 @@ if __name__ == '__main__':
 		fun = None
 	else:
 		fun = callback_list
+
+	print "\n------------SETTINGS-------------"
+	print "Notch filtering:", args.filtering
+
+	#  Configure number of output channels
+	nb_channels=8
+	if args.daisy:
+		nb_channels=16
+		print "Force daisy mode:", nb_channels, "channels."
+	else:
+		print "No daisy:", nb_channels, "channels."
 	
-	print "User serial interface enabled..."
-	print "Connecting to ", args.port
-	
+	print "\n-------INSTANTIATING BOARD-------"
 	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering)
 
-	print "View command map at http://docs.openbci.com."
-	print "Type start to run. Type exit to exit."
+	print "--------------INFO---------------"
+	print "User serial interface enabled...\n\
+View command map at http://docs.openbci.com.\n\
+Type start to run. Type /exit to exit. \n\
+Board outputs are automatically printed as: \n\
+%  <tab>  message\n\
+$$$ signals end of message"
+
+	print("\n-------------BEGIN---------------")
 
 	#Start by restoring default settings
 	s = 'd'
 
-	while(s != "exit"):
+	while(s != "/exit"):
 		#Send char and wait for registers to set
 		if (not s): pass
 
 		elif("help" in s): print "View command map at: \
-			http://docs.openbci.com/software/01-OpenBCI_SDK.\n\
-			For user interface, read README or view \
-			https://github.com/OpenBCI/OpenBCI_Python"
+http://docs.openbci.com/software/01-OpenBCI_SDK.\n\
+For user interface: read README or view \
+https://github.com/OpenBCI/OpenBCI_Python"
 
 		elif('/' == s[0]):
 			s = s[1:]
+			rec = False
 
 			if("T:" in s):
 				lapse = int(s[string.find(s,"T:")+2:])
+				rec = True
+			elif("t:" in s):
+				lapse = int(s[string.find(s,"t:")+2:])
+				rec = True
 			else:
 				lapse = -1
 
 			if("start" in s and fun != None): 
 				board.start_streaming(fun, lapse)
+				rec = True
 
 			elif('test' in s):
 				test = int(s[string.find(s,"test")+4:])
 				board.test_signal(test)
+				rec = True
+
+			if rec == False:
+				print("Command not recognized...")
 			
 		elif s:
 			for c in s:
@@ -153,12 +181,9 @@ if __name__ == '__main__':
 			line += c
 			time.sleep(0.001)	
 			if (c == '\n'):
-				print(line[:-1])
+				print('%\t'+line[:-1])
 				line = ''
 		print(line)
 
 		#Take user input
 		s = raw_input('--> ');
-	board.disconnect()
-	for plug in plug_list:
-		plug.deactivate()
