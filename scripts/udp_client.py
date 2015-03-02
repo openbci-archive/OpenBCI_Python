@@ -37,6 +37,7 @@ class UDPClient(object):
   def start_listening(self, callback=None):
     while True:
       data, addr = self.client.recvfrom(1024)
+      print("data")
       if self.json:
         sample = json.loads(data)
         # In JSON mode we only recieve channel data.
@@ -45,7 +46,7 @@ class UDPClient(object):
         sample = pickle.loads(data)
         # Note that sample is an OpenBCISample object.
         print sample.id
-        print sample.channels
+        print sample.channel_data
 
 
 args = parser.parse_args()

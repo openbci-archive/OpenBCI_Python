@@ -16,15 +16,6 @@ manager = PluginManager()
 manager.setPluginPlaces(["plugins"])
 manager.collectPlugins()
 
-def cleanUp():
-	board.disconnect()
-	print "Deactivating Plugins..."
-	for plug in plug_list:
-		plug.deactivate()
-	print "User.py exiting..."
-
-atexit.register(cleanUp)
-
 if __name__ == '__main__':
 
 	print "			USER.py"	
@@ -121,7 +112,16 @@ if __name__ == '__main__':
 	
 	print "\n-------INSTANTIATING BOARD-------"
 	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering)
+	
+	def cleanUp():
+		board.disconnect()
+		print "Deactivating Plugins..."
+		for plug in plug_list:
+			plug.deactivate()
+		print "User.py exiting..."
 
+	atexit.register(cleanUp)
+	
 	print "--------------INFO---------------"
 	print "User serial interface enabled...\n\
 View command map at http://docs.openbci.com.\n\
@@ -157,9 +157,13 @@ https://github.com/OpenBCI/OpenBCI_Python"
 			else:
 				lapse = -1
 
-			if("start" in s and fun != None): 
-				board.start_streaming(fun, lapse)
+			if("start" in s): 
+				if(fun != None):
+					board.start_streaming(fun, lapse)
+				else:
+					print "No function loaded"
 				rec = True
+
 
 			elif('test' in s):
 				test = int(s[string.find(s,"test")+4:])
