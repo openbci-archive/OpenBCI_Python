@@ -190,8 +190,6 @@ You're done, your plugin should be automatically detected by `user.py`.
 
 #### Existing plugins
 
-Tip: Type `python user.py --list` to list available plugins and `python user.py --help [plugin_name]` to get more information.
-
 * `print`: Display sample values -- *verbose* output!
 
 * `csv_collect`: Export data to a csv file.
@@ -208,6 +206,8 @@ Tip: Type `python user.py --list` to list available plugins and `python user.py 
 
 * `udp_server`: Very simple UDP server that sends data as json. Made to work with: https://github.com/OpenBCI/OpenBCI_Node
 	* Default IP: 127.0.0.1, default port: 8888
+
+Tip: Type `python user.py --list` to list available plugins and `python user.py --help [plugin_name]` to get more information.
 
 ### Scripts
 
