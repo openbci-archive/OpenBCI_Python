@@ -190,34 +190,24 @@ You're done, your plugin should be automatically detected by `user.py`.
 
 #### Existing plugins
 
-##### csv_collect
+Tip: Type `python user.py --list` to list available plugins and `python user.py --help [plugin_name]` to get more information.
 
-Export data to a csv file.
+* `print`: Display sample values -- *verbose* output!
 
-##### print
+* `csv_collect`: Export data to a csv file.
 
-Display sample values -- *verbose* output!
+* `sample_rate`: Print effective sampling rate averaged over XX seconds (default: 10).
 
-##### sample_rate
+* `streamer_tcp`: Acts as a TCP server, using a "raw" protocol to send value. 
+	* The stream can be acquired with [OpenViBE](http://openvibe.inria.fr/) acquisition server, selecting telnet, big endian, float 32 bits, forcing 250 sampling rate (125 if daisy mode is used).
+	* Default IP: localhost, default port: 12345
 
-Print effective sampling rate averaged over XX seconds (default: 10).
+* `streamer_osc`: Data is sent through OSC (UDP layer).
+	* Default IP: localhost, default port: 12345, default stream name: `/openbci`
+	* Requires pyosc. On linux type either `pip install --pre pyosc` as root, or `pip install --pre --user`.
 
-##### streamer_tcp
-
-Acts as a TCP server, using a "raw" protocol to send value. The stream can be acquired with [OpenViBE](http://openvibe.inria.fr/) acquisition server, selecting telnet, big endian, float 32 bits, forcing 250 sampling rate (125 if daisy mode is used).
-
-Default IP: localhost, default port: 12345
-
-##### streamer_osc
-
-Data is sent through OSC (UDP layer).
-
-Default IP: localhost, default port: 12345, default stream name: `/openbci`
-
-Note: requires pyosc. On linux type either `pip install --pre pyosc` as root, or `pip install --pre --user`.
-
-Type `python user.py --list` to list available plugins and `python user.py --help [plugin_name]` to get more information.
-
+* `udp_server`: Very simple UDP server that sends data as json. Made to work with: https://github.com/OpenBCI/OpenBCI_Node
+	* Default IP: 127.0.0.1, default port: 8888
 
 ### Scripts
 
@@ -226,5 +216,5 @@ In the `scripts` folder you will find code snippets that use directly the `OpenB
 Note: copy `open_bci_v3.py` there if you want to run the code -- no proper package yet.
 
 * `test.py`: minimal example, printing values.
-* `upd_server.py` and client: see https://github.com/OpenBCI/OpenBCI_Node for implementation example.
 * `stream_data.py` a version of a TCP streaming server that somehow oversamples OpenBCI from 250 to 256Hz.
+* `upd_server.py` *DEPRECATED* (Use Plugin): see https://github.com/OpenBCI/OpenBCI_Node for implementation example.
