@@ -218,7 +218,7 @@ class OpenBCIBoard(object):
         for a in xrange(3):
 
           #short = h
-          acc = struct.unpack('h', read(2))[0]
+          acc = struct.unpack('>h', read(2))[0]
           aux_data.append(acc)
 
         self.read_state = 3;
