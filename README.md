@@ -207,6 +207,10 @@ You're done, your plugin should be automatically detected by `user.py`.
 * `udp_server`: Very simple UDP server that sends data as json. Made to work with: https://github.com/OpenBCI/OpenBCI_Node
 	* Default IP: 127.0.0.1, default port: 8888
 
+* `streamer_lsl`: Data is sent through [LSL](https://code.google.com/p/labstreaminglayer/).
+	* Default EEG stream name "OpenBCI_EEG", ID "openbci_eeg_id1"; default AUX stream name "OpenBCI_AUX", ID "openbci_aux_id1".
+	* Requires LSL library. Download last version from offcial site, e.g., [liblsl-Python-1.10.2.zip](ftp://sccn.ucsd.edu/pub/software/LSL/SDK/liblsl-Python-1.10.2.zip) and unzip files in a "lib" folder at the same level as `user.py`.
+
 Tip: Type `python user.py --list` to list available plugins and `python user.py --help [plugin_name]` to get more information.
 
 ### Scripts
