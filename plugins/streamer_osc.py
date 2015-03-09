@@ -1,11 +1,11 @@
 
 # requires pyosc
 from OSC import OSCClient, OSCMessage
-from yapsy.IPlugin import IPlugin
+import plugin_interface as plugintypes
 
 # Use OSC protocol to broadcast data (UDP layer), using "/openbci" stream. (NB. does not check numbers of channel as TCP server)
 
-class StreamerOSC(IPlugin):
+class StreamerOSC(plugintypes.IPluginExtended):
 	"""
 
 	Relay OpenBCI values to OSC clients
@@ -23,19 +23,17 @@ class StreamerOSC(IPlugin):
 		self.address = address
 	
 	# From IPlugin
-	def activate(self, args):
-		if len(args) > 0:
-			self.ip = args[0]
-		if len(args) > 1:
-			self.port = args[1]
-		if len(args) > 2:
-			self.address = args[2]
+	def activate(self):
+		if len(self.args) > 0:
+			self.ip = self.args[0]
+		if len(self.args) > 1:
+			self.port = self.args[1]
+		if len(self.args) > 2:
+			self.address = self.args[2]
 		# init network
 		print "Selecting OSC streaming. IP: ", self.ip, ", port: ", self.port, ", address: ", self.address
 		self.client = OSCClient()
-		self.client.connect( (self.ip, self.port) )	
-			
-		return True
+		self.client.connect( (self.ip, self.port) )
 
 	# From IPlugin: close connections, send message to client
 	def deactivate(self):

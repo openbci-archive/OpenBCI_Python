@@ -2,10 +2,9 @@ import csv
 import timeit
 import datetime
 
+import plugin_interface as plugintypes
 
-from yapsy.IPlugin import IPlugin
-
-class PluginCSVCollect(IPlugin):
+class PluginCSVCollect(plugintypes.IPluginExtended):
 	def __init__(self, file_name="collect.csv", delim = ",", verbose=False):
 		now = datetime.datetime.now()
 		self.time_stamp = '%d-%d-%d_%d-%d-%d'%(now.year,now.month,now.day,now.hour,now.minute,now.second)
@@ -14,13 +13,13 @@ class PluginCSVCollect(IPlugin):
 		self.delim = delim
 		self.verbose = verbose
 
-	def activate(self, args):
-		if len(args) > 0:
-			if 'no_time' in args:
-				self.file_name = args[0]
+	def activate(self):
+		if len(self.args) > 0:
+			if 'no_time' in self.args:
+				self.file_name = self.args[0]
 			else:
-				self.file_name = args[0] + '_' + self.file_name;
-			if 'verbose' in args:
+				self.file_name = self.args[0] + '_' + self.file_name;
+			if 'verbose' in self.args:
 				self.verbose = True
 
 		self.file_name = self.file_name + '.csv'
@@ -28,7 +27,6 @@ class PluginCSVCollect(IPlugin):
 		#Open in append mode
 		with open(self.file_name, 'a') as f:
 			f.write('%'+self.time_stamp + '\n')
-		return True
 		
 	def deactivate(self):
 		print "Closing, CSV saved to:", self.file_name

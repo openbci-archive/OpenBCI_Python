@@ -86,7 +86,7 @@ if __name__ == '__main__':
 				print "Error: [", plug_name, "] not found or could not be loaded. Check name and requirements."
 			else:
 				print "\nActivating [", plug_name, "] plugin..."
-				if not plug.plugin_object.activate(plug_args):
+				if not plug.plugin_object.pre_activate(plug_args, sample_rate=250, eeg_channels=8, aux_channels=3):
 					print "Error while activating [", plug_name, "], check output for more info."
 				else:
 					print "Plugin [", plug_name, "] added to the list"
