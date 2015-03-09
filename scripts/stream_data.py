@@ -1,3 +1,4 @@
+import sys; sys.path.append('..') # help python find open_bci_v3.py relative to scripts folder
 import open_bci_v3 as bci
 import streamer_tcp_server
 import time, timeit

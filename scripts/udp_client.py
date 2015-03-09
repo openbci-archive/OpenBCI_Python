@@ -3,6 +3,7 @@
 import argparse
 import cPickle as pickle
 import json
+import sys; sys.path.append('..') # help python find open_bci_v3.py relative to scripts folder
 import open_bci_v3 as open_bci
 import socket
 
