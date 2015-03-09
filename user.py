@@ -63,6 +63,19 @@ if __name__ == '__main__':
 			plugin.plugin_object.show_help()
 		exit()
 	
+	print "\n------------SETTINGS-------------"
+	print "Notch filtering:", args.filtering
+
+	print "\n-------INSTANTIATING BOARD-------"
+	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering)
+	
+	#  Info about effective number of channels and sampling rate
+	if board.daisy:
+		print "Force daisy mode:",
+	else:
+		print "No daisy:",
+	print board.getNbEEGChannels(), "EEG channels and", board.getNbAUXChannels(), "AUX channels at", board.getSampleRate(), "Hz."
+	
 	print "\n------------PLUGINS--------------"
 	# Loop round the plugins and print their names.
 	print "Found plugins:",
@@ -86,7 +99,7 @@ if __name__ == '__main__':
 				print "Error: [", plug_name, "] not found or could not be loaded. Check name and requirements."
 			else:
 				print "\nActivating [", plug_name, "] plugin..."
-				if not plug.plugin_object.pre_activate(plug_args, sample_rate=250, eeg_channels=8, aux_channels=3):
+				if not plug.plugin_object.pre_activate(plug_args, sample_rate=board.getSampleRate(), eeg_channels=board.getNbEEGChannels(), aux_channels=board.getNbAUXChannels()):
 					print "Error while activating [", plug_name, "], check output for more info."
 				else:
 					print "Plugin [", plug_name, "] added to the list"
@@ -98,19 +111,6 @@ if __name__ == '__main__':
 		fun = None
 	else:
 		fun = callback_list
-
-	print "\n------------SETTINGS-------------"
-	print "Notch filtering:", args.filtering
-
-	print "\n-------INSTANTIATING BOARD-------"
-	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering)
-	
-	#  Info about effective number of channels and sampling rate
-	if board.daisy:
-		print "Force daisy mode:",
-	else:
-		print "No daisy:",
-	print board.getNbEEGChannels(), "EEG channels and", board.getNbAUXChannels(), "AUX channels at", board.getSampleRate(), "Hz."
 	
 	def cleanUp():
 		board.disconnect()
