@@ -27,7 +27,7 @@ class StreamerOSC(plugintypes.IPluginExtended):
 		if len(self.args) > 0:
 			self.ip = self.args[0]
 		if len(self.args) > 1:
-			self.port = self.args[1]
+			self.port = int(self.args[1])
 		if len(self.args) > 2:
 			self.address = self.args[2]
 		# init network

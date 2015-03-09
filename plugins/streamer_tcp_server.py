@@ -48,7 +48,7 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
 		if len(self.args) > 0:
 			self.ip = self.args[0]
 		if len(self.args) > 1:
-			self.port = self.args[1]
+			self.port = int(self.args[1])
 		
 		# init network
 		print "Selecting raw TCP streaming. IP: ", self.ip, ", port: ", self.port
