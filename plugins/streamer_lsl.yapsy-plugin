@@ -1,0 +1,9 @@
+
+[Core]
+Name = streamer_lsl
+Module = streamer_lsl
+
+[Documentation]
+Author = Various
+Version = 0.1
+Description = Use LSL protocol to broadcast data. Requires LSL and pylsl.

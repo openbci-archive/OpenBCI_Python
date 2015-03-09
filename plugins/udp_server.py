@@ -11,8 +11,7 @@ import cPickle as pickle
 import json
 import socket
 
-
-from yapsy.IPlugin import IPlugin
+import plugin_interface as plugintypes
 
 # class PluginPrint(IPlugin):
 #   # args: passed by command line
@@ -43,28 +42,27 @@ from yapsy.IPlugin import IPlugin
 #     #     print sample_string
 
 
-class UDPServer(IPlugin):
+class UDPServer(plugintypes.IPluginExtended):
   def __init__(self, ip='localhost', port=8888):
     self.ip = ip
     self.port = port
     self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
-  def activate(self, args):
+  def activate(self):
     print "udp_server plugin"
-    print args
+    print self.args
 
-    if len(args) > 0:
-      self.ip = args[0]
-    if len(args) > 1:
-      self.port = int(args[1])
+    if len(self.args) > 0:
+      self.ip = self.args[0]
+    if len(self.args) > 1:
+      self.port = int(self.args[1])
     
     # init network
     print "Selecting raw UDP streaming. IP: ", self.ip, ", port: ", str(self.port)
 
     self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    print "Server started on port " + str(self.port)     
-    return True
+    print "Server started on port " + str(self.port)
 
   def __call__(self, sample): 
     self.send_data(json.dumps(sample.channel_data))

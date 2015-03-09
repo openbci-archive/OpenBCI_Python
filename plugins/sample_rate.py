@@ -2,7 +2,7 @@ import time
 import timeit
 from threading import Thread
 
-from yapsy.IPlugin import IPlugin
+import plugin_interface as plugintypes
 
 # counter for sampling rate
 nb_samples_out = -1
@@ -33,21 +33,20 @@ class Monitor(Thread):
 			self.nb_samples_out = nb_samples_out
 			time.sleep(self.polling_interval)
 
-class PluginSampleRate(IPlugin):
+class PluginSampleRate(plugintypes.IPluginExtended):
 	# update counters value
 	def __call__(self, sample):
 		global nb_samples_out
 		nb_samples_out = nb_samples_out + 1
 	
 	# Instanciate "monitor" thread
-	def activate(self, args):
+	def activate(self):
 		monit = Monitor()
-		if len(args) > 0:
-			monit.polling_interval = float(args[0])
+		if len(self.args) > 0:
+			monit.polling_interval = float(self.args[0])
 		# daemonize thread to terminate it altogether with the main when time will come
 		monit.daemon = True
 		monit.start()
-		return True
 		
 	def show_help(self):
 		print "Optional argument: polling_interval -- in seconds, default: 10."

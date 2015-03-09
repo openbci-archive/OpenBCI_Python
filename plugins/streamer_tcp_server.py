@@ -1,6 +1,6 @@
 from threading import Thread
 import socket, select, struct, time
-from yapsy.IPlugin import IPlugin
+import plugin_interface as plugintypes
 
 # Simple TCP server to "broadcast" data to clients, handling deconnections. Binary format use network endianness (i.e., big-endian), float32
 
@@ -25,7 +25,7 @@ class MonitorStreamer(Thread):
 			time.sleep(1)
 
 
-class StreamerTCPServer(IPlugin):
+class StreamerTCPServer(plugintypes.IPluginExtended):
 	"""
 
 	Relay OpenBCI values to TCP clients
@@ -44,11 +44,11 @@ class StreamerTCPServer(IPlugin):
 	  self.port = port
 
 	# From IPlugin
-	def activate(self, args):
-		if len(args) > 0:
-			self.ip = args[0]
-		if len(args) > 1:
-			self.port = args[1]
+	def activate(self):
+		if len(self.args) > 0:
+			self.ip = self.args[0]
+		if len(self.args) > 1:
+			self.port = int(self.args[1])
 		
 		# init network
 		print "Selecting raw TCP streaming. IP: ", self.ip, ", port: ", self.port
@@ -59,8 +59,6 @@ class StreamerTCPServer(IPlugin):
 		self.monit.daemon = True
 		# launch monitor
 		self.monit.start()
-			
-		return True
 
 	# the initialize method reads settings and outputs the first header
 	def initialize(self):
