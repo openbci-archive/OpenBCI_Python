@@ -102,16 +102,15 @@ if __name__ == '__main__':
 	print "\n------------SETTINGS-------------"
 	print "Notch filtering:", args.filtering
 
-	#  Configure number of output channels
-	nb_channels=8
-	if args.daisy:
-		nb_channels=16
-		print "Force daisy mode:", nb_channels, "channels."
-	else:
-		print "No daisy:", nb_channels, "channels."
-	
 	print "\n-------INSTANTIATING BOARD-------"
 	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering)
+	
+	#  Info about effective number of channels and sampling rate
+	if board.daisy:
+		print "Force daisy mode:",
+	else:
+		print "No daisy:",
+	print board.getNbEEGChannels(), "EEG channels and", board.getNbAUXChannels(), "AUX channels at", board.getSampleRate(), "Hz."
 	
 	def cleanUp():
 		board.disconnect()

@@ -82,13 +82,29 @@ class OpenBCIBoard(object):
     self.streaming = False
     self.filtering_data = filter_data
     self.scaling_output = scaled_output
-    self.channels = 8 # number of channels per sample *from the board*
+    self.eeg_channels_per_sample = 8 # number of EEG channels per sample *from the board*
+    self.aux_channels_per_sample = 3 # number of AUX channels per sample *from the board*
     self.read_state = 0;
     self.daisy = daisy
     self.last_odd_sample = OpenBCISample(-1, [], []) # used for daisy
-
+    
     #Disconnects from board when terminated
     atexit.register(self.disconnect)
+  
+  def getSampleRate(self):
+    if self.daisy:
+      return SAMPLE_RATE/2
+    else:
+      return SAMPLE_RATE
+  
+  def getNbEEGChannels(self):
+    if self.daisy:
+      return self.eeg_channels_per_sample*2
+    else:
+      return self.eeg_channels_per_sample
+  
+  def getNbAUXChannels(self):
+    return  self.aux_channels_per_sample
 
   def start_streaming(self, callback, lapse=-1):
     """
@@ -186,7 +202,7 @@ class OpenBCIBoard(object):
 
       elif self.read_state == 1:
         channel_data = []
-        for c in xrange(self.channels):
+        for c in xrange(self.eeg_channels_per_sample):
 
           #3 byte ints
           literal_read = read(3)
@@ -215,7 +231,7 @@ class OpenBCIBoard(object):
 
       elif self.read_state == 2:
         aux_data = []
-        for a in xrange(3):
+        for a in xrange(self.aux_channels_per_sample):
 
           #short = h
           acc = struct.unpack('>h', read(2))[0]
