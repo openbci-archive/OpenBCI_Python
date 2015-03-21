@@ -24,8 +24,8 @@ import timeit
 import atexit
 
 SAMPLE_RATE = 250.0  # Hz
-START_BYTE = bytes(0xA0)  # start of data packet
-END_BYTE = bytes(0xC0)  # end of data packet
+START_BYTE = 0xA0  # start of data packet
+END_BYTE = 0xC0  # end of data packet
 ADS1299_Vref = 4.5;  #reference voltage for ADC in ADS1299.  set by its hardware
 ADS1299_gain = 24.0;  #assumed gain setting for ADS1299.  set by its Arduino code
 scale_fac_uVolts_per_count = ADS1299_Vref/(pow(2,23)-1)/ADS1299_gain*1000000.;
@@ -179,7 +179,7 @@ class OpenBCIBoard(object):
   def _read_serial_binary(self, max_bytes_to_skip=3000):
     def read(n):
       b = self.ser.read(n)
-      # print bytes(b)
+      # print b
       return b
 
     for rep in xrange(max_bytes_to_skip):
@@ -193,7 +193,7 @@ class OpenBCIBoard(object):
               self.ser.write('b\n')  # restart if it's stopped...
               time.sleep(.100)
               continue
-        if bytes(struct.unpack('B', b)[0]) == START_BYTE:
+        if struct.unpack('B', b)[0] == START_BYTE:
           if(rep != 0):
             self.warn('Skipped %d bytes before start found' %(rep))
           packet_id = struct.unpack('B', read(1))[0] #packet id goes from 0-255
@@ -240,7 +240,7 @@ class OpenBCIBoard(object):
         self.read_state = 3;
 
       elif self.read_state == 3:
-        val = bytes(struct.unpack('B', read(1))[0])
+        val = struct.unpack('B', read(1))[0]
         if (val == END_BYTE):
           sample = OpenBCISample(packet_id, channel_data, aux_data)
           self.read_state = 0 #read next packet
