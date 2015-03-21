@@ -132,8 +132,16 @@ Board outputs are automatically printed as: \n\
 $$$ signals end of message"
 
 	print("\n-------------BEGIN---------------")
-	#Start by restoring default settings
-	s = 'd'
+	# Init board state
+	# s: stop board streaming; v: soft reset of the 32-bit board (no effect with 8bit board)
+	s = 'sv'
+	# Tell the board to enable or not daisy module
+	if board.daisy:
+		s = s + 'C'
+	else:
+		s = s + 'c'
+	# d: Channels settings back to default  
+	s = s + 'd'
 
 	while(s != "/exit"):
 		#Send char and wait for registers to set
