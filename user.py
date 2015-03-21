@@ -125,13 +125,13 @@ if __name__ == '__main__':
 	print "--------------INFO---------------"
 	print "User serial interface enabled...\n\
 View command map at http://docs.openbci.com.\n\
-Type start to run. Type /exit to exit. \n\
+Type /start to run -- and /stop before issuing new commands afterwards.\n\
+Type /exit to exit. \n\
 Board outputs are automatically printed as: \n\
 %  <tab>  message\n\
 $$$ signals end of message"
 
 	print("\n-------------BEGIN---------------")
-
 	#Start by restoring default settings
 	s = 'd'
 
@@ -144,51 +144,56 @@ http://docs.openbci.com/software/01-OpenBCI_SDK.\n\
 For user interface: read README or view \
 https://github.com/OpenBCI/OpenBCI_Python"
 
+		elif board.streaming and s != "/stop":
+			print "Error: the board is currently streaming data, please type '/stop' before issuing new commands."
+		else:
+			if('/' == s[0]):
+				s = s[1:]
+				rec = False
 
-		elif('/' == s[0]):
-			s = s[1:]
-			rec = False
-
-			if("T:" in s):
-				lapse = int(s[string.find(s,"T:")+2:])
-				rec = True
-			elif("t:" in s):
-				lapse = int(s[string.find(s,"t:")+2:])
-				rec = True
-			else:
-				lapse = -1
-
-			if("start" in s): 
-				if(fun != None):
-					# start streaming in a separate thread so we could always send commands in here
-					boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
-					boardThread.daemon = True # will stop on exit
-					boardThread.start()
+				if("T:" in s):
+					lapse = int(s[string.find(s,"T:")+2:])
+					rec = True
+				elif("t:" in s):
+					lapse = int(s[string.find(s,"t:")+2:])
+					rec = True
 				else:
-					print "No function loaded"
-				rec = True
-			elif('test' in s):
-				test = int(s[string.find(s,"test")+4:])
-				board.test_signal(test)
-				rec = True
-			if rec == False:
-				print("Command not recognized...")
-			
-		elif s:
-			for c in s:
-				board.ser.write(c)
-				time.sleep(0.100)
+					lapse = -1
 
-		line = ''
-		time.sleep(0.1) #Wait to see if the board has anything to report
-		while board.ser.inWaiting():
-			c = board.ser.read()
-			line += c
-			time.sleep(0.001)	
-			if (c == '\n'):
-				print('%\t'+line[:-1])
-				line = ''
-		print(line)
+				if("start" in s): 
+					if(fun != None):
+						# start streaming in a separate thread so we could always send commands in here
+						boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
+						boardThread.daemon = True # will stop on exit
+						boardThread.start()
+					else:
+						print "No function loaded"
+					rec = True
+				elif('test' in s):
+					test = int(s[string.find(s,"test")+4:])
+					board.test_signal(test)
+					rec = True
+				elif('stop' in s):
+					board.stop()
+					rec = True
+				if rec == False:
+					print("Command not recognized...")
+				
+			elif s:
+				for c in s:
+					board.ser.write(c)
+					time.sleep(0.100)
+
+			line = ''
+			time.sleep(0.1) #Wait to see if the board has anything to report
+			while board.ser.inWaiting():
+				c = board.ser.read()
+				line += c
+				time.sleep(0.001)	
+				if (c == '\n'):
+					print('%\t'+line[:-1])
+					line = ''
+			print(line)
 
 		#Take user input
 		s = raw_input('--> ');
