@@ -92,7 +92,11 @@ start selected plugins (see below)
 
 Adding the argument "T:number" will set a timeout on the start command.
 
->-->/start T:5
+> --> /start T:5
+
+Stop the steam to issue new commands
+
+> --> /stop
 
 #### Useful commands:
 
