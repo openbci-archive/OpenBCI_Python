@@ -68,7 +68,7 @@ class OpenBCIBoard(object):
       if not port:
         raise OSError('Cannot find OpenBCI port')
 
-    print("Conencting to %s" %(port))
+    print("Connecting to %s" %(port))
     self.ser = serial.Serial(port, baud)
     print("Serial established...")
 
