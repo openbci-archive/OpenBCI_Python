@@ -147,9 +147,10 @@ https://github.com/OpenBCI/OpenBCI_Python"
 		elif board.streaming and s != "/stop":
 			print "Error: the board is currently streaming data, please type '/stop' before issuing new commands."
 		else:
+		  	flush = False # read silently incoming packet if set (used when stream is stopped)
 			if('/' == s[0]):
 				s = s[1:]
-				rec = False
+				rec = False # current command is recognized or fot
 
 				if("T:" in s):
 					lapse = int(s[string.find(s,"T:")+2:])
@@ -176,6 +177,7 @@ https://github.com/OpenBCI/OpenBCI_Python"
 				elif('stop' in s):
 					board.stop()
 					rec = True
+					flush = True
 				if rec == False:
 					print("Command not recognized...")
 				
@@ -190,10 +192,11 @@ https://github.com/OpenBCI/OpenBCI_Python"
 				c = board.ser.read()
 				line += c
 				time.sleep(0.001)	
-				if (c == '\n'):
+				if (c == '\n') and not flush:
 					print('%\t'+line[:-1])
 					line = ''
-			print(line)
+			if not flush:
+				print(line)
 
 		#Take user input
 		s = raw_input('--> ');
