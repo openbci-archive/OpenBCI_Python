@@ -5,6 +5,7 @@ import os
 import time
 import string
 import atexit
+import threading
 
 from yapsy.PluginManager import PluginManager
 
@@ -143,6 +144,7 @@ http://docs.openbci.com/software/01-OpenBCI_SDK.\n\
 For user interface: read README or view \
 https://github.com/OpenBCI/OpenBCI_Python"
 
+
 		elif('/' == s[0]):
 			s = s[1:]
 			rec = False
@@ -158,17 +160,17 @@ https://github.com/OpenBCI/OpenBCI_Python"
 
 			if("start" in s): 
 				if(fun != None):
-					board.start_streaming(fun, lapse)
+					# start streaming in a separate thread so we could always send commands in here
+					boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
+					boardThread.daemon = True # will stop on exit
+					boardThread.start()
 				else:
 					print "No function loaded"
 				rec = True
-
-
 			elif('test' in s):
 				test = int(s[string.find(s,"test")+4:])
 				board.test_signal(test)
 				rec = True
-
 			if rec == False:
 				print("Command not recognized...")
 			
