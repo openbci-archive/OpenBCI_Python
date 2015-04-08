@@ -26,12 +26,12 @@ import atexit
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = 0xA0  # start of data packet
 END_BYTE = 0xC0  # end of data packet
-ADS1299_Vref = 4.5;  #reference voltage for ADC in ADS1299.  set by its hardware
-ADS1299_gain = 24.0;  #assumed gain setting for ADS1299.  set by its Arduino code
-scale_fac_uVolts_per_count = ADS1299_Vref/(pow(2,23)-1)/ADS1299_gain*1000000.;
-
+ADS1299_Vref = 4.5  #reference voltage for ADC in ADS1299.  set by its hardware
+ADS1299_gain = 24.0  #assumed gain setting for ADS1299.  set by its Arduino code
+scale_fac_uVolts_per_count = ADS1299_Vref/float((pow(2,23)-1))/ADS1299_gain*1000000.
+scale_fac_accel_G_per_count = 0.002 /(pow(2,4)) #assume set to +/4G, so 2 mG 
 '''
-#Commands for in SDK http://docs.openbci.com/software/01-OpenBCI_SDK:
+#Commands for in SDK http://docs.openbci.com/software/01-Open BCI_SDK:
 
 command_stop = "s";
 command_startText = "x";
@@ -184,7 +184,7 @@ class OpenBCIBoard(object):
 
     for rep in xrange(max_bytes_to_skip):
 
-      #Looking for start and save id when found
+      #---------Start Byte & ID---------
       if self.read_state == 0:
         b = read(1)
         if not b:
@@ -200,6 +200,7 @@ class OpenBCIBoard(object):
 
           self.read_state = 1
 
+      #---------Channel Data---------
       elif self.read_state == 1:
         channel_data = []
         for c in xrange(self.eeg_channels_per_sample):
@@ -228,17 +229,20 @@ class OpenBCIBoard(object):
 
         self.read_state = 2;
 
-
+      #---------Accelerometer Data---------
       elif self.read_state == 2:
         aux_data = []
         for a in xrange(self.aux_channels_per_sample):
 
           #short = h
           acc = struct.unpack('>h', read(2))[0]
-          aux_data.append(acc)
+          if self.scaling_output:
+            aux_data.append(acc*scale_fac_accel_G_per_count)
+          else:
+              aux_data.append(acc)
 
         self.read_state = 3;
-
+      #---------End Byte---------
       elif self.read_state == 3:
         val = struct.unpack('B', read(1))[0]
         if (val == END_BYTE):

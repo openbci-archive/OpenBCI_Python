@@ -68,7 +68,7 @@ if __name__ == '__main__':
 	print "Notch filtering:", args.filtering
 
 	print "\n-------INSTANTIATING BOARD-------"
-	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering)
+	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering, scaled_output=True)
 	
 	#  Info about effective number of channels and sampling rate
 	if board.daisy:
