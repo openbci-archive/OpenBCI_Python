@@ -58,3 +58,7 @@ target/
 
 # CSV
 *.csv
+
+# Matlab
+*.m
+
