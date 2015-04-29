@@ -153,32 +153,6 @@ class OpenBCIBoard(object):
         self.log_packet_count = self.log_packet_count + 1;
 
 
-  """
-
-  Used by exit clean up function (atexit)
-
-  """
-  def warn(self, text):
-    if self.log:
-      if self.log_packet_count:
-        logging.info('Data packets received:'+str(self.log_packet_count))
-        self.log_packet_count = 0;
-      logging.warning(text)
-    print("Warning: %s" % text)
-
-  def stop(self):
-    print("Stopping streaming...\nWait for buffer to flush...")
-    self.streaming = False
-    self.ser.write('s')
-    if self.log:
-      logging.warning('sent <s>: stopped streaming')
-
-  def disconnect(self):
-    if(self.streaming == True):
-      self.stop()
-    if (self.ser.isOpen()):
-      self.warn("Closing Serial...")
-      self.ser.close()
   
   
   """
@@ -268,7 +242,34 @@ class OpenBCIBoard(object):
           self.warn("Warning: Unexpected END_BYTE found <%s> instead of <%s>,\
             discarted packet with id <%d>"      
             %(val, END_BYTE, packet_id))
-        
+  
+  """
+
+  Used by exit clean up function (atexit)
+
+  """
+  def warn(self, text):
+    if self.log:
+      if self.log_packet_count:
+        logging.info('Data packets received:'+str(self.log_packet_count))
+        self.log_packet_count = 0;
+      logging.warning(text)
+    print("Warning: %s" % text)
+
+  def stop(self):
+    print("Stopping streaming...\nWait for buffer to flush...")
+    self.streaming = False
+    self.ser.write('s')
+    if self.log:
+      logging.warning('sent <s>: stopped streaming')
+
+  def disconnect(self):
+    if(self.streaming == True):
+      self.stop()
+    if (self.ser.isOpen()):
+      self.warn("Closing Serial...")
+      self.ser.close()
+       
 
   """
 
