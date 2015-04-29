@@ -22,6 +22,8 @@ import numpy as np
 import time
 import timeit
 import atexit
+import logging
+
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = 0xA0  # start of data packet
@@ -62,7 +64,7 @@ class OpenBCIBoard(object):
   """
 
   def __init__(self, port=None, baud=115200, filter_data=True,
-    scaled_output=True, daisy=False):
+    scaled_output=True, daisy=False, log=True):
     if not port:
       port = find_port()
       if not port:
@@ -84,10 +86,12 @@ class OpenBCIBoard(object):
     self.scaling_output = scaled_output
     self.eeg_channels_per_sample = 8 # number of EEG channels per sample *from the board*
     self.aux_channels_per_sample = 3 # number of AUX channels per sample *from the board*
-    self.read_state = 0;
+    self.read_state = 0
     self.daisy = daisy
     self.last_odd_sample = OpenBCISample(-1, [], []) # used for daisy
-    
+    self.log = log
+    self.log_packet_count = 0
+
     #Disconnects from board when terminated
     atexit.register(self.disconnect)
   
@@ -145,6 +149,8 @@ class OpenBCIBoard(object):
           call(sample)
       if(lapse > 0 and timeit.default_timer() - start_time > lapse):
         self.stop();
+      if self.log:
+        self.log_packet_count = self.log_packet_count + 1;
 
 
   """
@@ -153,12 +159,19 @@ class OpenBCIBoard(object):
 
   """
   def warn(self, text):
+    if self.log:
+      if self.log_packet_count:
+        logging.info('Data packets received:'+str(self.log_packet_count))
+        self.log_packet_count = 0;
+      logging.warning(text)
     print("Warning: %s" % text)
 
   def stop(self):
-    self.warn("Stopping streaming...\nWait for buffer to flush...")
+    print("Stopping streaming...\nWait for buffer to flush...")
     self.streaming = False
     self.ser.write('s')
+    if self.log:
+      logging.warning('sent <s>: stopped streaming')
 
   def disconnect(self):
     if(self.streaming == True):
@@ -190,15 +203,17 @@ class OpenBCIBoard(object):
         if not b:
           if not self.ser.inWaiting():
               self.warn('Device appears to be stalled. Restarting...')
-              self.ser.write('b\n')  # restart if it's stopped...
+              self.ser.write('b')  # restart if it's stopped...
               time.sleep(.100)
               continue
-        if struct.unpack('B', b)[0] == START_BYTE:
-          if(rep != 0):
-            self.warn('Skipped %d bytes before start found' %(rep))
-          packet_id = struct.unpack('B', read(1))[0] #packet id goes from 0-255
+        else:
+          if struct.unpack('B', b)[0] == START_BYTE:
+            if(rep != 0):
+              self.warn('Skipped %d bytes before start found' %(rep))
+              rep = 0;
+            packet_id = struct.unpack('B', read(1))[0] #packet id goes from 0-255
 
-          self.read_state = 1
+            self.read_state = 1
 
       #---------Channel Data---------
       elif self.read_state == 1:
@@ -245,14 +260,15 @@ class OpenBCIBoard(object):
       #---------End Byte---------
       elif self.read_state == 3:
         val = struct.unpack('B', read(1))[0]
+        self.read_state = 0 #read next packet
         if (val == END_BYTE):
           sample = OpenBCISample(packet_id, channel_data, aux_data)
-          self.read_state = 0 #read next packet
           return sample
         else:
           self.warn("Warning: Unexpected END_BYTE found <%s> instead of <%s>,\
-            discarted packet with id <%d>"
+            discarted packet with id <%d>"      
             %(val, END_BYTE, packet_id))
+        
 
   """
 

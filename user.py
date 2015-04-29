@@ -6,11 +6,9 @@ import time
 import string
 import atexit
 import threading
+import logging
 
 from yapsy.PluginManager import PluginManager
-
-import logging
-logging.basicConfig(level=logging.CRITICAL) # DEBUG for dev
 
 # Load the plugins from the plugin directory.
 manager = PluginManager()
@@ -36,10 +34,13 @@ if __name__ == '__main__':
 	parser.set_defaults(filtering=True)
 	parser.add_argument('-d', '--daisy', dest='daisy', action='store_true',
 				help="Force daisy mode (beta feature)")
-	parser.set_defaults(daisy=False)
 	# first argument: plugin name, then parameters for plugin
 	parser.add_argument('-a', '--add', metavar=('PLUGIN', 'PARAM'), action='append', nargs='+',
 			help="Select which plugins to activate and set parameters.")
+	parser.add_argument('--log', dest='log', action='store_true',
+				help="Log program")
+	parser.set_defaults(daisy=False, log=False)
+
 	
 	args = parser.parse_args()
 	
@@ -67,8 +68,16 @@ if __name__ == '__main__':
 	print "\n------------SETTINGS-------------"
 	print "Notch filtering:", args.filtering
 
+	#Logging
+	if args.log:
+		print "Logging Enabled"
+		logging.basicConfig(filename="OBCI.log",format='%(asctime)s - %(levelname)s - %(message)s',level=logging.DEBUG)
+		logging.info('---------LOG START-------------')
+		logging.info(args)
+
+
 	print "\n-------INSTANTIATING BOARD-------"
-	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering, scaled_output=True)
+	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering, scaled_output=True, log=args.log)
 	
 	#  Info about effective number of channels and sampling rate
 	if board.daisy:
