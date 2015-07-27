@@ -15,12 +15,14 @@ def printData(sample):
 
 
 if __name__ == '__main__':
-	port = '/dev/tty.usbserial-DN0096XA'
+	port = '/dev/tty.OpenBCI-DN008VTF'
+	#port = '/dev/tty.OpenBCI-DN0096XA'
 	baud = 115200
 	logging.basicConfig(filename="test.log",format='%(asctime)s - %(levelname)s : %(message)s',level=logging.DEBUG)
 	logging.info('---------LOG START-------------')
 	board = bci.OpenBCIBoard(port=port, scaled_output=False, log=True)
+	print("Board Instantiated")
 	board.ser.write('v')
-	time.sleep(0.100)
+	time.sleep(10)
 	#board.start_streaming(printData)
 	board.print_bytes_in()

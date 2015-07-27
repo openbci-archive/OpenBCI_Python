@@ -25,6 +25,7 @@ import atexit
 import logging
 import threading
 import sys
+import pdb
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = 0xA0  # start of data packet
@@ -73,13 +74,17 @@ class OpenBCIBoard(object):
 
     print("Connecting to %s" %(port))
     self.ser = serial.Serial(port= port, baudrate = baud, timeout=timeout)
+
     print("Serial established...")
 
+    time.sleep(2)
     #Initialize 32-bit board, doesn't affect 8bit board
     self.ser.write('v');
 
+
     #wait for device to be ready
     time.sleep(1)
+    print("Incoming:")
     self.print_incoming_text()
 
     self.streaming = False
@@ -305,7 +310,8 @@ class OpenBCIBoard(object):
     """
     line = ''
     #Wait for device to send data
-    time.sleep(0.5)
+    time.sleep(1)
+    
     if self.ser.inWaiting():
       line = ''
       c = ''
@@ -314,6 +320,8 @@ class OpenBCIBoard(object):
         c = self.ser.read()
         line += c
       print(line);
+    else:
+      self.warn("No Message")
 
   def print_register_settings(self):
     self.ser.write('?')
