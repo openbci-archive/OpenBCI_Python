@@ -7,6 +7,7 @@ import string
 import atexit
 import threading
 import logging
+import sys
 
 from yapsy.PluginManager import PluginManager
 
@@ -71,13 +72,13 @@ if __name__ == '__main__':
 	#Logging
 	if args.log:
 		print "Logging Enabled"
-		logging.basicConfig(filename="OBCI.log",format='%(asctime)s - %(levelname)s - %(message)s',level=logging.DEBUG)
+		logging.basicConfig(filename="OBCI.log",format='%(asctime)s - %(levelname)s : %(message)s',level=logging.DEBUG)
 		logging.info('---------LOG START-------------')
 		logging.info(args)
 
 
 	print "\n-------INSTANTIATING BOARD-------"
-	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering, scaled_output=True, log=args.log)
+	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering, scaled_output=False, log=args.log)
 	
 	#  Info about effective number of channels and sampling rate
 	if board.daisy:
@@ -183,7 +184,10 @@ https://github.com/OpenBCI/OpenBCI_Python"
 						# start streaming in a separate thread so we could always send commands in here
 						boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
 						boardThread.daemon = True # will stop on exit
-						boardThread.start()
+						try:
+							boardThread.start()
+						except:
+   		 					raise
 					else:
 						print "No function loaded"
 					rec = True

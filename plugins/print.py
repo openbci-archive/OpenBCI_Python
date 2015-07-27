@@ -6,10 +6,11 @@ class PluginPrint(plugintypes.IPluginExtended):
 	
 	# called with each new sample
 	def __call__(self, sample):
-		sample_string = "ID: %f\n%s\n%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1])
-		print "---------------------------------"
-		print sample_string
-		print "---------------------------------"
+		if sample:
+			sample_string = "ID: %f\n%s\n%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1])
+			print "---------------------------------"
+			print sample_string
+			print "---------------------------------"
 		
 		# DEBBUGING
 		# try:
