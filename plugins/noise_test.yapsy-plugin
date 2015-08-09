@@ -1,0 +1,8 @@
+[Core]
+Name = noise_test
+Module = noise_test
+
+[Documentation]
+Author = Various
+Version = 0.1
+Description = Power of system noise on each channel.
