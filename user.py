@@ -1,6 +1,5 @@
 #!/usr/bin/env python2.7
 import argparse # new in Python2.7
-import open_bci_v3 as bci
 import os
 import time
 import string
@@ -20,6 +19,7 @@ if __name__ == '__main__':
 
 	print "			USER.py"	
 	parser = argparse.ArgumentParser(description="OpenBCI 'user'")
+	parser.add_argument('--board', default=3, type=int),
 	parser.add_argument('-l', '--list', action='store_true',
 				help="List available plugins.")
 	parser.add_argument('-i', '--info', metavar='PLUGIN',
@@ -48,6 +48,13 @@ if __name__ == '__main__':
 	if not (args.port or args.list or args.info):
 		parser.error('No action requested. Use `--port serial_port` to connect to the bord; `--list` to show available plugins or `--info [plugin_name]` to get more information.')
 	
+	if args.board == 3:
+		import open_bci_v3 as bci
+	elif args.board == 4:
+		import open_bci_v4 as bci
+	else:
+		warn('Board type not recognized')
+
 	# Print list of available plugins and exit
 	if args.list:
 		print "Available plugins:"
@@ -73,12 +80,13 @@ if __name__ == '__main__':
 	if args.log:
 		print "Logging Enabled"
 		logging.basicConfig(filename="OBCI.log",format='%(asctime)s - %(levelname)s : %(message)s',level=logging.DEBUG)
+		logging.getLogger('yapsy').setLevel(logging.DEBUG)
 		logging.info('---------LOG START-------------')
 		logging.info(args)
 
 
 	print "\n-------INSTANTIATING BOARD-------"
-	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering, scaled_output=False, log=args.log)
+	board = bci.OpenBCIBoard(port=args.port, daisy=args.daisy, filter_data=args.filtering, scaled_output=True, log=args.log)
 	
 	#  Info about effective number of channels and sampling rate
 	if board.daisy:

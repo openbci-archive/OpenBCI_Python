@@ -27,13 +27,14 @@ import threading
 import sys
 import pdb
 
-SAMPLE_RATE = 250.0  # Hz
+SAMPLE_RATE = 256.0  # Hz
 START_BYTE = 0xA0  # start of data packet
 END_BYTE = 0xC0  # end of data packet
-ADS1299_Vref = 4.5  #reference voltage for ADC in ADS1299.  set by its hardware
-ADS1299_gain = 24.0  #assumed gain setting for ADS1299.  set by its Arduino code
-scale_fac_uVolts_per_count = ADS1299_Vref/float((pow(2,23)-1))/ADS1299_gain*1000000.
+MCP_GAIN = 1
+AD8293G_GAIN = 80
+scale_fac_uVolts_per_count = 1200000/(pow(2,23)*AD8293G_GAIN*MCP_GAIN*1.5)
 scale_fac_accel_G_per_count = 0.002 /(pow(2,4)) #assume set to +/4G, so 2 mG 
+
 '''
 #Commands for in SDK http://docs.openbci.com/software/01-Open BCI_SDK:
 
@@ -72,7 +73,7 @@ class OpenBCIBoard(object):
       if not port:
         raise OSError('Cannot find OpenBCI port')
 
-    print("Connecting to V3 at port %s" %(port))
+    print("Connecting to V4 at port%s" %(port))
     self.ser = serial.Serial(port= port, baudrate = baud, timeout=timeout)
 
     print("Serial established...")
