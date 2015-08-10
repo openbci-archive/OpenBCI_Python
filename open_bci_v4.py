@@ -32,7 +32,7 @@ START_BYTE = 0xA0  # start of data packet
 END_BYTE = 0xC0  # end of data packet
 MCP_GAIN = 1
 AD8293G_GAIN = 80
-scale_fac_uVolts_per_count = 1200000/(pow(2,23)*AD8293G_GAIN*MCP_GAIN*1.5)
+scale_fac_uVolts_per_count = 1200000.0/(pow(2,23)*AD8293G_GAIN*MCP_GAIN*1.5)
 scale_fac_accel_G_per_count = 0.002 /(pow(2,4)) #assume set to +/4G, so 2 mG 
 
 '''
@@ -67,26 +67,28 @@ class OpenBCIBoard(object):
   """
 
   def __init__(self, port=None, baud=115200, filter_data=True,
-    scaled_output=True, daisy=False, log=True, timeout=None):
+               scaled_output=True, daisy=False, log=True, timeout=None):
     if not port:
-      port = find_port()
-      if not port:
-        raise OSError('Cannot find OpenBCI port')
+        port = find_port()
+        if not port:
+            raise OSError('open_bci_v4.py: Cannot find OpenBCI port')
 
-    print("Connecting to V4 at port%s" %(port))
-    self.ser = serial.Serial(port= port, baudrate = baud, timeout=timeout)
-
-    print("Serial established...")
-
+    print("open_bci_v4.py: Connecting to V4 at port %s" % (port))
+    self.ser = serial.Serial(port=port, baudrate=baud, timeout=timeout)
     time.sleep(2)
-    #Initialize 32-bit board, doesn't affect 8bit board
-    self.ser.write('v');
+    
+    # Initialize 32-bit board, doesn't affect 8bit board
+    self.ser.write('v')
+    print("open_bci_v4.py: Connecting to V4 at port %s" % (port))
 
-
-    #wait for device to be ready
+    # wait for device to be ready
     time.sleep(1)
+
+    self.log = log # Chip moved this earlier to prevent bombing
+    self.log_packet_count = 0 # Chip moved this earlier to prevent bombing
     self.print_incoming_text()
 
+    #print("open_bci_v4.py: setting many defaults...")
     self.streaming = False
     self.filtering_data = filter_data
     self.scaling_output = scaled_output
@@ -95,16 +97,15 @@ class OpenBCIBoard(object):
     self.read_state = 0
     self.daisy = daisy
     self.last_odd_sample = OpenBCISample(-1, [], []) # used for daisy
-    self.log = log
-    self.log_packet_count = 0
     self.attempt_reconnect = False
     self.last_reconnect = 0
     self.reconnect_freq = 5
     self.packets_dropped = 0
 
-    #Disconnects from board when terminated
+    # Disconnects from board when terminated
     atexit.register(self.disconnect)
-  
+
+
   def getSampleRate(self):
     if self.daisy:
       return SAMPLE_RATE/2
