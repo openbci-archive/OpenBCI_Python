@@ -64,7 +64,7 @@ if __name__ == '__main__':
         print "Available plugins:"
         for plugin in manager.getAllPlugins():
             print "\t-", plugin.name
-            exit()
+        exit()
 
     # User wants more info about a plugin...
     if args.info:
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         else:
             print plugin.description
             plugin.plugin_object.show_help()
-            exit()
+        exit()
 
     print "\n------------SETTINGS-------------"
     print "Notch filtering:", args.filtering
