@@ -185,44 +185,45 @@ https://github.com/OpenBCI/OpenBCI_Python"
         else:
             # read silently incoming packet if set (used when stream is stopped)
             flush = False
+            
+            if s:
+                if('/' == s[0]):
+                    s = s[1:]
+                    rec = False  # current command is recognized or fot
 
-            if('/' == s[0]):
-                s = s[1:]
-                rec = False  # current command is recognized or fot
-
-                if("T:" in s):
-                    lapse = int(s[string.find(s, "T:")+2:])
-                    rec = True
-                elif("t:" in s):
-                    lapse = int(s[string.find(s, "t:")+2:])
-                    rec = True
-                else:
-                    lapse = -1
-
-                if("start" in s):
-                    if(fun != None):
-                        # start streaming in a separate thread so we could always send commands in here
-                        boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
-                        boardThread.daemon = True # will stop on exit
-                        try:
-                            boardThread.start()
-                        except:
-                                raise
+                    if("T:" in s):
+                        lapse = int(s[string.find(s, "T:")+2:])
+                        rec = True
+                    elif("t:" in s):
+                        lapse = int(s[string.find(s, "t:")+2:])
+                        rec = True
                     else:
-                        print "No function loaded"
-                    rec = True
-                elif('test' in s):
-                    test = int(s[string.find(s, "test")+4:])
-                    board.test_signal(test)
-                    rec = True
-                elif('stop' in s):
-                    board.stop()
-                    rec = True
-                    flush = True
-                if rec == False:
-                    print("Command not recognized...")
+                        lapse = -1
 
-                elif s:
+                    if("start" in s):
+                        if(fun != None):
+                            # start streaming in a separate thread so we could always send commands in here
+                            boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
+                            boardThread.daemon = True # will stop on exit
+                            try:
+                                boardThread.start()
+                            except:
+                                    raise
+                        else:
+                            print "No function loaded"
+                        rec = True
+                    elif('test' in s):
+                        test = int(s[string.find(s, "test")+4:])
+                        board.test_signal(test)
+                        rec = True
+                    elif('stop' in s):
+                        board.stop()
+                        rec = True
+                        flush = True
+                    if rec == False:
+                        print("Command not recognized...")
+
+                else:
                     for c in s:
                         board.ser.write(c)
                         time.sleep(0.100)
