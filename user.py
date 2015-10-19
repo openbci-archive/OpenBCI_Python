@@ -222,23 +222,23 @@ https://github.com/OpenBCI/OpenBCI_Python"
                 if rec == False:
                     print("Command not recognized...")
 
-                elif s:
-                    for c in s:
-                        board.ser.write(c)
-                        time.sleep(0.100)
+            elif s:
+                for c in s:
+                    board.ser.write(c)
+                    time.sleep(0.100)
 
-                line = ''
-                time.sleep(0.1) #Wait to see if the board has anything to report
-                while board.ser.inWaiting():
-                    c = board.ser.read()
-                    line += c
-                    time.sleep(0.001)
-                    if (c == '\n') and not flush:
-                        print('%\t'+line[:-1])
-                        line = ''
+            line = ''
+            time.sleep(0.1) #Wait to see if the board has anything to report
+            while board.ser.inWaiting():
+                c = board.ser.read()
+                line += c
+                time.sleep(0.001)
+                if (c == '\n') and not flush:
+                    print('%\t'+line[:-1])
+                    line = ''
 
-                if not flush:
-                    print(line)
+            if not flush:
+                print(line)
 
         # Take user input
         s = raw_input('--> ')
