@@ -11,6 +11,8 @@ Please direct any questions, suggestions and bug reports to the github repo at: 
 * Numpy 1.7 or later (http://www.numpy.org/)
 * Yapsy -- if using pluging via `user.py` (http://yapsy.sourceforge.net/)
 
+NOTE: For comprehensive list see requirments.txt: (https://github.com/OpenBCI/OpenBCI_Python/blob/master/requirements.txt)
+
 OpenBCI 8 and 32 bit board with 8 or 16 channels.
 
 This library includes the main open_bci_v3 class definition that instantiates an OpenBCI Board object. This object will initialize communication with the board and get the environment ready for data streaming. This library is designed to work with iOS and Linux distributions. To use a Windows OS, change the __init__ function in open_bci_v3.py to establish a serial connection in Windows.
