@@ -67,6 +67,7 @@ class OpenBCIBoard(object):
 
   def __init__(self, port=None, baud=115200, filter_data=True,
     scaled_output=True, daisy=False, log=True, timeout=None):
+    self.log = log # print_incoming_text needs log
     if not port:
       port = find_port()
       if not port:
@@ -94,7 +95,6 @@ class OpenBCIBoard(object):
     self.read_state = 0
     self.daisy = daisy
     self.last_odd_sample = OpenBCISample(-1, [], []) # used for daisy
-    self.log = log
     self.log_packet_count = 0
     self.attempt_reconnect = False
     self.last_reconnect = 0
