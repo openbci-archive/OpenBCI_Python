@@ -30,15 +30,15 @@ if __name__ == '__main__':
     # baud rate is not currently used
     parser.add_argument('-b', '--baud', default=115200, type=int,
                         help="Baud rate (not currently used)")
-    parser.add_argument('--no-filtering', dest='filtering', 
+    parser.add_argument('--no-filtering', dest='filtering',
                         action='store_false',
                         help="Disable notch filtering")
     parser.set_defaults(filtering=True)
-    parser.add_argument('-d', '--daisy', dest='daisy', 
+    parser.add_argument('-d', '--daisy', dest='daisy',
                         action='store_true',
                         help="Force daisy mode (beta feature)")
     # first argument: plugin name, then parameters for plugin
-    parser.add_argument('-a', '--add', metavar=('PLUGIN', 'PARAM'), 
+    parser.add_argument('-a', '--add', metavar=('PLUGIN', 'PARAM'),
                         action='append', nargs='+',
                         help="Select which plugins to activate and set parameters.")
     parser.add_argument('--log', dest='log', action='store_true',
@@ -54,8 +54,8 @@ if __name__ == '__main__':
         print "user.py: open_bci_v3..."
         import open_bci_v3 as bci
     elif args.board == 4:
-        print "user.py: open_bci_v4..."
-        import open_bci_v4 as bci
+        print "user.py: open_bci_v_ganglion..."
+        import open_bci_v_ganglion as bci
     else:
         warn('Board type not recognized')
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     else:
         print "No daisy:",
         print board.getNbEEGChannels(), "EEG channels and", board.getNbAUXChannels(), "AUX channels at", board.getSampleRate(), "Hz."
-    
+
     print "\n------------PLUGINS--------------"
     # Loop round the plugins and print their names.
     print "Found plugins:",
@@ -139,7 +139,7 @@ if __name__ == '__main__':
         fun = None
     else:
         fun = callback_list
-    
+
     def cleanUp():
         board.disconnect()
         print "Deactivating Plugins..."
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         print "User.py exiting..."
 
     atexit.register(cleanUp)
-    
+
     print "--------------INFO---------------"
     print "User serial interface enabled...\n\
 View command map at http://docs.openbci.com.\n\
