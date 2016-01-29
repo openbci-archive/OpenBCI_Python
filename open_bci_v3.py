@@ -80,7 +80,7 @@ class OpenBCIBoard(object):
 
     time.sleep(2)
     #Initialize 32-bit board, doesn't affect 8bit board
-    self.ser.write('v');
+    self.ser.write(b'v');
 
 
     #wait for device to be ready
@@ -129,7 +129,7 @@ class OpenBCIBoard(object):
           OpenBCISample object captured.
     """
     if not self.streaming:
-      self.ser.write('b')
+      self.ser.write(b'b')
       self.streaming = True
 
     start_time = timeit.default_timer()
@@ -272,7 +272,7 @@ class OpenBCIBoard(object):
   def stop(self):
     print("Stopping streaming...\nWait for buffer to flush...")
     self.streaming = False
-    self.ser.write('s')
+    self.ser.write(b's')
     if self.log:
       logging.warning('sent <s>: stopped streaming')
 
@@ -316,21 +316,21 @@ class OpenBCIBoard(object):
       c = ''
      #Look for end sequence $$$
       while '$$$' not in line:
-        c = self.ser.read()
+        c = self.ser.read().decode('utf-8')
         line += c
       print(line);
     else:
       self.warn("No Message")
 
   def print_register_settings(self):
-    self.ser.write('?')
+    self.ser.write(b'?')
     time.sleep(0.5)
     print_incoming_text();
 
   #DEBBUGING: Prints individual incoming bytes
   def print_bytes_in(self):
     if not self.streaming:
-      self.ser.write('b')
+      self.ser.write(b'b')
       self.streaming = True
     while self.streaming:
       print(struct.unpack('B',self.ser.read())[0]);
@@ -341,7 +341,7 @@ class OpenBCIBoard(object):
 
   def print_packets_in(self):
     if not self.streaming:
-      self.ser.write('b')
+      self.ser.write(b'b')
       self.streaming = True
       skipped_str = ''
     while self.streaming:
@@ -415,9 +415,9 @@ class OpenBCIBoard(object):
     self.warn('Reconnecting')
     self.stop()
     time.sleep(0.5)
-    self.ser.write('v')
+    self.ser.write(b'v')
     time.sleep(0.5)
-    self.ser.write('b')
+    self.ser.write(b'b')
     time.sleep(0.5)
     self.streaming = True
     #self.attempt_reconnect = False
@@ -425,31 +425,31 @@ class OpenBCIBoard(object):
 
   #Adds a filter at 60hz to cancel out ambient electrical noise
   def enable_filters(self):
-    self.ser.write('f')
+    self.ser.write(b'f')
     self.filtering_data = True;
 
   def disable_filters(self):
-    self.ser.write('g')
+    self.ser.write(b'g')
     self.filtering_data = False;
 
   def test_signal(self, signal):
     if signal == 0:
-      self.ser.write('0')
+      self.ser.write(b'0')
       self.warn("Connecting all pins to ground")
     elif signal == 1:
-      self.ser.write('p')
+      self.ser.write(b'p')
       self.warn("Connecting all pins to Vcc")
     elif signal == 2:
-      self.ser.write('-')
+      self.ser.write(b'-')
       self.warn("Connecting pins to low frequency 1x amp signal")
     elif signal == 3:
-      self.ser.write('=')
+      self.ser.write(b'=')
       self.warn("Connecting pins to high frequency 1x amp signal")
     elif signal == 4:
-      self.ser.write('[')
+      self.ser.write(b'[')
       self.warn("Connecting pins to low frequency 2x amp signal")
     elif signal == 5:
-      self.ser.write(']')
+      self.ser.write(b']')
       self.warn("Connecting pins to high frequency 2x amp signal")
     else:
       self.warn("%s is not a known test signal. Valid signals go from 0-5" %(signal))
@@ -458,71 +458,71 @@ class OpenBCIBoard(object):
     #Commands to set toggle to on position
     if toggle_position == 1:
       if channel is 1:
-        self.ser.write('!')
+        self.ser.write(b'!')
       if channel is 2:
-        self.ser.write('@')
+        self.ser.write(b'@')
       if channel is 3:
-        self.ser.write('#')
+        self.ser.write(b'#')
       if channel is 4:
-        self.ser.write('$')
+        self.ser.write(b'$')
       if channel is 5:
-        self.ser.write('%')
+        self.ser.write(b'%')
       if channel is 6:
-        self.ser.write('^')
+        self.ser.write(b'^')
       if channel is 7:
-        self.ser.write('&')
+        self.ser.write(b'&')
       if channel is 8:
-        self.ser.write('*')
+        self.ser.write(b'*')
       if channel is 9 and self.daisy:
-        self.ser.write('Q')
+        self.ser.write(b'Q')
       if channel is 10 and self.daisy:
-        self.ser.write('W')
+        self.ser.write(b'W')
       if channel is 11 and self.daisy:
-        self.ser.write('E')
+        self.ser.write(b'E')
       if channel is 12 and self.daisy:
-        self.ser.write('R')
+        self.ser.write(b'R')
       if channel is 13 and self.daisy:
-        self.ser.write('T')
+        self.ser.write(b'T')
       if channel is 14 and self.daisy:
-        self.ser.write('Y')
+        self.ser.write(b'Y')
       if channel is 15 and self.daisy:
-        self.ser.write('U')
+        self.ser.write(b'U')
       if channel is 16 and self.daisy:
-        self.ser.write('I')
+        self.ser.write(b'I')
     #Commands to set toggle to off position
     elif toggle_position == 0:
       if channel is 1:
-        self.ser.write('1')
+        self.ser.write(b'1')
       if channel is 2:
-        self.ser.write('2')
+        self.ser.write(b'2')
       if channel is 3:
-        self.ser.write('3')
+        self.ser.write(b'3')
       if channel is 4:
-        self.ser.write('4')
+        self.ser.write(b'4')
       if channel is 5:
-        self.ser.write('5')
+        self.ser.write(b'5')
       if channel is 6:
-        self.ser.write('6')
+        self.ser.write(b'6')
       if channel is 7:
-        self.ser.write('7')
+        self.ser.write(b'7')
       if channel is 8:
-        self.ser.write('8')
+        self.ser.write(b'8')
       if channel is 9 and self.daisy:
-        self.ser.write('q')
+        self.ser.write(b'q')
       if channel is 10 and self.daisy:
-        self.ser.write('w')
+        self.ser.write(b'w')
       if channel is 11 and self.daisy:
-        self.ser.write('e')
+        self.ser.write(b'e')
       if channel is 12 and self.daisy:
-        self.ser.write('r')
+        self.ser.write(b'r')
       if channel is 13 and self.daisy:
-        self.ser.write('t')
+        self.ser.write(b't')
       if channel is 14 and self.daisy:
-        self.ser.write('y')
+        self.ser.write(b'y')
       if channel is 15 and self.daisy:
-        self.ser.write('u')
+        self.ser.write(b'u')
       if channel is 16 and self.daisy:
-        self.ser.write('i')
+        self.ser.write(b'i')
 
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
