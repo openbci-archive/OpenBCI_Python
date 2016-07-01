@@ -545,10 +545,6 @@ class OpenBCIBoard(object):
         pass
     return openbci_port
 
-
-
-
-
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
   def __init__(self, packet_id, channel_data, aux_data):
