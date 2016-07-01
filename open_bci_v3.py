@@ -26,6 +26,7 @@ import logging
 import threading
 import sys
 import pdb
+import glob
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = 0xA0  # start of data packet
@@ -69,7 +70,8 @@ class OpenBCIBoard(object):
     scaled_output=True, daisy=False, log=True, timeout=None):
     self.log = log # print_incoming_text needs log
     if not port:
-      port = find_port()
+      port = self.find_port()
+      print(port)
       if not port:
         raise OSError('Cannot find OpenBCI port')
 
@@ -523,6 +525,29 @@ class OpenBCIBoard(object):
         self.ser.write(b'u')
       if channel is 16 and self.daisy:
         self.ser.write(b'i')
+
+  def find_port(self):
+    # Finds the serial port names
+    if sys.platform.startswith('win'):
+      ports = ['COM%s' % (i+1) for i in range(256)]
+    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+      ports = glob.glob('/dev/ttyUSB*')
+    elif sys.platform.startswith('darwin'):
+      ports = glob.glob('/dev/tty.usbserial*')
+    else:
+      raise EnvironmentError('Error finding ports on your operating system')
+    for port in ports:
+      try:
+        s = serial.Serial(port)
+        s.close()
+        openbci_port = port;
+      except (OSError, serial.SerialException):
+        pass
+    return openbci_port
+
+
+
+
 
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
