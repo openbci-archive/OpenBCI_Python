@@ -71,9 +71,6 @@ class OpenBCIBoard(object):
     self.log = log # print_incoming_text needs log
     if not port:
       port = self.find_port()
-      print(port)
-      if not port:
-        raise OSError('Cannot find OpenBCI port')
 
     print("Connecting to V3 at port %s" %(port))
     self.ser = serial.Serial(port= port, baudrate = baud, timeout=timeout)
@@ -536,6 +533,7 @@ class OpenBCIBoard(object):
       ports = glob.glob('/dev/tty.usbserial*')
     else:
       raise EnvironmentError('Error finding ports on your operating system')
+    openbci_port = ''
     for port in ports:
       try:
         s = serial.Serial(port)
@@ -543,7 +541,10 @@ class OpenBCIBoard(object):
         openbci_port = port;
       except (OSError, serial.SerialException):
         pass
-    return openbci_port
+    if openbci_port == '':
+      raise OSError('Cannot find OpenBCI port')
+    else:
+      return openbci_port
 
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
