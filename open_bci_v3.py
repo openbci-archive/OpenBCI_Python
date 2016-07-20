@@ -327,13 +327,12 @@ class OpenBCIBoard(object):
   def openbci_id(self, serial):
     """
 
-    When starting the connection, print all the debug data until
-    we get to a line with the end sequence '$$$'.
+    When automatically detecting port, parse the serial return for the "OpenBCI" ID.
 
     """
     line = ''
     #Wait for device to send data
-    time.sleep(1)
+    time.sleep(2)
     
     if serial.inWaiting():
       line = ''
