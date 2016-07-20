@@ -26,6 +26,7 @@ import logging
 import threading
 import sys
 import pdb
+import glob
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = 0xA0  # start of data packet
@@ -68,11 +69,12 @@ class OpenBCIBoard(object):
   def __init__(self, port=None, baud=115200, filter_data=True,
     scaled_output=True, daisy=False, log=True, timeout=None):
     self.log = log # print_incoming_text needs log
+    self.streaming = False
+    self.baudrate = baud
+    self.timeout = timeout
     if not port:
-      port = find_port()
-      if not port:
-        raise OSError('Cannot find OpenBCI port')
-
+      port = self.find_port()
+    self.port = port
     print("Connecting to V3 at port %s" %(port))
     self.ser = serial.Serial(port= port, baudrate = baud, timeout=timeout)
 
@@ -322,11 +324,32 @@ class OpenBCIBoard(object):
     else:
       self.warn("No Message")
 
+  def openbci_id(self, serial):
+    """
+
+    When starting the connection, print all the debug data until
+    we get to a line with the end sequence '$$$'.
+
+    """
+    line = ''
+    #Wait for device to send data
+    time.sleep(1)
+    
+    if serial.inWaiting():
+      line = ''
+      c = ''
+     #Look for end sequence $$$
+      while '$$$' not in line:
+        c = serial.read().decode('utf-8')
+        line += c
+      if "OpenBCI" in line:
+        return True
+    return False
+
   def print_register_settings(self):
     self.ser.write(b'?')
     time.sleep(0.5)
     print_incoming_text();
-
   #DEBBUGING: Prints individual incoming bytes
   def print_bytes_in(self):
     if not self.streaming:
@@ -340,10 +363,6 @@ class OpenBCIBoard(object):
     0xA0|0-255|8, 3-byte signed ints|3 2-byte signed ints|0xC0'''
 
   def print_packets_in(self):
-    if not self.streaming:
-      self.ser.write(b'b')
-      self.streaming = True
-      skipped_str = ''
     while self.streaming:
       b = struct.unpack('B', self.ser.read())[0];
       
@@ -401,6 +420,7 @@ class OpenBCIBoard(object):
         self.warn('Reconnecting')
         self.reconnect()
  
+
 
   def check_connection(self, interval = 2, max_packets_to_skip=10):
     #check number of dropped packages and establish connection problem if too large
@@ -524,12 +544,37 @@ class OpenBCIBoard(object):
       if channel is 16 and self.daisy:
         self.ser.write(b'i')
 
+  def find_port(self):
+    # Finds the serial port names
+    if sys.platform.startswith('win'):
+      ports = ['COM%s' % (i+1) for i in range(256)]
+    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+      ports = glob.glob('/dev/ttyUSB*')
+    elif sys.platform.startswith('darwin'):
+      ports = glob.glob('/dev/tty.usbserial*')
+    else:
+      raise EnvironmentError('Error finding ports on your operating system')
+    openbci_port = ''
+    for port in ports:
+      try:
+        s = serial.Serial(port= port, baudrate = self.baudrate, timeout=self.timeout)
+        s.write(b'v')
+        openbci_serial = self.openbci_id(s)
+        s.close()
+        if openbci_serial:
+          openbci_port = port;
+      except (OSError, serial.SerialException):
+        pass
+    if openbci_port == '':
+      raise OSError('Cannot find OpenBCI port')
+    else:
+      return openbci_port
+
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
   def __init__(self, packet_id, channel_data, aux_data):
     self.id = packet_id;
     self.channel_data = channel_data;
     self.aux_data = aux_data;
-
 
 
