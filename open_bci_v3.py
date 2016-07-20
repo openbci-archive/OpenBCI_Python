@@ -188,7 +188,7 @@ class OpenBCIBoard(object):
       else:
         return b
 
-    for rep in xrange(max_bytes_to_skip):
+    for rep in range(max_bytes_to_skip):
 
       #---------Start Byte & ID---------
       if self.read_state == 0:
@@ -207,7 +207,7 @@ class OpenBCIBoard(object):
       #---------Channel Data---------
       elif self.read_state == 1:
         channel_data = []
-        for c in xrange(self.eeg_channels_per_sample):
+        for c in range(self.eeg_channels_per_sample):
 
           #3 byte ints
           literal_read = read(3)
@@ -217,9 +217,9 @@ class OpenBCIBoard(object):
 
           #3byte int in 2s compliment
           if (unpacked[0] >= 127):
-            pre_fix = '\xFF'
+            pre_fix = bytes(bytearray.fromhex('FF')) 
           else:
-            pre_fix = '\x00'
+            pre_fix = bytes(bytearray.fromhex('00'))
 
 
           literal_read = pre_fix + literal_read;
@@ -237,7 +237,7 @@ class OpenBCIBoard(object):
       #---------Accelerometer Data---------
       elif self.read_state == 2:
         aux_data = []
-        for a in xrange(self.aux_channels_per_sample):
+        for a in range(self.aux_channels_per_sample):
 
           #short = h
           acc = struct.unpack('>h', read(2))[0]
@@ -358,7 +358,7 @@ class OpenBCIBoard(object):
         packet_str = packet_str + "%03d"%(b) + '|';
         
         #data channels
-        for i in xrange(24-1):
+        for i in range(24-1):
           b = struct.unpack('B', self.ser.read())[0];
           packet_str = packet_str + '.' + "%03d"%(b);
 
@@ -366,7 +366,7 @@ class OpenBCIBoard(object):
         packet_str = packet_str + '.' + "%03d"%(b) + '|';
 
         #aux channels
-        for i in xrange(6-1):
+        for i in range(6-1):
           b = struct.unpack('B', self.ser.read())[0];
           packet_str = packet_str + '.' + "%03d"%(b);
         
