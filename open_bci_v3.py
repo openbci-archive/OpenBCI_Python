@@ -69,9 +69,12 @@ class OpenBCIBoard(object):
   def __init__(self, port=None, baud=115200, filter_data=True,
     scaled_output=True, daisy=False, log=True, timeout=None):
     self.log = log # print_incoming_text needs log
+    self.streaming = False
+    self.baudrate = baud
+    self.timeout = timeout
     if not port:
       port = self.find_port()
-
+    self.port = port
     print("Connecting to V3 at port %s" %(port))
     self.ser = serial.Serial(port= port, baudrate = baud, timeout=timeout)
 
@@ -321,11 +324,37 @@ class OpenBCIBoard(object):
     else:
       self.warn("No Message")
 
+  def openbci_id(self, serial):
+    """
+
+    When starting the connection, print all the debug data until
+    we get to a line with the end sequence '$$$'.
+
+    """
+    line = ''
+    #Wait for device to send data
+    time.sleep(1)
+    
+    if serial.inWaiting():
+      line = ''
+      c = ''
+     #Look for end sequence $$$
+      while '$$$' not in line:
+        c = serial.read().decode('utf-8')
+        line += c
+      if "OpenBCI" in line:
+        return True
+    return False
+
   def print_register_settings(self):
     self.ser.write(b'?')
     time.sleep(0.5)
     print_incoming_text();
 
+  def print_register_settings(self):
+    self.ser.write(b'?')
+    time.sleep(0.5)
+    print_incoming_text();
   #DEBBUGING: Prints individual incoming bytes
   def print_bytes_in(self):
     if not self.streaming:
@@ -339,10 +368,6 @@ class OpenBCIBoard(object):
     0xA0|0-255|8, 3-byte signed ints|3 2-byte signed ints|0xC0'''
 
   def print_packets_in(self):
-    if not self.streaming:
-      self.ser.write(b'b')
-      self.streaming = True
-      skipped_str = ''
     while self.streaming:
       b = struct.unpack('B', self.ser.read())[0];
       
@@ -357,7 +382,7 @@ class OpenBCIBoard(object):
         packet_str = packet_str + "%03d"%(b) + '|';
         
         #data channels
-        for i in xrange(24-1):
+        for i in range(24-1):
           b = struct.unpack('B', self.ser.read())[0];
           packet_str = packet_str + '.' + "%03d"%(b);
 
@@ -365,7 +390,7 @@ class OpenBCIBoard(object):
         packet_str = packet_str + '.' + "%03d"%(b) + '|';
 
         #aux channels
-        for i in xrange(6-1):
+        for i in range(6-1):
           b = struct.unpack('B', self.ser.read())[0];
           packet_str = packet_str + '.' + "%03d"%(b);
         
@@ -400,6 +425,7 @@ class OpenBCIBoard(object):
         self.warn('Reconnecting')
         self.reconnect()
  
+
 
   def check_connection(self, interval = 2, max_packets_to_skip=10):
     #check number of dropped packages and establish connection problem if too large
@@ -536,9 +562,12 @@ class OpenBCIBoard(object):
     openbci_port = ''
     for port in ports:
       try:
-        s = serial.Serial(port)
+        s = serial.Serial(port= port, baudrate = self.baudrate, timeout=self.timeout)
+        s.write(b'v')
+        openbci_serial = self.openbci_id(s)
         s.close()
-        openbci_port = port;
+        if openbci_serial:
+          openbci_port = port;
       except (OSError, serial.SerialException):
         pass
     if openbci_port == '':
@@ -552,6 +581,5 @@ class OpenBCISample(object):
     self.id = packet_id;
     self.channel_data = channel_data;
     self.aux_data = aux_data;
-
 
 
