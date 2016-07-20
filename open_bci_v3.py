@@ -350,11 +350,6 @@ class OpenBCIBoard(object):
     self.ser.write(b'?')
     time.sleep(0.5)
     print_incoming_text();
-
-  def print_register_settings(self):
-    self.ser.write(b'?')
-    time.sleep(0.5)
-    print_incoming_text();
   #DEBBUGING: Prints individual incoming bytes
   def print_bytes_in(self):
     if not self.streaming:
