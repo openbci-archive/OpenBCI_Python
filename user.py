@@ -15,9 +15,12 @@ manager = PluginManager()
 manager.setPluginPlaces(["plugins"])
 manager.collectPlugins()
 
-if __name__ == '__main__':
-
-    print ("            USER.py")
+# OPENBCI FUNCTIONS
+def set_up_parser():
+    '''
+        Returns a parser object to set up OpenBCI.
+        :return: argparse.Namespace
+    '''
     parser = argparse.ArgumentParser(description="OpenBCI 'user'")
     parser.add_argument('--board', default=3, type=int)
     parser.add_argument('-l', '--list', action='store_true',
@@ -26,7 +29,7 @@ if __name__ == '__main__':
                         help="Show more information about a plugin.")
     parser.add_argument('-p', '--port',
                         help="Port to connect to OpenBCI Dongle " +
-                        "( ex /dev/ttyUSB0 or /dev/tty.usbserial-* )")
+                             "( ex /dev/ttyUSB0 or /dev/tty.usbserial-* )")
     # baud rate is not currently used
     parser.add_argument('-b', '--baud', default=115200, type=int,
                         help="Baud rate (not currently used)")
@@ -45,19 +48,184 @@ if __name__ == '__main__':
                         help="Log program")
     parser.set_defaults(daisy=False, log=False)
 
+def set_logging(args):
+    '''
+    Sets up logging capability
+    :param args: argparse.Namespace
+    :return: None
+    '''
+    if args.log:
+        print("Logging Enabled: " + str(args.log))
+        logging.basicConfig(filename="OBCI.log",
+                            format='%(asctime)s - %(levelname)s : %(message)s',
+                            level=logging.DEBUG)
+        logging.getLogger('yapsy').setLevel(logging.DEBUG)
+        logging.info('---------LOG START-------------')
+        logging.info(args)
+    else:
+        print("user.py: Logging Disabled.")
+
+def add_plugin(plugin_name, plugin_args, board, plugin_list, callback_list):
+    #TODO: what type is plugin_args?
+    '''
+    Find and activate plugin listed, and add it to the plugin list
+    :param plugin_name: string
+    :param plugin_args:
+    :param board: bci.OpenBCIBoard
+    :param plugin_list: list
+    :param callback_list: list
+    :return:
+    '''
+    plug_name = plugin_name
+    plug_args = plugin_args
+    plug = manager.getPluginByName(plug_name)
+    if plug == None:
+        # eg: if an import fail inside a plugin, yapsy skip it
+        print ("Error: [", plug_name,
+               "] not found or could not be loaded. Check name and requirements.")
+    else:
+        print ("\nActivating [", plug_name, "] plugin...")
+        if not plug.plugin_object.pre_activate(plug_args,
+                                               sample_rate=board.getSampleRate(),
+                                               eeg_channels=board.getNbEEGChannels(),
+                                               aux_channels=board.getNbAUXChannels()):
+            print ("Error while activating [", plug_name,
+                   "], check output for more info.")
+        else:
+            print ("Plugin [", plug_name, "] added to the list")
+            plugin_list.append(plug.plugin_object)
+            callback_list.append(plug.plugin_object)
+
+def execute_plugins(board):
+    '''
+    Streams data from OpenBCI and runs plugins
+    :param board: bci.OpenBCIBoard
+    :return:
+    '''
+    print ("--------------INFO---------------")
+    print ("User serial interface enabled...\n\
+    View command map at http://docs.openbci.com.\n\
+    Type /start to run -- and /stop before issuing new commands afterwards.\n\
+    Type /exit to exit. \n\
+    Board outputs are automatically printed as: \n\
+    %  <tab>  message\n\
+    $$$ signals end of message")
+
+    print("\n-------------BEGIN---------------")
+    # Init board state
+    # s: stop board streaming; v: soft reset of the 32-bit board (no effect with 8bit board)
+    s = 'sv'
+    # Tell the board to enable or not daisy module
+    if board.daisy:
+        s = s + 'C'
+    else:
+        s = s + 'c'
+    # d: Channels settings back to default
+    s = s + 'd'
+
+    while (s != "/exit"):
+        # Send char and wait for registers to set
+        if (not s):
+            pass
+        elif ("help" in s):
+            print ("View command map at: \
+    http://docs.openbci.com/software/01-OpenBCI_SDK.\n\
+    For user interface: read README or view \
+    https://github.com/OpenBCI/OpenBCI_Python")
+
+        elif board.streaming and s != "/stop":
+            print (
+            "Error: the board is currently streaming data, please type '/stop' before issuing new commands.")
+        else:
+            # read silently incoming packet if set (used when stream is stopped)
+            flush = False
+
+            if ('/' == s[0]):
+                s = s[1:]
+                rec = False  # current command is recognized or fot
+
+                if ("T:" in s):
+                    lapse = int(s[string.find(s, "T:") + 2:])
+                    rec = True
+                elif ("t:" in s):
+                    lapse = int(s[string.find(s, "t:") + 2:])
+                    rec = True
+                else:
+                    lapse = -1
+
+                if ("start" in s):
+                    if (fun != None):
+                        # start streaming in a separate thread so we could always send commands in here
+                        boardThread = threading.Thread(
+                            target=board.start_streaming, args=(fun, lapse))
+                        boardThread.daemon = True  # will stop on exit
+                        try:
+                            boardThread.start()
+                        except:
+                            raise
+                    else:
+                        print ("No function loaded")
+                    rec = True
+                elif ('test' in s):
+                    test = int(s[s.find("test") + 4:])
+                    board.test_signal(test)
+                    rec = True
+                elif ('stop' in s):
+                    board.stop()
+                    rec = True
+                    flush = True
+                if rec == False:
+                    print("Command not recognized...")
+
+            elif s:
+                for c in s:
+                    if sys.hexversion > 0x03000000:
+                        board.ser.write(bytes(c, 'utf-8'))
+                    else:
+                        board.ser.write(bytes(c))
+                    time.sleep(0.100)
+
+            line = ''
+            time.sleep(0.1)  # Wait to see if the board has anything to report
+            while board.ser.inWaiting():
+                c = board.ser.read().decode('utf-8')
+                line += c
+                time.sleep(0.001)
+                if (c == '\n') and not flush:
+                    print('%\t' + line[:-1])
+                    line = ''
+
+            if not flush:
+                print(line)
+
+        # Take user input
+        # s = input('--> ')
+        if sys.hexversion > 0x03000000:
+            s = input('--> ')
+        else:
+            s = raw_input('--> ')
+
+
+if __name__ == '__main__':
+
+    print ("            USER.py")
+    # ADD ARGUMENTS
+    parser = set_up_parser()
     args = parser.parse_args()
 
     if not (args.port or args.list or args.info):
-        parser.error('No action requested. Use `--port serial_port` to connect to the bord; `--list` to show available plugins or `--info [plugin_name]` to get more information.')
+        parser.error(
+            'No action requested. Use `--port serial_port` to connect to the bord; `--list` to show available plugins or `--info [plugin_name]` to get more information.')
 
+    # DECIDE WHICH VERSION OF OPENBCI BOARD IS BEING USED
     if args.board == 3:
-        print ("user.py: open_bci_v3...")
+        print("main.py: open_bci_v3...")
         import open_bci_v3 as bci
     elif args.board == 4:
-        print ("user.py: open_bci_v_ganglion...")
+        print("main.py: open_bci_v_ganglion...")
         import open_bci_v_ganglion as bci
     else:
-        warn('Board type not recognized')
+        logging.warn('Board type not recognized')
 
     # Print list of available plugins and exit
     if args.list:
@@ -80,15 +248,8 @@ if __name__ == '__main__':
     print ("\n------------SETTINGS-------------")
     print ("Notch filtering:", args.filtering)
 
-    # Logging
-    if args.log:
-        print ("Logging Enabled: " + str(args.log))
-        logging.basicConfig(filename="OBCI.log", format='%(asctime)s - %(levelname)s : %(message)s', level=logging.DEBUG)
-        logging.getLogger('yapsy').setLevel(logging.DEBUG)
-        logging.info('---------LOG START-------------')
-        logging.info(args)
-    else:
-        print ("user.py: Logging Disabled.")
+    # LOGGING
+    set_logging(args)
 
     print ("\n-------INSTANTIATING BOARD-------")
     board = bci.OpenBCIBoard(port=args.port,
@@ -122,17 +283,10 @@ if __name__ == '__main__':
             plug_args = plug_candidate[1:]
             # Try to find name
             plug = manager.getPluginByName(plug_name)
-            if plug == None:
-                # eg: if an import fail inside a plugin, yapsy skip it
-                print ("Error: [", plug_name, "] not found or could not be loaded. Check name and requirements.")
-            else:
-                print ("\nActivating [", plug_name, "] plugin...")
-                if not plug.plugin_object.pre_activate(plug_args, sample_rate=board.getSampleRate(), eeg_channels=board.getNbEEGChannels(), aux_channels=board.getNbAUXChannels()):
-                    print ("Error while activating [", plug_name, "], check output for more info.")
-                else:
-                    print ("Plugin [", plug_name, "] added to the list")
-                    plug_list.append(plug.plugin_object)
-                    callback_list.append(plug.plugin_object)
+
+            # Add plugin
+            add_plugin(plug_name, plug_args, board, plug_list, callback_list)
+
 
     if len(plug_list) == 0:
         print ("WARNING: no plugin selected, you will only be able to communicate with the board.")
@@ -149,103 +303,4 @@ if __name__ == '__main__':
 
     atexit.register(cleanUp)
 
-    print ("--------------INFO---------------")
-    print ("User serial interface enabled...\n\
-View command map at http://docs.openbci.com.\n\
-Type /start to run -- and /stop before issuing new commands afterwards.\n\
-Type /exit to exit. \n\
-Board outputs are automatically printed as: \n\
-%  <tab>  message\n\
-$$$ signals end of message")
-
-    print("\n-------------BEGIN---------------")
-    # Init board state
-    # s: stop board streaming; v: soft reset of the 32-bit board (no effect with 8bit board)
-    s = 'sv'
-    # Tell the board to enable or not daisy module
-    if board.daisy:
-        s = s + 'C'
-    else:
-        s = s + 'c'
-    # d: Channels settings back to default
-    s = s + 'd'
-
-    while(s != "/exit"):
-        # Send char and wait for registers to set
-        if (not s):
-            pass
-        elif("help" in s):
-            print ("View command map at: \
-http://docs.openbci.com/software/01-OpenBCI_SDK.\n\
-For user interface: read README or view \
-https://github.com/OpenBCI/OpenBCI_Python")
-
-        elif board.streaming and s != "/stop":
-            print ("Error: the board is currently streaming data, please type '/stop' before issuing new commands.")
-        else:
-            # read silently incoming packet if set (used when stream is stopped)
-            flush = False
-
-            if('/' == s[0]):
-                s = s[1:]
-                rec = False  # current command is recognized or fot
-
-                if("T:" in s):
-                    lapse = int(s[string.find(s, "T:")+2:])
-                    rec = True
-                elif("t:" in s):
-                    lapse = int(s[string.find(s, "t:")+2:])
-                    rec = True
-                else:
-                    lapse = -1
-
-                if("start" in s):
-                    if(fun != None):
-                        # start streaming in a separate thread so we could always send commands in here
-                        boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
-                        boardThread.daemon = True # will stop on exit
-                        try:
-                            boardThread.start()
-                        except:
-                                raise
-                    else:
-                        print ("No function loaded")
-                    rec = True
-                elif('test' in s):
-                    test = int(s[s.find("test")+4:])
-                    board.test_signal(test)
-                    rec = True
-                elif('stop' in s):
-                    board.stop()
-                    rec = True
-                    flush = True
-                if rec == False:
-                    print("Command not recognized...")
-
-            elif s:
-                for c in s:
-                    if sys.hexversion > 0x03000000:
-                        board.ser.write(bytes(c, 'utf-8'))
-                    else:
-                        board.ser.write(bytes(c))
-                    time.sleep(0.100)
-
-            line = ''
-            time.sleep(0.1) #Wait to see if the board has anything to report
-            while board.ser.inWaiting():
-                c = board.ser.read().decode('utf-8')
-                line += c
-                time.sleep(0.001)
-                if (c == '\n') and not flush:
-                    print('%\t'+line[:-1])
-                    line = ''
-
-            if not flush:
-                print(line)
-
-        # Take user input
-        #s = input('--> ')
-        if sys.hexversion > 0x03000000:
-            s = input('--> ')
-        else:
-            s = raw_input('--> ')
+    execute_plugins(board)
