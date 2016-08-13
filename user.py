@@ -17,10 +17,10 @@ manager.collectPlugins()
 
 # OPENBCI FUNCTIONS
 def set_up_parser():
-    '''
-        Returns a parser object to set up OpenBCI.
-        :return: argparse.Namespace
-    '''
+    """
+    Returns a parser object to set up OpenBCI.
+    :rtype: argparse.Namespace object
+    """
     parser = argparse.ArgumentParser(description="OpenBCI 'user'")
     parser.add_argument('--board', default=3, type=int)
     parser.add_argument('-l', '--list', action='store_true',
@@ -49,11 +49,11 @@ def set_up_parser():
     parser.set_defaults(daisy=False, log=False)
 
 def set_logging(args):
-    '''
+    """
     Sets up logging capability
-    :param args: argparse.Namespace
-    :return: None
-    '''
+    :param args: a parser object
+    :rtype: None
+    """
     if args.log:
         print("Logging Enabled: " + str(args.log))
         logging.basicConfig(filename="OBCI.log",
@@ -67,16 +67,20 @@ def set_logging(args):
 
 def add_plugin(plugin_name, plugin_args, board, plugin_list, callback_list):
     #TODO: what type is plugin_args?
-    '''
+    """
     Find and activate plugin listed, and add it to the plugin list
     :param plugin_name: name of plugin
     :type plugin_name: str
     :param plugin_args:
-    :param board: bci.OpenBCIBoard
-    :param plugin_list: list
-    :param callback_list: list
-    :return:
-    '''
+    :type plugin_args:
+    :param board: an OpenBCI Board
+    :type board: bci.OpenBCIBoard object
+    :param plugin_list: list to add plugin name to
+    :type plugin_list: list
+    :param callback_list: list to add plugin name to
+    :type callback_list: list
+    :rtype: None
+    """
     plug_name = plugin_name
     plug_args = plugin_args
     plug = manager.getPluginByName(plug_name)
@@ -98,11 +102,12 @@ def add_plugin(plugin_name, plugin_args, board, plugin_list, callback_list):
             callback_list.append(plug.plugin_object)
 
 def execute_plugins(board):
-    '''
+    """
     Streams data from OpenBCI and runs plugins
-    :param board: bci.OpenBCIBoard
-    :return:
-    '''
+    :param board: an OpenBCI Board
+    :type board: bci.OpenBCIBoard object
+    :rtype: None
+    """
     print ("--------------INFO---------------")
     print ("User serial interface enabled...\n\
     View command map at http://docs.openbci.com.\n\
