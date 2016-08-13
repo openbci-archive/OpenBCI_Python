@@ -69,7 +69,8 @@ def add_plugin(plugin_name, plugin_args, board, plugin_list, callback_list):
     #TODO: what type is plugin_args?
     '''
     Find and activate plugin listed, and add it to the plugin list
-    :param plugin_name: string
+    :param plugin_name: name of plugin
+    :type plugin_name: str
     :param plugin_args:
     :param board: bci.OpenBCIBoard
     :param plugin_list: list
