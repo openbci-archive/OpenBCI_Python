@@ -12,8 +12,6 @@ from yapsy.PluginManager import PluginManager
 
 # Load the plugins from the plugin directory.
 manager = PluginManager()
-manager.setPluginPlaces(["plugins"])
-manager.collectPlugins()
 
 if __name__ == '__main__':
 
@@ -43,6 +41,9 @@ if __name__ == '__main__':
                         help="Select which plugins to activate and set parameters.")
     parser.add_argument('--log', dest='log', action='store_true',
                         help="Log program")
+    parser.add_argument('--plugins-path', dest='plugins_path', nargs='+',
+                        help="Additional path(s) to look for plugins")
+
     parser.set_defaults(daisy=False, log=False)
 
     args = parser.parse_args()
@@ -57,7 +58,15 @@ if __name__ == '__main__':
         print ("user.py: open_bci_v_ganglion...")
         import open_bci_v_ganglion as bci
     else:
-        warn('Board type not recognized')
+        raise ValueError(
+            'Board type %r was not recognized. Known are 3 and 4' % args.board
+        )
+
+    plugins_paths = ["plugins"]
+    if args.plugins_path:
+        plugins_paths += args.plugins_path
+    manager.setPluginPlaces(plugins_paths)
+    manager.collectPlugins()
 
     # Print list of available plugins and exit
     if args.list:
