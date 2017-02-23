@@ -405,6 +405,9 @@ class OpenBCIBoard(object):
  
 
   def check_connection(self, interval = 2, max_packets_to_skip=10):
+    # stop checking when we're no longer streaming
+    if not self.streaming:
+      return
     #check number of dropped packages and establish connection problem if too large
     if self.packets_dropped > max_packets_to_skip:
       #if error, attempt to reconect
