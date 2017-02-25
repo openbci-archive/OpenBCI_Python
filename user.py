@@ -8,6 +8,8 @@ import threading
 import logging
 import sys
 
+logging.basicConfig(level=logging.ERROR)
+
 from yapsy.PluginManager import PluginManager
 
 # Load the plugins from the plugin directory.
