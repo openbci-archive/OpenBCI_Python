@@ -22,7 +22,9 @@ import threading
 import sys
 import pdb
 import glob
-import bluepy
+# local bluepy should take precedence
+import sys
+sys.path.insert(0,"bluepy/bluepy")
 
 SAMPLE_RATE = 100.0  # Hz
 scale_fac_uVolts_per_count = 1200 * 8388607.0 * 1.5 * 51.0;
@@ -45,7 +47,8 @@ class OpenBCIBoard(object):
   Handle a connection to an OpenBCI board.
 
   Args:
-    port, baud, filter_data, daisy: Not used, for compatibility with v3
+    port: MAC address of the Ganglion Board. "None" to attempt auto-detect.
+    baud, filter_data, daisy: Not used, for compatibility with v3
   """
 
   def __init__(self, port=None, baud=0, filter_data=False,
@@ -54,8 +57,10 @@ class OpenBCIBoard(object):
     self.streaming = False
     self.timeout = timeout
 
-    print("Connecting to V3 at port %s" %(port))
-    self.ser = serial.Serial(port= port, baudrate = baud, timeout=timeout)
+    print("Looking for Ganglion board")
+    if port == None:
+      port == self.find_port()   
+    self.port = port
 
     print("Serial established...")
 
@@ -80,6 +85,58 @@ class OpenBCIBoard(object):
 
     #Disconnects from board when terminated
     atexit.register(self.disconnect)
+
+  def find_port(self):
+    """Detects Ganglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
+  
+    from btle import Scanner, DefaultDelegate
+
+    print("Try to detect Ganglion MAC address. NB: Turn on bluetooth and run as root for this to work!")
+    scan_time = 5
+    print("Scanning for 5 seconds nearby devices...")
+
+  #   From bluepy example
+    class ScanDelegate(DefaultDelegate):
+      def __init__(self):
+        DefaultDelegate.__init__(self)
+
+      def handleDiscovery(self, dev, isNewDev, isNewData):
+        if isNewDev:
+          print ("Discovered device: " + dev.addr)
+        elif isNewData:
+          print ("Received new data from: " + dev.addr)
+  
+    scanner = Scanner().withDelegate(ScanDelegate())
+    devices = scanner.scan(scan_time)
+
+    nb_devices = len(devices)
+    if nb_devices < 1:
+      print("No BLE devices found. Check connectivity.")
+      return ""
+    else:
+      print("Found " + str(nb_devices) + ", detecting Ganglion")
+      list_mac = []
+      list_id = []
+  
+      for dev in devices:
+        # "Ganglion" should appear inside the "value" associated to "Complete Local Name", e.g. "Ganglion-b2a6"
+        for (adtype, desc, value) in dev.getScanData():
+          if desc == "Complete Local Name" and   value.startswith("Ganglion"): 
+            list_mac.append(dev.addr)
+            list_id.append(value)
+            print("Got Ganglion: " + value + ", with MAC: " + dev.addr)
+            break
+    nb_ganglions = len(list_mac)
+  
+    if nb_ganglions < 1:
+      print("No Ganglion found ;(")
+      raise OSError('Cannot find OpenBCI Ganglion MAC address')
+
+    if nb_ganglions > 1:
+      print("Found " + str(nb_ganglions) + ", selecting first")
+
+    print("Selecting MAC address " + list_mac[0] + " for " + list_id[0])
+    return list_mac[0]
     
   def ser_write(self, b):
     """Access serial port object for write""" 

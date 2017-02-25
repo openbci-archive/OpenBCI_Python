@@ -19,6 +19,10 @@ This library includes the main open_bci_v3 class definition that instantiates an
 
 For additional details on connecting your board visit: http://docs.openbci.com/tutorials/01-GettingStarted
 
+### Ganglion Board
+
+The Ganglion board relies on Bluetooth Low Energy connectivity (BLE). You should also retrieve the bluepy submodule for a more up-to-date version. To do so, clone this repo with the `--recursive` flag then type `make` inside `bluepy/bluepy`. Note that you may need to run the script with root privileges to for some functionality, e.g. auto-detect MAC address.
+
 ## Audience:
 
 This python code is meant to be used by people familiar with python and programming in general. It's purpose is to allow for programmers to interface with OpenBCI technology directly, both to acquire data and to write programs that can use that data on a live setting, using python.
