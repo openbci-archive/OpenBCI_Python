@@ -318,7 +318,7 @@ class OpenBCIBoard(object):
       c = ''
      #Look for end sequence $$$
       while '$$$' not in line:
-        c = self.ser.read().decode('utf-8')
+        c = self.ser.read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
         line += c
       print(line);
     else:
@@ -339,7 +339,7 @@ class OpenBCIBoard(object):
       c = ''
      #Look for end sequence $$$
       while '$$$' not in line:
-        c = serial.read().decode('utf-8')
+        c = serial.read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
         line += c
       if "OpenBCI" in line:
         return True

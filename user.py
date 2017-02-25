@@ -251,7 +251,7 @@ https://github.com/OpenBCI/OpenBCI_Python")
             line = ''
             time.sleep(0.1) #Wait to see if the board has anything to report
             while board.ser.inWaiting():
-                c = board.ser.read().decode('utf-8')
+                c = board.ser.read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
                 line += c
                 time.sleep(0.001)
                 if (c == '\n') and not flush:
