@@ -15,7 +15,7 @@ manager = PluginManager()
 
 if __name__ == '__main__':
 
-    print ("            USER.py")
+    print ("------------user.py-------------")
     parser = argparse.ArgumentParser(description="OpenBCI 'user'")
     parser.add_argument('--board', default=3, type=int)
     parser.add_argument('-l', '--list', action='store_true',
@@ -24,7 +24,8 @@ if __name__ == '__main__':
                         help="Show more information about a plugin.")
     parser.add_argument('-p', '--port',
                         help="Port to connect to OpenBCI Dongle " +
-                        "( ex /dev/ttyUSB0 or /dev/tty.usbserial-* )")
+                        "( ex /dev/ttyUSB0 or /dev/tty.usbserial-* ) or AUTO to attempt auto-dection.")
+    parser.set_defaults(port="AUTO")
     # baud rate is not currently used
     parser.add_argument('-b', '--baud', default=115200, type=int,
                         help="Baud rate (not currently used)")
@@ -48,20 +49,27 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not (args.port or args.list or args.info):
-        parser.error('No action requested. Use `--port serial_port` to connect to the bord; `--list` to show available plugins or `--info [plugin_name]` to get more information.')
+    if not(args.add):
+        print ("WARNING: no plugin selected, you will only be able to communicate with the board. You should select at least one plugin with '--add [plugin_name]'. Use '--list' to show available plugins or '--info [plugin_name]' to get more information.")
 
     if args.board == 3:
-        print ("user.py: open_bci_v3...")
+        print ("Board type: open_bci_v3...")
         import open_bci_v3 as bci
     elif args.board == 4:
-        print ("user.py: open_bci_v_ganglion...")
+        print ("Board type: open_bci_v_ganglion...")
         import open_bci_v_ganglion as bci
     else:
         raise ValueError(
             'Board type %r was not recognized. Known are 3 and 4' % args.board
         )
 
+    # Check AUTO port selection, a "None" parameter for the board API
+    if "AUTO" == args.port.upper():
+        print("Will try do auto-detect board's port. Set it manually with '--port' if it goes wrong.")
+        args.port = None
+    else:
+        print("Port: ", args.port)
+    
     plugins_paths = ["plugins"]
     if args.plugins_path:
         plugins_paths += args.plugins_path
@@ -144,7 +152,6 @@ if __name__ == '__main__':
                     callback_list.append(plug.plugin_object)
 
     if len(plug_list) == 0:
-        print ("WARNING: no plugin selected, you will only be able to communicate with the board.")
         fun = None
     else:
         fun = callback_list
