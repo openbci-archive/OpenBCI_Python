@@ -80,14 +80,14 @@ if __name__ == '__main__':
         plugin = manager.getPluginByName(args.info)
         if plugin == None:
             # eg: if an import fail inside a plugin, yapsy skip it
-            print ("Error: [", args.info, "] not found or could not be loaded. Check name and requirements.")
+            print ("Error: [ " +  args.info + " ] not found or could not be loaded. Check name and requirements.")
         else:
             print (plugin.description)
             plugin.plugin_object.show_help()
         exit()
 
     print ("\n------------SETTINGS-------------")
-    print ("Notch filtering:", args.filtering)
+    print ("Notch filtering:" + str(args.filtering))
 
     # Logging
     if args.log:
@@ -117,8 +117,8 @@ if __name__ == '__main__':
     # Loop round the plugins and print their names.
     print ("Found plugins:")
     for plugin in manager.getAllPlugins():
-        print ("[", plugin.name, "]")
-    print()
+        print ("[ " + plugin.name + " ]")
+    print("\n")
 
 
     # Fetch plugins, try to activate them, add to the list if OK
@@ -133,13 +133,13 @@ if __name__ == '__main__':
             plug = manager.getPluginByName(plug_name)
             if plug == None:
                 # eg: if an import fail inside a plugin, yapsy skip it
-                print ("Error: [", plug_name, "] not found or could not be loaded. Check name and requirements.")
+                print ("Error: [ " + plug_name + " ] not found or could not be loaded. Check name and requirements.")
             else:
-                print ("\nActivating [", plug_name, "] plugin...")
+                print ("\nActivating [ " + plug_name + " ] plugin...")
                 if not plug.plugin_object.pre_activate(plug_args, sample_rate=board.getSampleRate(), eeg_channels=board.getNbEEGChannels(), aux_channels=board.getNbAUXChannels()):
-                    print ("Error while activating [", plug_name, "], check output for more info.")
+                    print ("Error while activating [ " + plug_name + " ], check output for more info.")
                 else:
-                    print ("Plugin [", plug_name, "] added to the list")
+                    print ("Plugin [ " + plug_name + "] added to the list")
                     plug_list.append(plug.plugin_object)
                     callback_list.append(plug.plugin_object)
 
