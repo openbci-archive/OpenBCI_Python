@@ -105,7 +105,19 @@ class OpenBCIBoard(object):
 
     #Disconnects from board when terminated
     atexit.register(self.disconnect)
-  
+    
+  def ser_write(self, b):
+    """Access serial port object for write""" 
+    self.ser.write(b)
+
+  def ser_read(self):
+    """Access serial port object for read""" 
+    return self.ser.read()
+
+  def ser_inWaiting(self):
+    """Access serial port object for inWaiting""" 
+    return self.ser.inWaiting();
+    
   def getSampleRate(self):
     if self.daisy:
       return SAMPLE_RATE/2

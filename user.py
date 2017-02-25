@@ -59,7 +59,7 @@ if __name__ == '__main__':
         import open_bci_v3 as bci
     elif args.board == 4:
         print ("Board type: open_bci_v_ganglion...")
-        import open_bci_v_ganglion as bci
+        import open_bci_ganglion as bci
     else:
         raise ValueError(
             'Board type %r was not recognized. Known are 3 and 4' % args.board
@@ -243,15 +243,15 @@ https://github.com/OpenBCI/OpenBCI_Python")
             elif s:
                 for c in s:
                     if sys.hexversion > 0x03000000:
-                        board.ser.write(bytes(c, 'utf-8'))
+                        board.ser_write(bytes(c, 'utf-8'))
                     else:
-                        board.ser.write(bytes(c))
+                        board.ser_write(bytes(c))
                     time.sleep(0.100)
 
             line = ''
             time.sleep(0.1) #Wait to see if the board has anything to report
-            while board.ser.inWaiting():
-                c = board.ser.read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
+            while board.ser_inWaiting():
+                c = board.ser_read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
                 line += c
                 time.sleep(0.001)
                 if (c == '\n') and not flush:
