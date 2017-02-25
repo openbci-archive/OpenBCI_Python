@@ -180,15 +180,15 @@ class OpenBCIBoard(object):
   """
   def _read_serial_binary(self, max_bytes_to_skip=3000):
     def read(n):
-      b = self.ser.read(n)
-      if not b:
+      bb = self.ser.read(n)
+      if not bb:
         self.warn('Device appears to be stalled. Quitting...')
         sys.exit()
         raise Exception('Device Stalled')
         sys.exit()
         return '\xFF'
       else:
-        return b
+        return bb
 
     for rep in range(max_bytes_to_skip):
 
