@@ -72,7 +72,7 @@ if __name__ == '__main__':
     if args.list:
         print ("Available plugins:")
         for plugin in manager.getAllPlugins():
-            print ("\t-", plugin.name)
+            print ("\t- " + plugin.name)
         exit()
 
     # User wants more info about a plugin...
