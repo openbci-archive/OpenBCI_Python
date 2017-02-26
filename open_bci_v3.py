@@ -8,7 +8,7 @@ def handle_sample(sample):
 
 board = OpenBCIBoard()
 board.print_register_settings()
-board.start(handle_sample)
+board.start_streaming(handle_sample)
 
 NOTE: If daisy modules is enabled, the callback will occur every two samples, hence "packet_id" will only contain even numbers. As a side effect, the sampling rate will be divided by 2.
 
