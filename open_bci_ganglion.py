@@ -10,6 +10,7 @@ board = OpenBCIBoard()
 board.start(handle_sample)
 
 TODO: Pick between several boards
+TODO: support impedance
 
 """
 import struct
@@ -25,14 +26,17 @@ import glob
 # local bluepy should take precedence
 import sys
 sys.path.insert(0,"bluepy/bluepy")
+from btle import Scanner, DefaultDelegate, Peripheral
 
 SAMPLE_RATE = 100.0  # Hz
 scale_fac_uVolts_per_count = 1200 * 8388607.0 * 1.5 * 51.0;
 
+# service for communication, as per docs
 BLE_SERVICE = "fe84"
-BLE_RECEIVE = "2d30c082f39f4ce6923f3484ea480596"
-BLE_SEND = "2d30c083f39f4ce6923f3484ea480596"
-BLE_DISCONNECT = "2d30c084f39f4ce6923f3484ea48059"
+# characteristics of interest
+BLE_CHAR_RECEIVE = "2d30c082f39f4ce6923f3484ea480596"
+BLE_CHAR_SEND = "2d30c083f39f4ce6923f3484ea480596"
+BLE_CHAR_DISCONNECT = "2d30c084f39f4ce6923f3484ea480596"
 
 '''
 #Commands for in SDK http://docs.openbci.com/Hardware/08-Ganglion_Data_Forma
@@ -59,37 +63,44 @@ class OpenBCIBoard(object):
 
     print("Looking for Ganglion board")
     if port == None:
-      port == self.find_port()   
-    self.port = port
+      port = self.find_port()   
+    self.port = port # find_port might not return string
 
-    print("Serial established...")
+    print ("Init BLE connection with MAC: " + self.port)
+    print ("NB: if it fails, try with root privileges.")
+    self.gang = Peripheral(port, 'random') # ADDR_TYPE_RANDOM
 
-    time.sleep(2)
-    #Initialize 32-bit board, doesn't affect 8bit board
-    self.ser.write(b'v');
+    print ("Get mainservice...")
+    self.service = self.gang.getServiceByUUID(BLE_SERVICE)
+    print ("Got:" + str(self.service))
+    
+    print ("Get characteristics...")
+    self.char_read = self.service.getCharacteristics(BLE_CHAR_RECEIVE)[0]
+    print ("receive, properties: " + str(self.char_read.propertiesToString()) + ", supports read: " + str(self.char_read.supportsRead()))
 
+    self.char_write = self.service.getCharacteristics(BLE_CHAR_SEND)[0]
+    print ("write, properties: " + str(self.char_write.propertiesToString()) + ", supports read: " + str(self.char_write.supportsRead()))
 
-    #wait for device to be ready
+    self.char_discon = self.service.getCharacteristics(BLE_CHAR_DISCONNECT)[0]
+    print ("disconnect, properties: " + str(self.char_discon.propertiesToString()) + ", supports read: " + str(self.char_discon.supportsRead()))
+
+    print("Connection established")
+
+    #wait for device to be ready, just in case
     time.sleep(1)
-    self.print_incoming_text()
 
     self.streaming = False
-    self.filtering_data = filter_data
     self.scaling_output = scaled_output
     self.eeg_channels_per_sample = 4 # number of EEG channels per sample *from the board*
     self.read_state = 0
     self.log_packet_count = 0
-    self.last_reconnect = 0
-    self.reconnect_freq = 5
     self.packets_dropped = 0
 
     #Disconnects from board when terminated
     atexit.register(self.disconnect)
 
   def find_port(self):
-    """Detects Ganglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
-  
-    from btle import Scanner, DefaultDelegate
+    """DetectsGanglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
 
     print("Try to detect Ganglion MAC address. NB: Turn on bluetooth and run as root for this to work!")
     scan_time = 5
@@ -145,10 +156,6 @@ class OpenBCIBoard(object):
   def ser_read(self):
     """Access serial port object for read""" 
     return self.ser.read()
-
-  def ser_inWaiting(self):
-    """Access serial port object for inWaiting""" 
-    return self.ser.inWaiting();
     
   def getSampleRate(self):
       return SAMPLE_RATE
@@ -326,29 +333,6 @@ class OpenBCIBoard(object):
         self.log_packet_count = 0;
       logging.warning(text)
     print("Warning: %s" % text)
-
-
-  def print_incoming_text(self):
-    """
-
-    When starting the connection, print all the debug data until
-    we get to a line with the end sequence '$$$'.
-
-    """
-    line = ''
-    #Wait for device to send data
-    time.sleep(1)
-    
-    if self.ser.inWaiting():
-      line = ''
-      c = ''
-     #Look for end sequence $$$
-      while '$$$' not in line:
-        c = self.ser.read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
-        line += c
-      print(line);
-    else:
-      self.warn("No Message")
 
   def check_connection(self, interval = 2, max_packets_to_skip=10):
     # stop checking when we're no longer streaming
