@@ -11,6 +11,7 @@ board.start(handle_sample)
 
 TODO: Pick between several boards
 TODO: support impedance
+TODO: support accelerometer with n / N codes
 
 """
 import struct
@@ -151,11 +152,11 @@ class OpenBCIBoard(object):
     
   def ser_write(self, b):
     """Access serial port object for write""" 
-    self.ser.write(b)
+    self.char_write.write(b)
 
   def ser_read(self):
     """Access serial port object for read""" 
-    return self.ser.read()
+    return self.char_read.read()
     
   def getSampleRate(self):
       return SAMPLE_RATE
@@ -177,7 +178,7 @@ class OpenBCIBoard(object):
           OpenBCISample object captured.
     """
     if not self.streaming:
-      self.ser.write(b'b')
+      self.char_write.write(b'b')
       self.streaming = True
 
     start_time = timeit.default_timer()
@@ -193,9 +194,10 @@ class OpenBCIBoard(object):
     while self.streaming:
 
       # read current sample
+      # FIXME: several samples per packet
       sample = self._read_serial_binary()
-      for call in callback:
-          call(sample)
+      #for call in callback:
+      #    call(sample)
       
       if(lapse > 0 and timeit.default_timer() - start_time > lapse):
         self.stop();
@@ -205,57 +207,63 @@ class OpenBCIBoard(object):
   
   """
     PARSER:
-    Parses incoming data packet into OpenBCISample.
-    Incoming Packet Structure:
-    Start Byte(1)|Sample ID(1)|Channel Data(24)|Aux Data(6)|End Byte(1)
-    0xA0|0-255|8, 3-byte signed ints|3 2-byte signed ints|0xC0
-
+    Parses incoming data packet into OpenBCISample -- see docs.
+    FIXME: use buffer to account for missed / double packets?
   """
-  def _read_serial_binary(self, max_bytes_to_skip=3000):
-    def read(n):
-      bb = self.ser.read(n)
-      if not bb:
-        self.warn('Device appears to be stalled. Quitting...')
-        sys.exit()
-        raise Exception('Device Stalled')
-        sys.exit()
-        return '\xFF'
-      else:
-        return bb
+  def _read_serial_binary(self):
 
-    for rep in range(max_bytes_to_skip):
+    print("reading packet")
+    packet = self.ser_read()
+    # poor handling of errors...
+    if not packet:
+      self.warn('Device appears to be stalling.')
+      return
+    if len(packet) != 20:
+      self.warn('Wrong packet size, ' + str(len(packet)) + ' instead of 20 bytes')
+      return
 
-      #---------Start Byte & ID---------
-      if self.read_state == 0:
-        
-        b = read(1)
-        
-        if struct.unpack('B', b)[0] == START_BYTE:
-          if(rep != 0):
-            self.warn('Skipped %d bytes before start found' %(rep))
-            rep = 0;
-          packet_id = struct.unpack('B', read(1))[0] #packet id goes from 0-255
-          log_bytes_in = str(packet_id);
+    for b in packet:
+      unpac = struct.unpack('B', b)
+      print unpac
 
-          self.read_state = 1
+    start_byte = struct.unpack('B', packet[0])
+    print(str(start_byte))
+    # Raw uncompressed
+    if start_byte == 0:
+      print ("Raw uncompressed")
+    # 18-bit compression with Accelerometer
+    elif start_byte >= 1 and start_byte <= 100:
+      print("18-bit compression with Accelerometer") 
+    # 19-bit compression without Accelerometer
+    elif start_byte >=101 and start_byte <= 200:
+      print("19-bit compression without Accelerometer")
+    # Impedance Channel
+    elif start_byte >= 201 and start_byte <= 205:
+      print("Impedance Channel")  
+    # Part of ASCII
+    elif start_byte == 206:
+      print("ASCII message")
+      print (packet)
+    # End of ASCII message
+    elif start_byte == 207:
+      print ("End of ASCII message")
+      print (packet)
+      print ("----")
+    else:
+      self.warn("Unknown type of packet: " + str(start_byte))
+    
 
-      #---------Channel Data---------
-      elif self.read_state == 1:
-        channel_data = []
-        for c in range(self.eeg_channels_per_sample):
-
+    if False:
           #3 byte ints
           literal_read = read(3)
 
           unpacked = struct.unpack('3B', literal_read)
-          log_bytes_in = log_bytes_in + '|' + str(literal_read);
 
           #3byte int in 2s compliment
           if (unpacked[0] >= 127):
             pre_fix = bytes(bytearray.fromhex('FF')) 
           else:
             pre_fix = bytes(bytearray.fromhex('00'))
-
 
           literal_read = pre_fix + literal_read;
 
@@ -267,37 +275,6 @@ class OpenBCIBoard(object):
           else:
             channel_data.append(myInt)
 
-        self.read_state = 2;
-
-      #---------Accelerometer Data---------
-      elif self.read_state == 2:
-        aux_data = []
-        for a in range(self.aux_channels_per_sample):
-
-          #short = h
-          acc = struct.unpack('>h', read(2))[0]
-          log_bytes_in = log_bytes_in + '|' + str(acc);
-
-          if self.scaling_output:
-            aux_data.append(acc*scale_fac_accel_G_per_count)
-          else:
-              aux_data.append(acc)
-
-        self.read_state = 3;
-      #---------End Byte---------
-      elif self.read_state == 3:
-        val = struct.unpack('B', read(1))[0]
-        log_bytes_in = log_bytes_in + '|' + str(val);
-        self.read_state = 0 #read next packet
-        if (val == END_BYTE):
-          sample = OpenBCISample(packet_id, channel_data, aux_data)
-          self.packets_dropped = 0
-          return sample
-        else:
-          self.warn("ID:<%d> <Unexpected END_BYTE found <%s> instead of <%s>"      
-            %(packet_id, val, END_BYTE))
-          logging.debug(log_bytes_in);
-          self.packets_dropped = self.packets_dropped + 1
   
   """
 
@@ -307,17 +284,18 @@ class OpenBCIBoard(object):
   def stop(self):
     print("Stopping streaming...\nWait for buffer to flush...")
     self.streaming = False
-    self.ser.write(b's')
+    self.char_write.write(b's')
     if self.log:
       logging.warning('sent <s>: stopped streaming')
 
   def disconnect(self):
     if(self.streaming == True):
       self.stop()
-    if (self.ser.isOpen()):
-      print("Closing Serial...")
-      self.ser.close()
-      logging.warning('serial closed')
+    print("Closing BLE..")
+    self.char_discon.write(' ')
+    # should not try to read/write anything after that, will crash
+    self.gang.disconnect()
+    logging.warning('BLE closed')
        
 
   """
