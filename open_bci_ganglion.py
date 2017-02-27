@@ -15,7 +15,6 @@ TODO: support accelerometer with n / N codes
 
 """
 import struct
-import numpy as np
 import time
 import timeit
 import atexit
@@ -222,11 +221,21 @@ class OpenBCIBoard(object):
       self.warn('Wrong packet size, ' + str(len(packet)) + ' instead of 20 bytes')
       return
 
-    for b in packet:
-      unpac = struct.unpack('B', b)
-      print unpac
+    # bluepy returnds INT with python3 and STR with python2 
+    if type(packet) is str:
+      do_unpack = True
+      start_byte = struct.unpack('B', packet[0])[0]
+    else:
+      do_unpack = False
+      start_byte = packet[0]
 
-    start_byte = struct.unpack('B', packet[0])
+    for b in packet:
+      if do_unpack:
+        unpac = struct.unpack('B', b)[0]
+      else:
+        unpac = b
+      print (str(unpac))
+
     print(str(start_byte))
     # Raw uncompressed
     if start_byte == 0:
