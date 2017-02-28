@@ -293,6 +293,11 @@ class GanglionDelegate(DefaultDelegate):
   """ Called by BLE when new data arrive """
   def __init__(self):
       DefaultDelegate.__init__(self)
+      # holds samples until OpenBCIBoard claims them
+      self.samples = []
+      # detect gaps between packets
+      self.last_id = -1
+      self.packets_dropped = 0
 
   def handleNotification(self, cHandle, data):
     if len(data) != 20:
@@ -314,22 +319,19 @@ class GanglionDelegate(DefaultDelegate):
      
     start_byte = unpac[0]
 
-    #for b in unpac:
-    #  print (str(b))
-
-    print(str(start_byte))
+    # Give the informative part of the packet to proper handler -- split between ID and data bytes
     # Raw uncompressed
     if start_byte == 0:
-      print ("Raw uncompressed")
+      self.parseRaw(start_byte, unpac[1:])
     # 18-bit compression with Accelerometer
     elif start_byte >= 1 and start_byte <= 100:
-      print("18-bit compression with Accelerometer") 
+      print("Warning: data not handled: '18-bit compression with Accelerometer'.") 
     # 19-bit compression without Accelerometer
     elif start_byte >=101 and start_byte <= 200:
-      print("19-bit compression without Accelerometer")
+      self.parse19bit(start_byte-100, unpac[1:])
     # Impedance Channel
     elif start_byte >= 201 and start_byte <= 205:
-      print("Impedance Channel")  
+      print("Warning: data not handled: 'Impedance Channel'.") 
     # Part of ASCII
     elif start_byte == 206:
       print("ASCII message")
@@ -340,35 +342,42 @@ class GanglionDelegate(DefaultDelegate):
       print (packet)
       print ("----")
     else:
-      print("Unknown type of packet: " + str(start_byte))
-    
+      print("Warning: unknown type of packet: " + str(start_byte))
 
-    if False:
-          #3 byte ints
-          literal_read = read(3)
+  def parseRaw(self, sample_id, packet):
+    """ Dealing with "Raw uncompressed" """
+    print ("Raw uncompressed")
+    sample = OpenBCISample(sample_id, [], [])
+    self.samples.append(sample)
+    self.updatePacketsCount(sample_id)
 
-          unpacked = struct.unpack('3B', literal_read)
+  def parse19bit(self, sample_id, packet):
+    """ Dealing with "19-bit compression without Accelerometer" """
+    sample = OpenBCISample(sample_id, [], [])
+    self.samples.append(sample)
+    self.updatePacketsCount(sample_id)
 
-          #3byte int in 2s compliment
-          if (unpacked[0] >= 127):
-            pre_fix = bytes(bytearray.fromhex('FF')) 
-          else:
-            pre_fix = bytes(bytearray.fromhex('00'))
-
-          literal_read = pre_fix + literal_read;
-
-          #unpack little endian(>) signed integer(i) (makes unpacking platform independent)
-          myInt = struct.unpack('>i', literal_read)[0]
-
-          if self.scaling_output:
-            channel_data.append(myInt*scale_fac_uVolts_per_count)
-          else:
-            channel_data.append(myInt)
+  def updatePacketsCount(self, sample_id):
+    """Update last packet ID and dropped packets"""
+    if self.last_id == -1:
+      self.last_id = sample_id
+      self.packets_dropped  = 0
+    # ID loops every 101 packets
+    if sample_id > self.last_id:
+      self.packets_dropped = sample_id - self.last_id - 1
+    else:
+      self.packets_dropped = sample_id + 101 - self.last_id - 1
+    self.last_id = sample_id
+    if self.packets_dropped > 0:
+      print("Warning: dropped " + str(self.packets_dropped) + " packets.")
 
   def getSamples(self):
     """ Retrieve and remove from buffer last samples. """
-    return None
+    unstack_samples = self.samples
+    self.samples = []
+    return unstack_samples
 
   def getMaxPacketsDropped(self):
-    """ While processing last samples, how many packets were dropped at max?"""
-    return 0
+    """ While processing last samples, how many packets were dropped?"""
+    # TODO: return max value of the last samples array?
+    return self.packets_dropped
