@@ -109,13 +109,19 @@ class OpenBCIBoard(object):
     print("Turn on notifications")
     # nead up-to-date bluepy, cf https://github.com/IanHarvey/bluepy/issues/53
     self.desc_notify = self.char_read.getDescriptors(forUUID=0x2902)[0]
-    self.desc_notify.write(b"\x01")
+    try:
+      self.desc_notify.write(b"\x01")
+    except Exception as e:
+      print("Something went wrong while trying to enable notification: " + str(e))
     
     print("Connection established")
 
   def init_steaming(self):
     """ Tell the board to record like crazy. """
-    self.char_write.write(b'b')
+    try:
+      self.ser_write(b'b')
+    except Exception as e:
+      print("Something went wrong while asking the board to start streaming: " + str(e))
     self.streaming = True
     self.packets_dropped = 0
     self.time_last_packet = timeit.default_timer() 
@@ -235,7 +241,11 @@ class OpenBCIBoard(object):
   def stop(self):
     print("Stopping streaming...")
     self.streaming = False
-    self.char_write.write(b's')
+    # connection might be already down here
+    try:
+      self.ser_write(b's')
+    except Exception as e:
+      print("Something went wrong while asking the board to stop streaming: " + str(e))
     if self.log:
       logging.warning('sent <s>: stopped streaming')
 
@@ -243,9 +253,15 @@ class OpenBCIBoard(object):
     if(self.streaming == True):
       self.stop()
     print("Closing BLE..")
-    self.char_discon.write(b' ')
+    try:
+      self.char_discon.write(b' ')
+    except Exception as e:
+      print("Something went wrong while asking the board to disconnect: " + str(e))
     # should not try to read/write anything after that, will crash
-    self.gang.disconnect()
+    try:
+      self.gang.disconnect()
+    except Exception as e:
+      print("Something went wrong while shutting down BLE link: " + str(e))
     logging.warning('BLE closed')
        
 
