@@ -318,6 +318,8 @@ class GanglionDelegate(DefaultDelegate):
       # detect gaps between packets
       self.last_id = -1
       self.packets_dropped = 0
+      # save uncompressed data to compute deltas
+      self.lastChannelData = [0, 0, 0, 0]
 
   def handleNotification(self, cHandle, data):
     if len(data) != 20:
@@ -367,7 +369,13 @@ class GanglionDelegate(DefaultDelegate):
   def parseRaw(self, sample_id, packet):
     """ Dealing with "Raw uncompressed" """
     print ("Raw uncompressed")
-    sample = OpenBCISample(sample_id, [], [])
+    chan_data = []
+    # 4 channels of 24bits, take values one by one
+    for i in range(0,12,3):
+      chan_data.append(conv24bitsToInt(packet[i:i+3]))
+    # save uncompressed raw channel for future use and append whole sample
+    self.lastChannelData = chan_data
+    sample = OpenBCISample(sample_id, chan_data, [])
     self.samples.append(sample)
     self.updatePacketsCount(sample_id)
 
@@ -402,3 +410,24 @@ class GanglionDelegate(DefaultDelegate):
     """ While processing last samples, how many packets were dropped?"""
     # TODO: return max value of the last samples array?
     return self.packets_dropped
+
+def conv24bitsToInt(unpacked):
+  """ Convert 24bit data coded on 3 bytes to a proper integer """ 
+  if len(unpacked) != 3:
+    raise ValueError("Input should be 3 bytes long.")
+
+  # FIXME: quick'n dirty, unpack wants strings later on
+  literal_read = struct.pack('3B', unpacked[0], unpacked[1], unpacked[2])
+
+  #3byte int in 2s compliment
+  if (unpacked[0] >= 127):
+    pre_fix = bytes(bytearray.fromhex('FF')) 
+  else:
+    pre_fix = bytes(bytearray.fromhex('00'))
+
+  literal_read = pre_fix + literal_read;
+
+  #unpack little endian(>) signed integer(i) (makes unpacking platform independent)
+  myInt = struct.unpack('>i', literal_read)[0]
+
+  return myInt
