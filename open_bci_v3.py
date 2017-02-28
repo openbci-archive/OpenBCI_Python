@@ -4,7 +4,7 @@ Core OpenBCI object for handling connections and samples from the board.
 EXAMPLE USE:
 
 def handle_sample(sample):
-  print(sample.channels)
+  print(sample.channel_data)
 
 board = OpenBCIBoard()
 board.print_register_settings()
