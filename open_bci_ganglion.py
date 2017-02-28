@@ -85,6 +85,10 @@ class OpenBCIBoard(object):
     print ("disconnect, properties: " + str(self.char_discon.propertiesToString()) + ", supports read: " + str(self.char_discon.supportsRead()))
 
 
+    # set delegate to handle incoming data
+    self.delegate = GanglionDelegate()
+    self.gang.setDelegate(self.delegate)
+    
     print("Turn on notifications")
     # nead up-to-date bluepy, cf https://github.com/IanHarvey/bluepy/issues/53
     self.desc_notify = self.char_read.getDescriptors(forUUID=0x2902)[0]
@@ -197,12 +201,16 @@ class OpenBCIBoard(object):
     self.check_connection()
 
     while self.streaming:
-
-      # read current sample
-      # FIXME: several samples per packet
-      sample = self._read_serial_binary()
-      #for call in callback:
-      #    call(sample)
+      # at most we will get one sample per packet
+      self.gang.waitForNotifications(1./self.getSampleRate())
+      # retrieve current samples on the stack
+      samples = self.delegate.getSamples()
+      if not samples:
+        print("no new sample")
+      else:
+        for call in callback:
+          for sample in samples:
+            call(sample)
       
       if(lapse > 0 and timeit.default_timer() - start_time > lapse):
         self.stop();
@@ -210,85 +218,6 @@ class OpenBCIBoard(object):
         self.log_packet_count = self.log_packet_count + 1;
   
   
-  """
-    PARSER:
-    Parses incoming data packet into OpenBCISample -- see docs.
-    FIXME: use buffer to account for missed / double packets?
-  """
-  def _read_serial_binary(self):
-
-    print("reading packet")
-    packet = self.ser_read()
-    # TODO: better handling of errors...
-    if not packet:
-      self.warn('Device appears to be stalling.')
-      return
-    if len(packet) != 20:
-      self.warn('Wrong packet size, ' + str(len(packet)) + ' instead of 20 bytes')
-      return
-
-    # bluepy returnds INT with python3 and STR with python2 
-    if type(packet) is str:
-      do_unpack = True
-      start_byte = struct.unpack('B', packet[0])[0]
-    else:
-      do_unpack = False
-      start_byte = packet[0]
-
-    #for b in packet:
-    #  if do_unpack:
-    #    unpac = struct.unpack('B', b)[0]
-    #  else:
-    #    unpac = b
-    #  print (str(unpac))
-
-    print(str(start_byte))
-    # Raw uncompressed
-    if start_byte == 0:
-      print ("Raw uncompressed")
-    # 18-bit compression with Accelerometer
-    elif start_byte >= 1 and start_byte <= 100:
-      print("18-bit compression with Accelerometer") 
-    # 19-bit compression without Accelerometer
-    elif start_byte >=101 and start_byte <= 200:
-      print("19-bit compression without Accelerometer")
-    # Impedance Channel
-    elif start_byte >= 201 and start_byte <= 205:
-      print("Impedance Channel")  
-    # Part of ASCII
-    elif start_byte == 206:
-      print("ASCII message")
-      print (packet)
-    # End of ASCII message
-    elif start_byte == 207:
-      print ("End of ASCII message")
-      print (packet)
-      print ("----")
-    else:
-      self.warn("Unknown type of packet: " + str(start_byte))
-    
-
-    if False:
-          #3 byte ints
-          literal_read = read(3)
-
-          unpacked = struct.unpack('3B', literal_read)
-
-          #3byte int in 2s compliment
-          if (unpacked[0] >= 127):
-            pre_fix = bytes(bytearray.fromhex('FF')) 
-          else:
-            pre_fix = bytes(bytearray.fromhex('00'))
-
-          literal_read = pre_fix + literal_read;
-
-          #unpack little endian(>) signed integer(i) (makes unpacking platform independent)
-          myInt = struct.unpack('>i', literal_read)[0]
-
-          if self.scaling_output:
-            channel_data.append(myInt*scale_fac_uVolts_per_count)
-          else:
-            channel_data.append(myInt)
 
   
   """
@@ -356,3 +285,85 @@ class OpenBCISample(object):
     self.channel_data = channel_data;
     self.aux_data = aux_data;
 
+
+class GanglionDelegate(DefaultDelegate):
+  """ Called by BLE when new data arrive """
+  def __init__(self):
+      DefaultDelegate.__init__(self)
+
+  def handleNotification(self, cHandle, data):
+    print ("handle data!")
+    print cHandle
+    if len(data) != 20:
+      self.warn('Wrong packet size, ' + str(len(data)) + ' instead of 20 bytes')
+      return
+    self.parse(data)
+
+  """
+    PARSER:
+    Parses incoming data packet into OpenBCISample -- see docs.
+    FIXME: use buffer to account for missed / double packets?
+  """
+  def parse(self, packet):
+    # bluepy returnds INT with python3 and STR with python2 
+    if type(packet) is str:
+      # convert a list that must comprises 20 strings to one string
+      unpac = struct.unpack('20B', "".join(packet))
+    else:
+      unpac = packet
+     
+    start_byte = unpac[0]
+
+    for b in unpac:
+      print (str(b))
+
+    print(str(start_byte))
+    # Raw uncompressed
+    if start_byte == 0:
+      print ("Raw uncompressed")
+    # 18-bit compression with Accelerometer
+    elif start_byte >= 1 and start_byte <= 100:
+      print("18-bit compression with Accelerometer") 
+    # 19-bit compression without Accelerometer
+    elif start_byte >=101 and start_byte <= 200:
+      print("19-bit compression without Accelerometer")
+    # Impedance Channel
+    elif start_byte >= 201 and start_byte <= 205:
+      print("Impedance Channel")  
+    # Part of ASCII
+    elif start_byte == 206:
+      print("ASCII message")
+      print (packet)
+    # End of ASCII message
+    elif start_byte == 207:
+      print ("End of ASCII message")
+      print (packet)
+      print ("----")
+    else:
+      self.warn("Unknown type of packet: " + str(start_byte))
+    
+
+    if False:
+          #3 byte ints
+          literal_read = read(3)
+
+          unpacked = struct.unpack('3B', literal_read)
+
+          #3byte int in 2s compliment
+          if (unpacked[0] >= 127):
+            pre_fix = bytes(bytearray.fromhex('FF')) 
+          else:
+            pre_fix = bytes(bytearray.fromhex('00'))
+
+          literal_read = pre_fix + literal_read;
+
+          #unpack little endian(>) signed integer(i) (makes unpacking platform independent)
+          myInt = struct.unpack('>i', literal_read)[0]
+
+          if self.scaling_output:
+            channel_data.append(myInt*scale_fac_uVolts_per_count)
+          else:
+            channel_data.append(myInt)
+
+  def getSamples(self):
+    return None
