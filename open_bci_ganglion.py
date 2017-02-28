@@ -84,6 +84,12 @@ class OpenBCIBoard(object):
     self.char_discon = self.service.getCharacteristics(BLE_CHAR_DISCONNECT)[0]
     print ("disconnect, properties: " + str(self.char_discon.propertiesToString()) + ", supports read: " + str(self.char_discon.supportsRead()))
 
+
+    print("Turn on notifications")
+    # nead up-to-date bluepy, cf https://github.com/IanHarvey/bluepy/issues/53
+    self.desc_notify = self.char_read.getDescriptors(forUUID=0x2902)[0]
+    self.desc_notify.write(b"\x01")
+    
     print("Connection established")
 
     #wait for device to be ready, just in case
@@ -213,7 +219,7 @@ class OpenBCIBoard(object):
 
     print("reading packet")
     packet = self.ser_read()
-    # poor handling of errors...
+    # TODO: better handling of errors...
     if not packet:
       self.warn('Device appears to be stalling.')
       return
@@ -229,12 +235,12 @@ class OpenBCIBoard(object):
       do_unpack = False
       start_byte = packet[0]
 
-    for b in packet:
-      if do_unpack:
-        unpac = struct.unpack('B', b)[0]
-      else:
-        unpac = b
-      print (str(unpac))
+    #for b in packet:
+    #  if do_unpack:
+    #    unpac = struct.unpack('B', b)[0]
+    #  else:
+    #    unpac = b
+    #  print (str(unpac))
 
     print(str(start_byte))
     # Raw uncompressed
