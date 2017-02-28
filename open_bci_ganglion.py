@@ -58,7 +58,7 @@ class OpenBCIBoard(object):
   """
 
   def __init__(self, port=None, baud=0, filter_data=False,
-    scaled_output=True, daisy=False, log=True, timeout=-1, max_packets_to_skip=10):
+    scaled_output=True, daisy=False, log=True, timeout=-1, max_packets_to_skip=20):
     self.log = log # print_incoming_text needs log
     self.streaming = False
     self.timeout = timeout
@@ -69,9 +69,24 @@ class OpenBCIBoard(object):
       port = self.find_port()   
     self.port = port # find_port might not return string
 
+    self.connect()
+
+    self.streaming = False
+    self.scaling_output = scaled_output
+    self.eeg_channels_per_sample = 4 # number of EEG channels per sample *from the board*
+    self.read_state = 0
+    self.log_packet_count = 0
+    self.packets_dropped = 0
+    self.time_last_packet = 0
+
+    # Disconnects from board when terminated
+    atexit.register(self.disconnect)
+
+  def connect(self):
+    """ Connecting to board. Note: recreates various objects upon call. """
     print ("Init BLE connection with MAC: " + self.port)
     print ("NB: if it fails, try with root privileges.")
-    self.gang = Peripheral(port, 'random') # ADDR_TYPE_RANDOM
+    self.gang = Peripheral(self.port, 'random') # ADDR_TYPE_RANDOM
 
     print ("Get mainservice...")
     self.service = self.gang.getServiceByUUID(BLE_SERVICE)
@@ -87,7 +102,6 @@ class OpenBCIBoard(object):
     self.char_discon = self.service.getCharacteristics(BLE_CHAR_DISCONNECT)[0]
     print ("disconnect, properties: " + str(self.char_discon.propertiesToString()) + ", supports read: " + str(self.char_discon.supportsRead()))
 
-
     # set delegate to handle incoming data
     self.delegate = GanglionDelegate()
     self.gang.setDelegate(self.delegate)
@@ -99,20 +113,13 @@ class OpenBCIBoard(object):
     
     print("Connection established")
 
-    #wait for device to be ready, just in case
-    time.sleep(1)
-
-    self.streaming = False
-    self.scaling_output = scaled_output
-    self.eeg_channels_per_sample = 4 # number of EEG channels per sample *from the board*
-    self.read_state = 0
-    self.log_packet_count = 0
+  def init_steaming(self):
+    """ Tell the board to record like crazy. """
+    self.char_write.write(b'b')
+    self.streaming = True
     self.packets_dropped = 0
-    self.time_last_packet = 0
-
-    #Disconnects from board when terminated
-    atexit.register(self.disconnect)
-
+    self.time_last_packet = timeit.default_timer() 
+    
   def find_port(self):
     """DetectsGanglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
 
@@ -191,9 +198,7 @@ class OpenBCIBoard(object):
           OpenBCISample object captured.
     """
     if not self.streaming:
-      self.char_write.write(b'b')
-      self.streaming = True
-      self.time_last_packet = timeit.default_timer() 
+      self.init_steaming()
 
     start_time = timeit.default_timer()
 
@@ -220,7 +225,6 @@ class OpenBCIBoard(object):
   
       # Checking connection -- timeout and packets dropped
       self.check_connection()
-  
 
   
   """
@@ -239,7 +243,7 @@ class OpenBCIBoard(object):
     if(self.streaming == True):
       self.stop()
     print("Closing BLE..")
-    self.char_discon.write(' ')
+    self.char_discon.write(b' ')
     # should not try to read/write anything after that, will crash
     self.gang.disconnect()
     logging.warning('BLE closed')
@@ -260,29 +264,29 @@ class OpenBCIBoard(object):
     print("Warning: %s" % text)
 
   def check_connection(self):
+    """ Check connection quality in term of lag and number of packets drop. Reinit connection if necessary. FIXME: parameters given to the board will be lost."""
     # stop checking when we're no longer streaming
     if not self.streaming:
       return
     #check number of dropped packets and duration without new packets, deco/reco if too large
     if self.packets_dropped > self.max_packets_to_skip:
       self.warn("Too many packets dropped, attempt to reconnect")
+      self.reconnect()
     elif self.timeout > 0 and timeit.default_timer() - self.time_last_packet > self.timeout:
       self.warn("Too long since got new data, attempt to reconnect")
       #if error, attempt to reconect
       self.reconnect()
 
   def reconnect(self):
+    """ In case of poor connection, will shut down and relaunch everything. FIXME: parameters given to the board will be lost."""
     self.warn('Reconnecting')
     self.stop()
-    time.sleep(0.5)
-    self.ser.write(b'b')
-    self.streaming = True
-    self.packets_dropped = 0
-    self.time_last_packet = timeit.default_timer()
-
+    self.disconnect()
+    self.connect()
+    self.init_steaming()
 
 class OpenBCISample(object):
-  """Object encapulsating a single sample from the OpenBCI board."""
+  """Object encapulsating a single sample from the OpenBCI board. Note for Ganglion board: since most of the time two samples are compressed in one BLE packet, two consecutive samples will likely have the same ID."""
   def __init__(self, packet_id, channel_data, aux_data):
     self.id = packet_id;
     self.channel_data = channel_data;
@@ -290,7 +294,7 @@ class OpenBCISample(object):
 
 
 class GanglionDelegate(DefaultDelegate):
-  """ Called by BLE when new data arrive """
+  """ Called by bluepy (handling BLE connection) when new data arrive, parses samples. """
   def __init__(self):
       DefaultDelegate.__init__(self)
       # holds samples until OpenBCIBoard claims them
@@ -362,6 +366,7 @@ class GanglionDelegate(DefaultDelegate):
     if self.last_id == -1:
       self.last_id = sample_id
       self.packets_dropped  = 0
+      return
     # ID loops every 101 packets
     if sample_id > self.last_id:
       self.packets_dropped = sample_id - self.last_id - 1
