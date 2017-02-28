@@ -381,8 +381,11 @@ class GanglionDelegate(DefaultDelegate):
 
   def parse19bit(self, sample_id, packet):
     """ Dealing with "19-bit compression without Accelerometer" """
-    sample = OpenBCISample(sample_id, [], [])
-    self.samples.append(sample)
+    # should get 2 by 4 arrays of uncompressed data
+    data = decompressDeltas19Bit(packet)
+    for d in data:
+      sample = OpenBCISample(sample_id, d, [])
+      self.samples.append(sample)
     self.updatePacketsCount(sample_id)
 
   def updatePacketsCount(self, sample_id):
@@ -411,6 +414,13 @@ class GanglionDelegate(DefaultDelegate):
     # TODO: return max value of the last samples array?
     return self.packets_dropped
 
+
+
+"""
+  DATA conversion, for the most part courtesy of OpenBCI_NodeJS_Ganglion
+
+"""
+  
 def conv24bitsToInt(unpacked):
   """ Convert 24bit data coded on 3 bytes to a proper integer """ 
   if len(unpacked) != 3:
@@ -431,3 +441,91 @@ def conv24bitsToInt(unpacked):
   myInt = struct.unpack('>i', literal_read)[0]
 
   return myInt
+
+def conv19bitToInt32 (threeByteBuffer):
+  """ Convert 19bit data coded on 3 bytes to a proper integer """ 
+  if len(threeByteBuffer) != 3:
+    raise ValueError("Input should be 3 bytes long.")
+
+  prefix = 0;
+
+  if threeByteBuffer[2] & 0x01 > 0:
+    prefix = 0b1111111111111;
+
+  return (prefix << 19) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[2]
+
+
+
+def decompressDeltas19Bit(buffer):
+  """
+  Called to when a compressed packet is received.
+  buffer: Just the data portion of the sample. So 19 bytes.
+ return {Array} - An array of deltas of shape 2x4 (2 samples per packet and 4 channels per sample.)
+  """ 
+  if len(buffer) != 19:
+    raise ValueError("Input should be 19 bytes long.")
+
+  receivedDeltas = [[0, 0, 0, 0],[0, 0, 0, 0]]
+
+  # Sample 1 - Channel 1
+  miniBuf = [
+      (buffer[0] >> 5),
+      ((buffer[0] & 0x1F) << 3) | (buffer[1] >> 5),
+      ((buffer[1] & 0x1F) << 3) | (buffer[2] >> 5)
+    ]
+
+  receivedDeltas[0][0] = conv19bitToInt32(miniBuf)
+
+  # Sample 1 - Channel 2
+  miniBuf = [
+      (buffer[2] & 0x1F) >> 2,
+      (buffer[2] << 6) | (buffer[3] >> 2),
+      (buffer[3] << 6) | (buffer[4] >> 2)
+    ]
+  receivedDeltas[0][1] = conv19bitToInt32(miniBuf)
+
+  # Sample 1 - Channel 3
+  miniBuf = [
+      ((buffer[4] & 0x03) << 1) | (buffer[5] >> 7),
+      ((buffer[5] & 0x7F) << 1) | (buffer[6] >> 7),
+      ((buffer[6] & 0x7F) << 1) | (buffer[7] >> 7)
+    ]
+  receivedDeltas[0][2] = conv19bitToInt32(miniBuf)
+
+  # Sample 1 - Channel 4
+  miniBuf = [
+      ((buffer[7] & 0x7F) >> 4),
+      ((buffer[7] & 0x0F) << 4) | (buffer[8] >> 4),
+      ((buffer[8] & 0x0F) << 4) | (buffer[9] >> 4)
+    ]
+  receivedDeltas[0][3] = conv19bitToInt32(miniBuf)
+
+  # Sample 2 - Channel 1
+  miniBuf = [
+      ((buffer[9] & 0x0F) >> 1),
+      (buffer[9] << 7) | (buffer[10] >> 1),
+      (buffer[10] << 7) | (buffer[11] >> 1)
+    ]
+  receivedDeltas[1][0] = conv19bitToInt32(miniBuf)
+
+  # Sample 2 - Channel 2
+  miniBuf = [
+      ((buffer[11] & 0x01) << 2) | (buffer[12] >> 6),
+      (buffer[12] << 2) | (buffer[13] >> 6),
+      (buffer[13] << 2) | (buffer[14] >> 6)
+    ]
+  receivedDeltas[1][1] = conv19bitToInt32(miniBuf)
+
+  # Sample 2 - Channel 3
+  miniBuf = [
+      ((buffer[14] & 0x38) >> 3),
+      ((buffer[14] & 0x07) << 5) | ((buffer[15] & 0xF8) >> 3),
+      ((buffer[15] & 0x07) << 5) | ((buffer[16] & 0xF8) >> 3)
+    ]
+  receivedDeltas[1][2] = conv19bitToInt32(miniBuf)
+
+  # Sample 2 - Channel 4
+  miniBuf = [(buffer[16] & 0x07), buffer[17], buffer[18]]
+  receivedDeltas[1][3] = conv19bitToInt32(miniBuf)
+
+  return receivedDeltas;
