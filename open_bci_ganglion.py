@@ -52,14 +52,17 @@ class OpenBCIBoard(object):
 
   Args:
     port: MAC address of the Ganglion Board. "None" to attempt auto-detect.
+    timeout: in seconds, if set will try to disconnect / reconnect after a period without new data
+    max_packets_to_skip: will try to disconnect / reconnect after too many packets are skipped
     baud, filter_data, daisy: Not used, for compatibility with v3
   """
 
   def __init__(self, port=None, baud=0, filter_data=False,
-    scaled_output=True, daisy=False, log=True, timeout=None):
+    scaled_output=True, daisy=False, log=True, timeout=-1, max_packets_to_skip=10):
     self.log = log # print_incoming_text needs log
     self.streaming = False
     self.timeout = timeout
+    self.max_packets_to_skip = max_packets_to_skip
 
     print("Looking for Ganglion board")
     if port == None:
@@ -105,6 +108,7 @@ class OpenBCIBoard(object):
     self.read_state = 0
     self.log_packet_count = 0
     self.packets_dropped = 0
+    self.time_last_packet = 0
 
     #Disconnects from board when terminated
     atexit.register(self.disconnect)
@@ -116,7 +120,7 @@ class OpenBCIBoard(object):
     scan_time = 5
     print("Scanning for 5 seconds nearby devices...")
 
-  #   From bluepy example
+    #   From bluepy example
     class ScanDelegate(DefaultDelegate):
       def __init__(self):
         DefaultDelegate.__init__(self)
@@ -189,25 +193,22 @@ class OpenBCIBoard(object):
     if not self.streaming:
       self.char_write.write(b'b')
       self.streaming = True
+      self.time_last_packet = timeit.default_timer() 
 
     start_time = timeit.default_timer()
 
     # Enclose callback funtion in a list if it comes alone
     if not isinstance(callback, list):
       callback = [callback]
-    
-
-    #Initialize check connection
-    self.check_connection()
 
     while self.streaming:
       # at most we will get one sample per packet
       self.gang.waitForNotifications(1./self.getSampleRate())
       # retrieve current samples on the stack
       samples = self.delegate.getSamples()
-      if not samples:
-        print("no new sample")
-      else:
+      self.packets_dropped = self.delegate.getMaxPacketsDropped()
+      if samples:
+        self.time_last_packet = timeit.default_timer() 
         for call in callback:
           for sample in samples:
             call(sample)
@@ -217,6 +218,8 @@ class OpenBCIBoard(object):
       if self.log:
         self.log_packet_count = self.log_packet_count + 1;
   
+      # Checking connection -- timeout and packets dropped
+      self.check_connection()
   
 
   
@@ -226,7 +229,7 @@ class OpenBCIBoard(object):
 
   """
   def stop(self):
-    print("Stopping streaming...\nWait for buffer to flush...")
+    print("Stopping streaming...")
     self.streaming = False
     self.char_write.write(b's')
     if self.log:
@@ -256,26 +259,26 @@ class OpenBCIBoard(object):
       logging.warning(text)
     print("Warning: %s" % text)
 
-  def check_connection(self, interval = 2, max_packets_to_skip=10):
+  def check_connection(self):
     # stop checking when we're no longer streaming
     if not self.streaming:
       return
-    #check number of dropped packages and establish connection problem if too large
-    if self.packets_dropped > max_packets_to_skip:
+    #check number of dropped packets and duration without new packets, deco/reco if too large
+    if self.packets_dropped > self.max_packets_to_skip:
+      self.warn("Too many packets dropped, attempt to reconnect")
+    elif self.timeout > 0 and timeit.default_timer() - self.time_last_packet > self.timeout:
+      self.warn("Too long since got new data, attempt to reconnect")
       #if error, attempt to reconect
       self.reconnect()
-    # check again again in 2 seconds
-    threading.Timer(interval, self.check_connection).start()
 
   def reconnect(self):
-    self.packets_dropped = 0
     self.warn('Reconnecting')
     self.stop()
     time.sleep(0.5)
     self.ser.write(b'b')
-    time.sleep(0.5)
     self.streaming = True
-    #self.attempt_reconnect = False
+    self.packets_dropped = 0
+    self.time_last_packet = timeit.default_timer()
 
 
 class OpenBCISample(object):
@@ -292,17 +295,14 @@ class GanglionDelegate(DefaultDelegate):
       DefaultDelegate.__init__(self)
 
   def handleNotification(self, cHandle, data):
-    print ("handle data!")
-    print cHandle
     if len(data) != 20:
-      self.warn('Wrong packet size, ' + str(len(data)) + ' instead of 20 bytes')
+      print('Wrong packet size, ' + str(len(data)) + ' instead of 20 bytes')
       return
     self.parse(data)
 
   """
     PARSER:
     Parses incoming data packet into OpenBCISample -- see docs.
-    FIXME: use buffer to account for missed / double packets?
   """
   def parse(self, packet):
     # bluepy returnds INT with python3 and STR with python2 
@@ -314,8 +314,8 @@ class GanglionDelegate(DefaultDelegate):
      
     start_byte = unpac[0]
 
-    for b in unpac:
-      print (str(b))
+    #for b in unpac:
+    #  print (str(b))
 
     print(str(start_byte))
     # Raw uncompressed
@@ -340,7 +340,7 @@ class GanglionDelegate(DefaultDelegate):
       print (packet)
       print ("----")
     else:
-      self.warn("Unknown type of packet: " + str(start_byte))
+      print("Unknown type of packet: " + str(start_byte))
     
 
     if False:
@@ -366,4 +366,9 @@ class GanglionDelegate(DefaultDelegate):
             channel_data.append(myInt)
 
   def getSamples(self):
+    """ Retrieve and remove from buffer last samples. """
     return None
+
+  def getMaxPacketsDropped(self):
+    """ While processing last samples, how many packets were dropped at max?"""
+    return 0
