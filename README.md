@@ -21,7 +21,7 @@ For additional details on connecting your board visit: http://docs.openbci.com/t
 
 ### Ganglion Board
 
-The Ganglion board relies on Bluetooth Low Energy connectivity (BLE). You should also retrieve the bluepy submodule for a more up-to-date version. To do so, clone this repo with the `--recursive` flag then type `make` inside `bluepy/bluepy`. Note that you may need to run the script with root privileges to for some functionality, e.g. auto-detect MAC address.
+The Ganglion board relies on Bluetooth Low Energy connectivity (BLE). You should also retrieve the bluepy submodule for a more up-to-date version than the version `1.0.5` available at that time through `pip`. To do so, clone this repo with the `--recursive` flag then type `make` inside `bluepy/bluepy`. Note that you may need to run the script with root privileges to for some functionality, e.g. auto-detect MAC address.
 
 ## Audience:
 

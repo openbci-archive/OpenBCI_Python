@@ -59,6 +59,9 @@ class OpenBCIBoard(object):
 
   def __init__(self, port=None, baud=0, filter_data=False,
     scaled_output=True, daisy=False, log=True, timeout=-1, max_packets_to_skip=20):
+    # unused, for compatibility with Cyton v3 API
+    self.daisy = False
+    
     self.log = log # print_incoming_text needs log
     self.streaming = False
     self.timeout = timeout
@@ -127,9 +130,9 @@ class OpenBCIBoard(object):
     self.time_last_packet = timeit.default_timer() 
     
   def find_port(self):
-    """DetectsGanglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
+    """Detects Ganglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
 
-    print("Try to detect Ganglion MAC address. NB: Turn on bluetooth and run as root for this to work!")
+    print("Try to detect Ganglion MAC address. NB: Turn on bluetooth and run as root for this to work! Might not work with every BLE dongles.")
     scan_time = 5
     print("Scanning for 5 seconds nearby devices...")
 
@@ -368,7 +371,6 @@ class GanglionDelegate(DefaultDelegate):
 
   def parseRaw(self, sample_id, packet):
     """ Dealing with "Raw uncompressed" """
-    print ("Raw uncompressed")
     chan_data = []
     # 4 channels of 24bits, take values one by one
     for i in range(0,12,3):

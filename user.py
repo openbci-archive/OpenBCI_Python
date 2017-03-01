@@ -19,7 +19,8 @@ if __name__ == '__main__':
 
     print ("------------user.py-------------")
     parser = argparse.ArgumentParser(description="OpenBCI 'user'")
-    parser.add_argument('--board', default=3, type=int)
+    parser.add_argument('--board', default="cyton", 
+                        help="Choose between [cyton] and [ganglion] boards.")
     parser.add_argument('-l', '--list', action='store_true',
                         help="List available plugins.")
     parser.add_argument('-i', '--info', metavar='PLUGIN',
@@ -54,11 +55,11 @@ if __name__ == '__main__':
     if not(args.add):
         print ("WARNING: no plugin selected, you will only be able to communicate with the board. You should select at least one plugin with '--add [plugin_name]'. Use '--list' to show available plugins or '--info [plugin_name]' to get more information.")
 
-    if args.board == 3:
-        print ("Board type: open_bci_v3...")
+    if args.board == "cyton":
+        print ("Board type: OpenBCI Cyton (v3 API)")
         import open_bci_v3 as bci
-    elif args.board == 4:
-        print ("Board type: open_bci_v_ganglion...")
+    elif args.board == "ganglion":
+        print ("Board type: OpenBCI Ganglion")
         import open_bci_ganglion as bci
     else:
         raise ValueError(
