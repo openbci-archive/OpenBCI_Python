@@ -55,16 +55,16 @@ if __name__ == '__main__':
     if not(args.add):
         print ("WARNING: no plugin selected, you will only be able to communicate with the board. You should select at least one plugin with '--add [plugin_name]'. Use '--list' to show available plugins or '--info [plugin_name]' to get more information.")
 
-    if args.board == "cyton":
+        
+    board_type = args.board
+    if board_type == "cyton":
         print ("Board type: OpenBCI Cyton (v3 API)")
         import open_bci_v3 as bci
-    elif args.board == "ganglion":
+    elif board_type == "ganglion":
         print ("Board type: OpenBCI Ganglion")
         import open_bci_ganglion as bci
     else:
-        raise ValueError(
-            'Board type %r was not recognized. Known are 3 and 4' % args.board
-        )
+        raise ValueError('Board type %r was not recognized. Known are 3 and 4' % args.board)
 
     # Check AUTO port selection, a "None" parameter for the board API
     if "AUTO" == args.port.upper():
@@ -251,13 +251,15 @@ https://github.com/OpenBCI/OpenBCI_Python")
 
             line = ''
             time.sleep(0.1) #Wait to see if the board has anything to report
-            while board.ser_inWaiting():
-                c = board.ser_read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
-                line += c
-                time.sleep(0.001)
-                if (c == '\n') and not flush:
-                    print('%\t'+line[:-1])
-                    line = ''
+            # The Cyton can tell us if packets are incoming, whereas the Ganglion cannot, the library will take care of printing messages.
+            if board_type == "cyton":
+              while board.ser_inWaiting():
+                  c = board.ser_read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
+                  line += c
+                  time.sleep(0.001)
+                  if (c == '\n') and not flush:
+                      print('%\t'+line[:-1])
+                      line = ''
 
             if not flush:
                 print(line)

@@ -1,10 +1,12 @@
 """
 Core OpenBCI object for handling connections and samples from the gnaglion board.
 
+Note that the LIB will take care on its own to print incoming ASCII messages if any (FIXME, BTW).
+
 EXAMPLE USE:
 
 def handle_sample(sample):
-  print(sample.channels)
+  print(sample.channels_data)
 
 board = OpenBCIBoard()
 board.start(handle_sample)
@@ -186,7 +188,11 @@ class OpenBCIBoard(object):
   def ser_read(self):
     """Access serial port object for read""" 
     return self.char_read.read()
-    
+
+  def ser_inWaiting(self):
+      """Dummy function to emulate Cyton API, here we don't know a thing about input buffer."""
+      return 0
+  
   def getSampleRate(self):
       return SAMPLE_RATE
   
@@ -325,8 +331,8 @@ class GanglionDelegate(DefaultDelegate):
       self.lastChannelData = [0, 0, 0, 0]
 
   def handleNotification(self, cHandle, data):
-    if len(data) != 20:
-      print('Wrong packet size, ' + str(len(data)) + ' instead of 20 bytes')
+    if len(data) < 1:
+      print('Warning: a packet should at least hold one byte...')
       return
     self.parse(data)
 
@@ -337,8 +343,8 @@ class GanglionDelegate(DefaultDelegate):
   def parse(self, packet):
     # bluepy returnds INT with python3 and STR with python2 
     if type(packet) is str:
-      # convert a list that must comprises 20 strings to one string
-      unpac = struct.unpack('20B', "".join(packet))
+      # convert a list of strings in bytes
+      unpac = struct.unpack(str(len(packet)) + 'B', "".join(packet))
     else:
       unpac = packet
      
@@ -357,20 +363,22 @@ class GanglionDelegate(DefaultDelegate):
     # Impedance Channel
     elif start_byte >= 201 and start_byte <= 205:
       print("Warning: data not handled: 'Impedance Channel'.") 
-    # Part of ASCII
+    # Part of ASCII -- TODO: better formatting of incoming ASCII
     elif start_byte == 206:
-      print("ASCII message")
-      print (packet)
+      print("%\t" + str(packet[1:]))
     # End of ASCII message
     elif start_byte == 207:
-      print ("End of ASCII message")
-      print (packet)
-      print ("----")
+      print("%\t" + str(packet[1:]))
+      print ("$$$")
     else:
       print("Warning: unknown type of packet: " + str(start_byte))
 
   def parseRaw(self, sample_id, packet):
     """ Dealing with "Raw uncompressed" """
+    if len(packet) != 19:
+      print('Wrong size, for raw data' + str(len(data)) + ' instead of 19 bytes')
+      return
+
     chan_data = []
     # 4 channels of 24bits, take values one by one
     for i in range(0,12,3):
@@ -383,6 +391,10 @@ class GanglionDelegate(DefaultDelegate):
 
   def parse19bit(self, sample_id, packet):
     """ Dealing with "19-bit compression without Accelerometer" """
+    if len(packet) != 19:
+      print('Wrong size, for 19-bit compression data' + str(len(data)) + ' instead of 19 bytes')
+      return
+
     # should get 2 by 4 arrays of uncompressed data
     deltas = decompressDeltas19Bit(packet)
     for delta in deltas:
