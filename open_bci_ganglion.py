@@ -19,7 +19,7 @@ import time
 import timeit
 import atexit
 import logging
-import threading
+import numpy as np
 import sys
 import pdb
 import glob
@@ -329,7 +329,7 @@ class GanglionDelegate(DefaultDelegate):
 
   """
     PARSER:
-    Parses incoming data packet into OpenBCISample -- see docs.
+    Parses incoming data packet into OpenBCISample -- see docs. Will call the corresponding parse* function depending on the format of the packet.
   """
   def parse(self, packet):
     # bluepy returnds INT with python3 and STR with python2 
@@ -374,18 +374,22 @@ class GanglionDelegate(DefaultDelegate):
     for i in range(0,12,3):
       chan_data.append(conv24bitsToInt(packet[i:i+3]))
     # save uncompressed raw channel for future use and append whole sample
-    self.lastChannelData = chan_data
     sample = OpenBCISample(sample_id, chan_data, [])
     self.samples.append(sample)
+    self.lastChannelData = chan_data
     self.updatePacketsCount(sample_id)
 
   def parse19bit(self, sample_id, packet):
     """ Dealing with "19-bit compression without Accelerometer" """
     # should get 2 by 4 arrays of uncompressed data
-    data = decompressDeltas19Bit(packet)
-    for d in data:
-      sample = OpenBCISample(sample_id, d, [])
+    deltas = decompressDeltas19Bit(packet)
+    for delta in deltas:
+      # 19bit packets hold deltas between two samples
+      # TODO: use more broadly numpy
+      full_data = list(np.array(self.lastChannelData) - np.array(delta))
+      sample = OpenBCISample(sample_id, full_data, [])
       self.samples.append(sample)
+      self.lastChannelData = full_data
     self.updatePacketsCount(sample_id)
 
   def updatePacketsCount(self, sample_id):
@@ -460,7 +464,7 @@ def decompressDeltas19Bit(buffer):
   """
   Called to when a compressed packet is received.
   buffer: Just the data portion of the sample. So 19 bytes.
- return {Array} - An array of deltas of shape 2x4 (2 samples per packet and 4 channels per sample.)
+  return {Array} - An array of deltas of shape 2x4 (2 samples per packet and 4 channels per sample.)
   """ 
   if len(buffer) != 19:
     raise ValueError("Input should be 19 bytes long.")
