@@ -453,10 +453,12 @@ def conv19bitToInt32 (threeByteBuffer):
 
   prefix = 0;
 
+  # if LSB is 1, negative number, some hasty unsigned to signed conversion to do
   if threeByteBuffer[2] & 0x01 > 0:
     prefix = 0b1111111111111;
-
-  return (prefix << 19) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[2]
+    return ((prefix << 19) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[2]) | ~0xFFFFFFFF
+  else:
+    return (prefix << 19) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[2]
 
 def decompressDeltas19Bit(buffer):
   """
