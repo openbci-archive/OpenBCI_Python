@@ -30,7 +30,7 @@ import sys
 sys.path.insert(0,"bluepy/bluepy")
 from btle import Scanner, DefaultDelegate, Peripheral
 
-SAMPLE_RATE = 100.0  # Hz
+SAMPLE_RATE = 200.0  # Hz
 scale_fac_uVolts_per_count = 1200 * 8388607.0 * 1.5 * 51.0;
 
 # service for communication, as per docs
