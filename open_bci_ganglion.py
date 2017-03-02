@@ -12,7 +12,6 @@ board = OpenBCIBoard()
 board.start(handle_sample)
 
 TODO: support impedance
-TODO: better sample ID
 TODO: switch for 18bit aux
 TODO: indicate incoming message -- end ascii packet or timeout
 
@@ -319,7 +318,7 @@ class OpenBCIBoard(object):
     self.init_steaming()
 
 class OpenBCISample(object):
-  """Object encapulsating a single sample from the OpenBCI board. Note for Ganglion board: since most of the time two samples are compressed in one BLE packet, two consecutive samples will likely have the same ID."""
+  """Object encapulsating a single sample from the OpenBCI board."""
   def __init__(self, packet_id, channel_data, aux_data):
     self.id = packet_id;
     self.channel_data = channel_data;
@@ -384,7 +383,7 @@ class GanglionDelegate(DefaultDelegate):
     else:
       print("Warning: unknown type of packet: " + str(start_byte))
 
-  def parseRaw(self, sample_id, packet):
+  def parseRaw(self, packet_id, packet):
     """ Dealing with "Raw uncompressed" """
     if len(packet) != 19:
       print('Wrong size, for raw data' + str(len(data)) + ' instead of 19 bytes')
@@ -395,20 +394,11 @@ class GanglionDelegate(DefaultDelegate):
     for i in range(0,12,3):
       chan_data.append(conv24bitsToInt(packet[i:i+3]))
     # save uncompressed raw channel for future use and append whole sample
-    self.pushSample(sample_id, chan_data, self.lastAcceleromoter)
+    self.pushSample(packet_id, chan_data, self.lastAcceleromoter)
     self.lastChannelData = chan_data
-    self.updatePacketsCount(sample_id)
+    self.updatePacketsCount(packet_id)
 
-  def pushSample(self, sample_id, chan_data, aux_data):
-    """ Add a sample to inner stack, dealing with scaling if necessary """
-
-    if self.scaling_output:
-      chan_data = list(np.array(chan_data) * scale_fac_uVolts_per_count)
-      aux_data = list(np.array(aux_data) * scale_fac_accel_G_per_count)
-    sample = OpenBCISample(sample_id, chan_data, aux_data)
-    self.samples.append(sample)
-    
-  def parse19bit(self, sample_id, packet):
+  def parse19bit(self, packet_id, packet):
     """ Dealing with "19-bit compression without Accelerometer" """
     if len(packet) != 19:
       print('Wrong size, for 19-bit compression data' + str(len(data)) + ' instead of 19 bytes')
@@ -416,17 +406,22 @@ class GanglionDelegate(DefaultDelegate):
 
     # should get 2 by 4 arrays of uncompressed data
     deltas = decompressDeltas19Bit(packet)
+    # the sample_id will be shifted
+    delta_id = 1
     for delta in deltas:
+      # convert from packet to sample id
+      sample_id = (packet_id - 1) * 2 + delta_id
       # 19bit packets hold deltas between two samples
       # TODO: use more broadly numpy
       full_data = list(np.array(self.lastChannelData) - np.array(delta))
       # NB: aux data updated only in 18bit mode, send values here only to be consistent
       self.pushSample(sample_id, full_data, self.lastAcceleromoter)
       self.lastChannelData = full_data
-    self.updatePacketsCount(sample_id)
+      delta_id += 1
+    self.updatePacketsCount(packet_id)
 
 
-  def parse18bit(self, sample_id, packet):
+  def parse18bit(self, packet_id, packet):
     """ Dealing with "18-bit compression without Accelerometer" """
     if len(packet) != 19:
       print('Wrong size, for 18-bit compression data' + str(len(data)) + ' instead of 19 bytes')
@@ -434,38 +429,50 @@ class GanglionDelegate(DefaultDelegate):
 
 
     # accelerometer X
-    if sample_id % 10 == 1:
+    if packet_id % 10 == 1:
       self.lastAcceleromoter[0] = conv8bitToInt8(packet[18])
     # accelerometer Y
-    elif sample_id % 10 == 2:
+    elif packet_id % 10 == 2:
       self.lastAcceleromoter[1] = conv8bitToInt8(packet[18])
     # accelerometer Z
-    elif sample_id % 10 == 3:
+    elif packet_id % 10 == 3:
       self.lastAcceleromoter[2] = conv8bitToInt8(packet[18])
         
-
     # deltas: should get 2 by 4 arrays of uncompressed data
     deltas = decompressDeltas18Bit(packet[:-1])
+    # the sample_id will be shifted
+    delta_id = 1
     for delta in deltas:
+      # convert from packet to sample id
+      sample_id = (packet_id - 1) * 2 + delta_id
       # 19bit packets hold deltas between two samples
       # TODO: use more broadly numpy
       full_data = list(np.array(self.lastChannelData) - np.array(delta))
       self.pushSample(sample_id, full_data, self.lastAcceleromoter)
       self.lastChannelData = full_data
-    self.updatePacketsCount(sample_id)
+      delta_id += 1
+    self.updatePacketsCount(packet_id)
     
-  def updatePacketsCount(self, sample_id):
+  def pushSample(self, sample_id, chan_data, aux_data):
+    """ Add a sample to inner stack, setting ID and dealing with scaling if necessary. """
+    if self.scaling_output:
+      chan_data = list(np.array(chan_data) * scale_fac_uVolts_per_count)
+      aux_data = list(np.array(aux_data) * scale_fac_accel_G_per_count)
+    sample = OpenBCISample(sample_id, chan_data, aux_data)
+    self.samples.append(sample)
+    
+  def updatePacketsCount(self, packet_id):
     """Update last packet ID and dropped packets"""
     if self.last_id == -1:
-      self.last_id = sample_id
+      self.last_id = packet_id
       self.packets_dropped  = 0
       return
     # ID loops every 101 packets
-    if sample_id > self.last_id:
-      self.packets_dropped = sample_id - self.last_id - 1
+    if packet_id > self.last_id:
+      self.packets_dropped = packet_id - self.last_id - 1
     else:
-      self.packets_dropped = sample_id + 101 - self.last_id - 1
-    self.last_id = sample_id
+      self.packets_dropped = packet_id + 101 - self.last_id - 1
+    self.last_id = packet_id
     if self.packets_dropped > 0:
       print("Warning: dropped " + str(self.packets_dropped) + " packets.")
 
