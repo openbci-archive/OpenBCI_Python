@@ -23,7 +23,14 @@ For additional details on connecting your board visit: http://docs.openbci.com/t
 
 The Ganglion board relies on Bluetooth Low Energy connectivity (BLE). You should also retrieve the bluepy submodule for a more up-to-date version than the version `1.0.5` available at that time through `pip`. To do so, clone this repo with the `--recursive` flag then type `make` inside `bluepy/bluepy`. Note that you may need to run the script with root privileges to for some functionality, e.g. auto-detect MAC address.
 
-## Audience:
+You may also need to alter the settings of your bluetooth adapter in order to reduce latency and avoid packet drops -- e.g. if the terminal spams "Warning: Dropped 1 packets" several times a seconds, DO THAT.
+
+On linux, assuming `hci0` is the name of your bluetooth adapter:
+
+`sudo echo 9 > /sys/kernel/debug/bluetooth/hci0/conn_min_interval`
+`sudo echo 10 > /sys/kernel/debug/bluetooth/hci0/conn_max_interval`
+
+# Audience:
 
 This python code is meant to be used by people familiar with python and programming in general. It's purpose is to allow for programmers to interface with OpenBCI technology directly, both to acquire data and to write programs that can use that data on a live setting, using python.
 
