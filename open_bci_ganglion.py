@@ -12,7 +12,6 @@ board = OpenBCIBoard()
 board.start(handle_sample)
 
 TODO: support impedance
-TODO: switch for 18bit aux
 TODO: indicate incoming message -- end ascii packet or timeout
 
 """
@@ -50,26 +49,30 @@ command_startBinary = "b";
 
 class OpenBCIBoard(object):
   """
-
   Handle a connection to an OpenBCI board.
 
   Args:
     port: MAC address of the Ganglion Board. "None" to attempt auto-detect.
+    aux: enable on not aux channels (i.e. switch to 18bit mode if set)
     timeout: in seconds, if set will try to disconnect / reconnect after a period without new data
     max_packets_to_skip: will try to disconnect / reconnect after too many packets are skipped
     baud, filter_data, daisy: Not used, for compatibility with v3
   """
 
   def __init__(self, port=None, baud=0, filter_data=False,
-    scaled_output=True, daisy=False, log=True, timeout=1, max_packets_to_skip=20):
+    scaled_output=True, daisy=False, log=True, aux=False, timeout=1, max_packets_to_skip=20):
     # unused, for compatibility with Cyton v3 API
     self.daisy = False
-    
+    # these one are used 
     self.log = log # print_incoming_text needs log
+    self.aux = aux
     self.streaming = False
     self.timeout = timeout
     self.max_packets_to_skip = max_packets_to_skip
     self.scaling_output = scaled_output
+
+    # might be handy to know API
+    self.board_type = "ganglion"
 
     print("Looking for Ganglion board")
     if port == None:
@@ -90,8 +93,12 @@ class OpenBCIBoard(object):
     # Disconnects from board when terminated
     atexit.register(self.disconnect)
 
+  def getBoardType(self):
+    """ Returns the version of the board """
+    return self.board_type
+
   def connect(self):
-    """ Connecting to board. Note: recreates various objects upon call. """
+    """ Connect to the board and configure it. Note: recreates various objects upon call. """
     print ("Init BLE connection with MAC: " + self.port)
     print ("NB: if it fails, try with root privileges.")
     self.gang = Peripheral(self.port, 'random') # ADDR_TYPE_RANDOM
@@ -113,6 +120,14 @@ class OpenBCIBoard(object):
     # set delegate to handle incoming data
     self.delegate = GanglionDelegate(self.scaling_output)
     self.gang.setDelegate(self.delegate)
+
+    # enable AUX channel
+    if self.aux:
+      print("Enabling AUX data...")
+      try:
+        self.ser_write(b'n')
+      except Exception as e:
+        print("Something went wrong while enabling aux channels: " + str(e))
     
     print("Turn on notifications")
     # nead up-to-date bluepy, cf https://github.com/IanHarvey/bluepy/issues/53
@@ -124,7 +139,7 @@ class OpenBCIBoard(object):
     
     print("Connection established")
 
-  def init_steaming(self):
+  def init_streaming(self):
     """ Tell the board to record like crazy. """
     try:
       self.ser_write(b'b')
@@ -216,7 +231,7 @@ class OpenBCIBoard(object):
           OpenBCISample object captured.
     """
     if not self.streaming:
-      self.init_steaming()
+      self.init_streaming()
 
     start_time = timeit.default_timer()
 
@@ -315,7 +330,7 @@ class OpenBCIBoard(object):
     self.stop()
     self.disconnect()
     self.connect()
-    self.init_steaming()
+    self.init_streaming()
 
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""

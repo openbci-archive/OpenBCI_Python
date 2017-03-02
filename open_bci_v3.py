@@ -64,10 +64,11 @@ class OpenBCIBoard(object):
     port: The port to connect to.
     baud: The baud of the serial connection.
     daisy: Enable or disable daisy module and 16 chans readings
+    aux: unused, for compatibility with ganglion API
   """
 
   def __init__(self, port=None, baud=115200, filter_data=True,
-    scaled_output=True, daisy=False, log=True, timeout=None):
+    scaled_output=True, daisy=False, aux=False, log=True, timeout=None):
     self.log = log # print_incoming_text needs log
     self.streaming = False
     self.baudrate = baud
@@ -75,6 +76,8 @@ class OpenBCIBoard(object):
     if not port:
       port = self.find_port()
     self.port = port
+    # might be handy to know API
+    self.board_type = "cyton"
     print("Connecting to V3 at port %s" %(port))
     self.ser = serial.Serial(port= port, baudrate = baud, timeout=timeout)
 
@@ -105,7 +108,11 @@ class OpenBCIBoard(object):
 
     #Disconnects from board when terminated
     atexit.register(self.disconnect)
-    
+
+  def getBoardType(self):
+    """ Returns the version of the board """
+    return self.board_type
+  
   def ser_write(self, b):
     """Access serial port object for write""" 
     self.ser.write(b)

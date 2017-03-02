@@ -38,7 +38,10 @@ if __name__ == '__main__':
     parser.set_defaults(filtering=True)
     parser.add_argument('-d', '--daisy', dest='daisy',
                         action='store_true',
-                        help="Force daisy mode (beta feature)")
+                        help="Force daisy mode (cyton board)")
+    parser.add_argument('-x', '--aux', dest='aux',
+                        action='store_true',
+                        help="Enable accelerometer/AUX data (ganglion board)")
     # first argument: plugin name, then parameters for plugin
     parser.add_argument('-a', '--add', metavar=('PLUGIN', 'PARAM'),
                         action='append', nargs='+',
@@ -55,12 +58,10 @@ if __name__ == '__main__':
     if not(args.add):
         print ("WARNING: no plugin selected, you will only be able to communicate with the board. You should select at least one plugin with '--add [plugin_name]'. Use '--list' to show available plugins or '--info [plugin_name]' to get more information.")
 
-        
-    board_type = args.board
-    if board_type == "cyton":
+    if args.board == "cyton":
         print ("Board type: OpenBCI Cyton (v3 API)")
         import open_bci_v3 as bci
-    elif board_type == "ganglion":
+    elif args.board == "ganglion":
         print ("Board type: OpenBCI Ganglion")
         import open_bci_ganglion as bci
     else:
@@ -115,7 +116,8 @@ if __name__ == '__main__':
                              daisy=args.daisy,
                              filter_data=args.filtering,
                              scaled_output=True,
-                             log=args.log)
+                             log=args.log,
+                             aux=args.aux)
 
     #  Info about effective number of channels and sampling rate
     if board.daisy:
@@ -252,7 +254,7 @@ https://github.com/OpenBCI/OpenBCI_Python")
             line = ''
             time.sleep(0.1) #Wait to see if the board has anything to report
             # The Cyton can tell us if packets are incoming, whereas the Ganglion cannot, the library will take care of printing messages.
-            if board_type == "cyton":
+            if board.getBoardType() == "cyton":
               while board.ser_inWaiting():
                   c = board.ser_read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
                   line += c
