@@ -264,7 +264,7 @@ https://github.com/OpenBCI/OpenBCI_Python")
                       line = ''
             elif board.getBoardType() == "ganglion":
                   while board.ser_inWaiting():
-                      time.sleep(0.001)
+                      board.waitForNotifications(0.001)
 
             if not flush:
                 print(line)

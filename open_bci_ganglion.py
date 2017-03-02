@@ -248,7 +248,7 @@ class OpenBCIBoard(object):
       # should the board get disconnected and we could not wait for notification anymore, a reco should be attempted through timeout mechanism
       try:
         # at most we will get one sample per packet
-        self.gang.waitForNotifications(1./self.getSampleRate())
+        self.waitForNotifications(1./self.getSampleRate())
       except Exception as e:
         print("Something went wrong while waiting for a new sample: " + str(e))
       # retrieve current samples on the stack
@@ -268,6 +268,9 @@ class OpenBCIBoard(object):
       # Checking connection -- timeout and packets dropped
       self.check_connection()
 
+  def waitForNotifications(self, delay):
+    """ Allow some time for the board to receive new data. """
+    self.gang.waitForNotifications(delay)
   
   """
 
