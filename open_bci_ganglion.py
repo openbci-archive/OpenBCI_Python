@@ -85,7 +85,7 @@ class OpenBCIBoard(object):
     # number of EEG channels and (optionally) accelerometer channel
     self.eeg_channels_per_sample = 4
     self.aux_channels_per_sample = 3 
-    self.imp_channels_per_sample = 0 
+    self.imp_channels_per_sample = 5 
     self.read_state = 0
     self.log_packet_count = 0
     self.packets_dropped = 0
@@ -392,12 +392,11 @@ class OpenBCIBoard(object):
 
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
-  def __init__(self, packet_id, channel_data, aux_data):
+  def __init__(self, packet_id, channel_data, aux_data, imp_data):
     self.id = packet_id
     self.channel_data = channel_data
     self.aux_data = aux_data
-    self.imp_data = []
-
+    self.imp_data = imp_data
 
 class GanglionDelegate(DefaultDelegate):
   """ Called by bluepy (handling BLE connection) when new data arrive, parses samples. """
@@ -412,6 +411,8 @@ class GanglionDelegate(DefaultDelegate):
       self.lastChannelData = [0, 0, 0, 0]
       # 18bit data got here and then accelerometer with it
       self.lastAcceleromoter = [0, 0, 0]
+      # when the board is manually set in the right mode (z to start, Z to stop), impedance will be measured. 4 channels + ref
+      self.lastImpedance = [0, 0, 0, 0, 0]
       self.scaling_output = scaling_output
       # handling incoming ASCII messages
       self.receiving_ASCII = False
@@ -453,7 +454,7 @@ class GanglionDelegate(DefaultDelegate):
     # Impedance Channel
     elif start_byte >= 201 and start_byte <= 205:
       self.receiving_ASCII = False
-      print("Warning: data not handled: 'Impedance Channel'.") 
+      self.parseImpedance(start_byte, unpac[1:])
     # Part of ASCII -- TODO: better formatting of incoming ASCII
     elif start_byte == 206:
       print("%\t" + str(packet[1:]))
@@ -479,7 +480,7 @@ class GanglionDelegate(DefaultDelegate):
     for i in range(0,12,3):
       chan_data.append(conv24bitsToInt(packet[i:i+3]))
     # save uncompressed raw channel for future use and append whole sample
-    self.pushSample(packet_id, chan_data, self.lastAcceleromoter)
+    self.pushSample(packet_id, chan_data, self.lastAcceleromoter, self.lastImpedance)
     self.lastChannelData = chan_data
     self.updatePacketsCount(packet_id)
 
@@ -500,7 +501,7 @@ class GanglionDelegate(DefaultDelegate):
       # TODO: use more broadly numpy
       full_data = list(np.array(self.lastChannelData) - np.array(delta))
       # NB: aux data updated only in 18bit mode, send values here only to be consistent
-      self.pushSample(sample_id, full_data, self.lastAcceleromoter)
+      self.pushSample(sample_id, full_data, self.lastAcceleromoter, self.lastImpedance)
       self.lastChannelData = full_data
       delta_id += 1
     self.updatePacketsCount(packet_id)
@@ -511,7 +512,6 @@ class GanglionDelegate(DefaultDelegate):
     if len(packet) != 19:
       print('Wrong size, for 18-bit compression data' + str(len(data)) + ' instead of 19 bytes')
       return
-
 
     # accelerometer X
     if packet_id % 10 == 1:
@@ -533,17 +533,23 @@ class GanglionDelegate(DefaultDelegate):
       # 19bit packets hold deltas between two samples
       # TODO: use more broadly numpy
       full_data = list(np.array(self.lastChannelData) - np.array(delta))
-      self.pushSample(sample_id, full_data, self.lastAcceleromoter)
+      self.pushSample(sample_id, full_data, self.lastAcceleromoter, self.lastImpedance)
       self.lastChannelData = full_data
       delta_id += 1
     self.updatePacketsCount(packet_id)
+
+
+  def parseImpedance(self, packet_id, packet):
+    """ Dealing with impedance data """
+    print "impedance:", packet
+
     
-  def pushSample(self, sample_id, chan_data, aux_data):
+  def pushSample(self, sample_id, chan_data, aux_data, imp_data):
     """ Add a sample to inner stack, setting ID and dealing with scaling if necessary. """
     if self.scaling_output:
       chan_data = list(np.array(chan_data) * scale_fac_uVolts_per_count)
       aux_data = list(np.array(aux_data) * scale_fac_accel_G_per_count)
-    sample = OpenBCISample(sample_id, chan_data, aux_data)
+    sample = OpenBCISample(sample_id, chan_data, aux_data, imp_data)
     self.samples.append(sample)
     
   def updatePacketsCount(self, packet_id):
