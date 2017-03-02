@@ -11,9 +11,11 @@ def handle_sample(sample):
 board = OpenBCIBoard()
 board.start(handle_sample)
 
-TODO: Pick between several boards
 TODO: support impedance
-TODO: support accelerometer with n / N codes
+TODO: better sample ID
+TODO: scale output, both for EEG and AUX
+TODO: switch for 18bit aux
+TODO: indicate incoming message -- end ascii packet or timeout
 
 """
 import struct
@@ -78,7 +80,9 @@ class OpenBCIBoard(object):
 
     self.streaming = False
     self.scaling_output = scaled_output
-    self.eeg_channels_per_sample = 4 # number of EEG channels per sample *from the board*
+     # number of EEG channels and (optionally) accelerometer channel
+    self.eeg_channels_per_sample = 4
+    self.aux_channels_per_sample = 3 
     self.read_state = 0
     self.log_packet_count = 0
     self.packets_dropped = 0
@@ -200,8 +204,8 @@ class OpenBCIBoard(object):
       return self.eeg_channels_per_sample
   
   def getNbAUXChannels(self):
-    """Not implemented on the Ganglion"""
-    return 0 
+    """Might not be used depending on the mode."""
+    return self.aux_channels_per_sample
 
   def start_streaming(self, callback, lapse=-1):
     """
@@ -333,6 +337,8 @@ class GanglionDelegate(DefaultDelegate):
       self.packets_dropped = 0
       # save uncompressed data to compute deltas
       self.lastChannelData = [0, 0, 0, 0]
+      # 18bit data got here and then accelerometer with it
+      self.lastAcceleromoter = [0, 0, 0]
 
   def handleNotification(self, cHandle, data):
     if len(data) < 1:
@@ -360,7 +366,7 @@ class GanglionDelegate(DefaultDelegate):
       self.parseRaw(start_byte, unpac[1:])
     # 18-bit compression with Accelerometer
     elif start_byte >= 1 and start_byte <= 100:
-      print("Warning: data not handled: '18-bit compression with Accelerometer'.") 
+      self.parse18bit(start_byte, unpac[1:])
     # 19-bit compression without Accelerometer
     elif start_byte >=101 and start_byte <= 200:
       self.parse19bit(start_byte-100, unpac[1:])
@@ -405,11 +411,42 @@ class GanglionDelegate(DefaultDelegate):
       # 19bit packets hold deltas between two samples
       # TODO: use more broadly numpy
       full_data = list(np.array(self.lastChannelData) - np.array(delta))
-      sample = OpenBCISample(sample_id, full_data, [])
+      # NB: aux data updated only in 18bit mode, send values here only to be consistent
+      sample = OpenBCISample(sample_id, full_data, self.lastAcceleromoter)
       self.samples.append(sample)
       self.lastChannelData = full_data
     self.updatePacketsCount(sample_id)
 
+
+  def parse18bit(self, sample_id, packet):
+    """ Dealing with "18-bit compression without Accelerometer" """
+    if len(packet) != 19:
+      print('Wrong size, for 18-bit compression data' + str(len(data)) + ' instead of 19 bytes')
+      return
+
+
+    # accelerometer X
+    if sample_id % 10 == 1:
+      self.lastAcceleromoter[0] = conv8bitToInt8(packet[18])
+    # accelerometer Y
+    elif sample_id % 10 == 2:
+      self.lastAcceleromoter[1] = conv8bitToInt8(packet[18])
+    # accelerometer Z
+    elif sample_id % 10 == 3:
+      self.lastAcceleromoter[2] = conv8bitToInt8(packet[18])
+        
+
+    # deltas: should get 2 by 4 arrays of uncompressed data
+    deltas = decompressDeltas18Bit(packet[:-1])
+    for delta in deltas:
+      # 19bit packets hold deltas between two samples
+      # TODO: use more broadly numpy
+      full_data = list(np.array(self.lastChannelData) - np.array(delta))
+      sample = OpenBCISample(sample_id, full_data, self.lastAcceleromoter)
+      self.samples.append(sample)
+      self.lastChannelData = full_data
+    self.updatePacketsCount(sample_id)
+    
   def updatePacketsCount(self, sample_id):
     """Update last packet ID and dropped packets"""
     if self.last_id == -1:
@@ -464,8 +501,8 @@ def conv24bitsToInt(unpacked):
 
   return myInt
 
-def conv19bitToInt32 (threeByteBuffer):
-  """ Convert 19bit data coded on 3 bytes to a proper integer """ 
+def conv19bitToInt32(threeByteBuffer):
+  """ Convert 19bit data coded on 3 bytes to a proper integer (LSB bit 1 used as sign). """ 
   if len(threeByteBuffer) != 3:
     raise ValueError("Input should be 3 bytes long.")
 
@@ -478,6 +515,28 @@ def conv19bitToInt32 (threeByteBuffer):
   else:
     return (prefix << 19) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[2]
 
+def conv18bitToInt32(threeByteBuffer):
+  """ Convert 18bit data coded on 3 bytes to a proper integer (LSB bit 1 used as sign) """ 
+  if len(threeByteBuffer) != 3:
+    raise Valuerror("Input should be 3 bytes long.")
+
+  prefix = 0;
+
+  # if LSB is 1, negative number, some hasty unsigned to signed conversion to do
+  if threeByteBuffer[2] & 0x01 > 0:
+    prefix = 0b11111111111111;
+    return ((prefix << 18) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[2]) | ~0xFFFFFFFF
+  else:
+    return (prefix << 18) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[2]
+  
+def conv8bitToInt8(byte):
+  """ Convert one byte to signed value """ 
+
+  if byte > 127:
+    return (256-byte) * (-1)
+  else:
+    return byte
+  
 def decompressDeltas19Bit(buffer):
   """
   Called to when a compressed packet is received.
@@ -549,5 +608,82 @@ def decompressDeltas19Bit(buffer):
   # Sample 2 - Channel 4
   miniBuf = [(buffer[16] & 0x07), buffer[17], buffer[18]]
   receivedDeltas[1][3] = conv19bitToInt32(miniBuf)
+
+  return receivedDeltas;
+
+def decompressDeltas18Bit(buffer):
+  """
+  Called to when a compressed packet is received.
+  buffer: Just the data portion of the sample. So 19 bytes.
+  return {Array} - An array of deltas of shape 2x4 (2 samples per packet and 4 channels per sample.)
+  """ 
+  if len(buffer) != 18:
+    raise ValueError("Input should be 18 bytes long.")
+  
+  receivedDeltas = [[0, 0, 0, 0],[0, 0, 0, 0]]
+
+  # Sample 1 - Channel 1
+  miniBuf = [
+      (buffer[0] >> 6),
+      ((buffer[0] & 0x3F) << 2 & 0xFF) | (buffer[1] >> 6),
+      ((buffer[1] & 0x3F) << 2 & 0xFF) | (buffer[2] >> 6)
+    ]
+  receivedDeltas[0][0] = conv18bitToInt32(miniBuf);
+
+  # Sample 1 - Channel 2
+  miniBuf = [
+      (buffer[2] & 0x3F) >> 4,
+      (buffer[2] << 4 & 0xFF) | (buffer[3] >> 4),
+      (buffer[3] << 4 & 0xFF) | (buffer[4] >> 4)
+    ]
+  receivedDeltas[0][1] = conv18bitToInt32(miniBuf);
+
+  # Sample 1 - Channel 3
+  miniBuf = [
+      (buffer[4] & 0x0F) >> 2,
+      (buffer[4] << 6 & 0xFF) | (buffer[5] >> 2),
+      (buffer[5] << 6 & 0xFF) | (buffer[6] >> 2)
+    ]
+  receivedDeltas[0][2] = conv18bitToInt32(miniBuf);
+
+  # Sample 1 - Channel 4
+  miniBuf = [
+      (buffer[6] & 0x03),
+      buffer[7],
+      buffer[8]
+    ]
+  receivedDeltas[0][3] = conv18bitToInt32(miniBuf);
+
+  # Sample 2 - Channel 1
+  miniBuf = [
+      (buffer[9] >> 6),
+      ((buffer[9] & 0x3F) << 2 & 0xFF) | (buffer[10] >> 6),
+      ((buffer[10] & 0x3F) << 2 & 0xFF) | (buffer[11] >> 6)
+    ]
+  receivedDeltas[1][0] = conv18bitToInt32(miniBuf);
+
+  # Sample 2 - Channel 2
+  miniBuf = [
+      (buffer[11] & 0x3F) >> 4,
+      (buffer[11] << 4 & 0xFF) | (buffer[12] >> 4),
+      (buffer[12] << 4 & 0xFF) | (buffer[13] >> 4)
+    ]
+  receivedDeltas[1][1] = conv18bitToInt32(miniBuf);
+
+  # Sample 2 - Channel 3
+  miniBuf = [
+      (buffer[13] & 0x0F) >> 2,
+      (buffer[13] << 6 & 0xFF) | (buffer[14] >> 2),
+      (buffer[14] << 6 & 0xFF) | (buffer[15] >> 2)
+    ]
+  receivedDeltas[1][2] = conv18bitToInt32(miniBuf);
+
+  # Sample 2 - Channel 4
+  miniBuf = [
+      (buffer[15] & 0x03),
+      buffer[16],
+      buffer[17]
+    ]
+  receivedDeltas[1][3] = conv18bitToInt32(miniBuf);
 
   return receivedDeltas;
