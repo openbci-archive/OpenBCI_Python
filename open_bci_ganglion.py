@@ -13,7 +13,6 @@ board.start(handle_sample)
 
 TODO: support impedance
 TODO: better sample ID
-TODO: scale output, both for EEG and AUX
 TODO: switch for 18bit aux
 TODO: indicate incoming message -- end ascii packet or timeout
 
@@ -33,7 +32,8 @@ sys.path.insert(0,"bluepy/bluepy")
 from btle import Scanner, DefaultDelegate, Peripheral
 
 SAMPLE_RATE = 200.0  # Hz
-scale_fac_uVolts_per_count = 1200 * 8388607.0 * 1.5 * 51.0;
+scale_fac_uVolts_per_count = 1200 / (8388607.0 * 1.5 * 51.0)
+scale_fac_accel_G_per_count = 0.000032
 
 # service for communication, as per docs
 BLE_SERVICE = "fe84"
@@ -70,6 +70,7 @@ class OpenBCIBoard(object):
     self.streaming = False
     self.timeout = timeout
     self.max_packets_to_skip = max_packets_to_skip
+    self.scaling_output = scaled_output
 
     print("Looking for Ganglion board")
     if port == None:
@@ -79,8 +80,7 @@ class OpenBCIBoard(object):
     self.connect()
 
     self.streaming = False
-    self.scaling_output = scaled_output
-     # number of EEG channels and (optionally) accelerometer channel
+    # number of EEG channels and (optionally) accelerometer channel
     self.eeg_channels_per_sample = 4
     self.aux_channels_per_sample = 3 
     self.read_state = 0
@@ -112,7 +112,7 @@ class OpenBCIBoard(object):
     print ("disconnect, properties: " + str(self.char_discon.propertiesToString()) + ", supports read: " + str(self.char_discon.supportsRead()))
 
     # set delegate to handle incoming data
-    self.delegate = GanglionDelegate()
+    self.delegate = GanglionDelegate(self.scaling_output)
     self.gang.setDelegate(self.delegate)
     
     print("Turn on notifications")
@@ -328,7 +328,7 @@ class OpenBCISample(object):
 
 class GanglionDelegate(DefaultDelegate):
   """ Called by bluepy (handling BLE connection) when new data arrive, parses samples. """
-  def __init__(self):
+  def __init__(self, scaling_output = True):
       DefaultDelegate.__init__(self)
       # holds samples until OpenBCIBoard claims them
       self.samples = []
@@ -339,6 +339,7 @@ class GanglionDelegate(DefaultDelegate):
       self.lastChannelData = [0, 0, 0, 0]
       # 18bit data got here and then accelerometer with it
       self.lastAcceleromoter = [0, 0, 0]
+      self.scaling_output = scaling_output
 
   def handleNotification(self, cHandle, data):
     if len(data) < 1:
@@ -394,11 +395,19 @@ class GanglionDelegate(DefaultDelegate):
     for i in range(0,12,3):
       chan_data.append(conv24bitsToInt(packet[i:i+3]))
     # save uncompressed raw channel for future use and append whole sample
-    sample = OpenBCISample(sample_id, chan_data, [])
-    self.samples.append(sample)
+    self.pushSample(sample_id, chan_data, self.lastAcceleromoter)
     self.lastChannelData = chan_data
     self.updatePacketsCount(sample_id)
 
+  def pushSample(self, sample_id, chan_data, aux_data):
+    """ Add a sample to inner stack, dealing with scaling if necessary """
+
+    if self.scaling_output:
+      chan_data = list(np.array(chan_data) * scale_fac_uVolts_per_count)
+      aux_data = list(np.array(aux_data) * scale_fac_accel_G_per_count)
+    sample = OpenBCISample(sample_id, chan_data, aux_data)
+    self.samples.append(sample)
+    
   def parse19bit(self, sample_id, packet):
     """ Dealing with "19-bit compression without Accelerometer" """
     if len(packet) != 19:
@@ -412,8 +421,7 @@ class GanglionDelegate(DefaultDelegate):
       # TODO: use more broadly numpy
       full_data = list(np.array(self.lastChannelData) - np.array(delta))
       # NB: aux data updated only in 18bit mode, send values here only to be consistent
-      sample = OpenBCISample(sample_id, full_data, self.lastAcceleromoter)
-      self.samples.append(sample)
+      self.pushSample(sample_id, full_data, self.lastAcceleromoter)
       self.lastChannelData = full_data
     self.updatePacketsCount(sample_id)
 
@@ -442,8 +450,7 @@ class GanglionDelegate(DefaultDelegate):
       # 19bit packets hold deltas between two samples
       # TODO: use more broadly numpy
       full_data = list(np.array(self.lastChannelData) - np.array(delta))
-      sample = OpenBCISample(sample_id, full_data, self.lastAcceleromoter)
-      self.samples.append(sample)
+      self.pushSample(sample_id, full_data, self.lastAcceleromoter)
       self.lastChannelData = full_data
     self.updatePacketsCount(sample_id)
     
