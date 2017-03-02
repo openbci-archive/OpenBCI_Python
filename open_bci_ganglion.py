@@ -271,7 +271,51 @@ class OpenBCIBoard(object):
   def waitForNotifications(self, delay):
     """ Allow some time for the board to receive new data. """
     self.gang.waitForNotifications(delay)
-  
+
+
+  def test_signal(self, signal):
+    """ Enable / disable test signal """
+    if signal == 0:
+      self.warn("Disabling synthetic square wave")
+      try:
+        self.char_write.write(b']')
+      except Exception as e:
+        print("Something went wrong while setting signal: " + str(e))
+    elif signal == 1:
+      self.warn("Eisabling synthetic square wave")
+      try:
+        self.char_write.write(b'[')
+      except Exception as e:
+        print("Something went wrong while setting signal: " + str(e))
+    else:
+      self.warn("%s is not a known test signal. Valid signal is 0-1" %(signal))
+
+  def set_channel(self, channel, toggle_position):
+    """ Enable / disable channels """
+    try:
+      #Commands to set toggle to on position
+      if toggle_position == 1:
+        if channel is 1:
+          self.ser.write(b'!')
+        if channel is 2:
+          self.ser.write(b'@')
+        if channel is 3:
+          self.ser.write(b'#')
+        if channel is 4:
+          self.ser.write(b'$')
+      #Commands to set toggle to off position
+      elif toggle_position == 0:
+        if channel is 1:
+          self.ser.write(b'1')
+        if channel is 2:
+          self.ser.write(b'2')
+        if channel is 3:
+          self.ser.write(b'3')
+        if channel is 4:
+          self.ser.write(b'4')
+    except Exception as e:
+      print("Something went wrong while setting channels: " + str(e))
+    
   """
 
   Clean Up (atexit)

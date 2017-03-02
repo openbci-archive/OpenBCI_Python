@@ -474,6 +474,7 @@ class OpenBCIBoard(object):
     self.filtering_data = False;
 
   def test_signal(self, signal):
+    """ Enable / disable test signal """
     if signal == 0:
       self.ser.write(b'0')
       self.warn("Connecting all pins to ground")
@@ -496,6 +497,7 @@ class OpenBCIBoard(object):
       self.warn("%s is not a known test signal. Valid signals go from 0-5" %(signal))
 
   def set_channel(self, channel, toggle_position):
+    """ Enable / disable channels """
     #Commands to set toggle to on position
     if toggle_position == 1:
       if channel is 1:
