@@ -13,7 +13,7 @@ board.start_streaming(handle_sample)
 NOTE: If daisy modules is enabled, the callback will occur every two samples, hence "packet_id" will only contain even numbers. As a side effect, the sampling rate will be divided by 2.
 
 FIXME: at the moment we can just force daisy mode, do not check that the module is detected.
-
+TODO: enable impedance
 
 """
 import serial
@@ -97,6 +97,7 @@ class OpenBCIBoard(object):
     self.scaling_output = scaled_output
     self.eeg_channels_per_sample = 8 # number of EEG channels per sample *from the board*
     self.aux_channels_per_sample = 3 # number of AUX channels per sample *from the board*
+    self.imp_channels_per_sample = 0 # impedance check not supported at the moment
     self.read_state = 0
     self.daisy = daisy
     self.last_odd_sample = OpenBCISample(-1, [], []) # used for daisy
@@ -139,6 +140,9 @@ class OpenBCIBoard(object):
   
   def getNbAUXChannels(self):
     return  self.aux_channels_per_sample
+
+  def getNbImpChannels(self):
+    return  self.imp_channels_per_sample
 
   def start_streaming(self, callback, lapse=-1):
     """
@@ -594,10 +598,11 @@ class OpenBCIBoard(object):
       return openbci_port
 
 class OpenBCISample(object):
-  """Object encapulsating a single sample from the OpenBCI board."""
+  """Object encapulsating a single sample from the OpenBCI board. NB: dummy imp for plugin compatiblity"""
   def __init__(self, packet_id, channel_data, aux_data):
-    self.id = packet_id;
-    self.channel_data = channel_data;
-    self.aux_data = aux_data;
+    self.id = packet_id
+    self.channel_data = channel_data
+    self.aux_data = aux_data
+    self.imp_data = []
 
 

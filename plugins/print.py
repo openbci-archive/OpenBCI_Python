@@ -7,7 +7,11 @@ class PluginPrint(plugintypes.IPluginExtended):
 	# called with each new sample
 	def __call__(self, sample):
 		if sample:
-			sample_string = "ID: %f\n%s\n%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1])
+            # print impedance if supported
+			if self.imp_channels > 0:
+				sample_string = "ID: %f\n%s\n%s\%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1], str(sample.imp_data)[1:-1])
+			else:
+				sample_string = "ID: %f\n%s\n%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1])
 			print "---------------------------------"
 			print sample_string
 			print "---------------------------------"

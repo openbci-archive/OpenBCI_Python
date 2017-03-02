@@ -85,6 +85,7 @@ class OpenBCIBoard(object):
     # number of EEG channels and (optionally) accelerometer channel
     self.eeg_channels_per_sample = 4
     self.aux_channels_per_sample = 3 
+    self.imp_channels_per_sample = 0 
     self.read_state = 0
     self.log_packet_count = 0
     self.packets_dropped = 0
@@ -220,11 +221,16 @@ class OpenBCIBoard(object):
       return SAMPLE_RATE
   
   def getNbEEGChannels(self):
-      return self.eeg_channels_per_sample
+    """Will not get new data on impedance check."""
+    return self.eeg_channels_per_sample
   
   def getNbAUXChannels(self):
     """Might not be used depending on the mode."""
     return self.aux_channels_per_sample
+
+  def getNbImpChannels(self):
+    """Might not be used depending on the mode."""
+    return  self.imp_channels_per_sample
 
   def start_streaming(self, callback, lapse=-1):
     """
@@ -387,9 +393,10 @@ class OpenBCIBoard(object):
 class OpenBCISample(object):
   """Object encapulsating a single sample from the OpenBCI board."""
   def __init__(self, packet_id, channel_data, aux_data):
-    self.id = packet_id;
-    self.channel_data = channel_data;
-    self.aux_data = aux_data;
+    self.id = packet_id
+    self.channel_data = channel_data
+    self.aux_data = aux_data
+    self.imp_data = []
 
 
 class GanglionDelegate(DefaultDelegate):

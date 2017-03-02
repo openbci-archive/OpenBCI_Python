@@ -22,11 +22,12 @@ from yapsy.IPlugin import IPlugin
 
 class IPluginExtended(IPlugin):
   # args: passed by command line
-  def pre_activate(self, args, sample_rate=250, eeg_channels=8, aux_channels=3):
+  def pre_activate(self, args, sample_rate=250, eeg_channels=8, aux_channels=3, imp_channels=0):
     self.args = args
     self.sample_rate = sample_rate
     self.eeg_channels = eeg_channels
     self.aux_channels = aux_channels
+    self.imp_channels = imp_channels
     # by default we say that activation was okay -- inherited from IPlugin
     self.is_activated = True
     self.activate()
