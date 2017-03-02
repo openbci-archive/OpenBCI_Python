@@ -208,8 +208,13 @@ class OpenBCIBoard(object):
     return self.char_read.read()
 
   def ser_inWaiting(self):
-      """Dummy function to emulate Cyton API, here we don't know a thing about input buffer."""
-      return 0
+      """ Slightly different from Cyton API, return True if ASCII messages are incoming."""
+      # FIXME: might have a slight problem with thread because of notifications...
+      if self.delegate.receiving_ASCII:
+        # in case the packet indicating the end of the message drops, we use a 1s timeout
+        if timeit.default_timer() - self.delegate.time_last_ASCII > 2:
+          self.delegate.receiving_ASCII = False
+      return self.delegate.receiving_ASCII
   
   def getSampleRate(self):
       return SAMPLE_RATE
@@ -354,6 +359,9 @@ class GanglionDelegate(DefaultDelegate):
       # 18bit data got here and then accelerometer with it
       self.lastAcceleromoter = [0, 0, 0]
       self.scaling_output = scaling_output
+      # handling incoming ASCII messages
+      self.receiving_ASCII = False
+      self.time_last_ASCII = timeit.default_timer() 
 
   def handleNotification(self, cHandle, data):
     if len(data) < 1:
@@ -378,23 +386,31 @@ class GanglionDelegate(DefaultDelegate):
     # Give the informative part of the packet to proper handler -- split between ID and data bytes
     # Raw uncompressed
     if start_byte == 0:
+      self.receiving_ASCII = False
       self.parseRaw(start_byte, unpac[1:])
     # 18-bit compression with Accelerometer
     elif start_byte >= 1 and start_byte <= 100:
+      self.receiving_ASCII = False
       self.parse18bit(start_byte, unpac[1:])
     # 19-bit compression without Accelerometer
     elif start_byte >=101 and start_byte <= 200:
+      self.receiving_ASCII = False
       self.parse19bit(start_byte-100, unpac[1:])
     # Impedance Channel
     elif start_byte >= 201 and start_byte <= 205:
+      self.receiving_ASCII = False
       print("Warning: data not handled: 'Impedance Channel'.") 
     # Part of ASCII -- TODO: better formatting of incoming ASCII
     elif start_byte == 206:
       print("%\t" + str(packet[1:]))
+      self.receiving_ASCII = True
+      self.time_last_ASCII = timeit.default_timer() 
+      
     # End of ASCII message
     elif start_byte == 207:
       print("%\t" + str(packet[1:]))
       print ("$$$")
+      self.receiving_ASCII = False
     else:
       print("Warning: unknown type of packet: " + str(start_byte))
 
