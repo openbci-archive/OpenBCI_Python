@@ -64,11 +64,11 @@ class OpenBCIBoard(object):
     port: The port to connect to.
     baud: The baud of the serial connection.
     daisy: Enable or disable daisy module and 16 chans readings
-    aux: unused, for compatibility with ganglion API
+    aux, impedance: unused, for compatibility with ganglion API
   """
 
   def __init__(self, port=None, baud=115200, filter_data=True,
-    scaled_output=True, daisy=False, aux=False, log=True, timeout=None):
+    scaled_output=True, daisy=False, aux=False, impedance=False, log=True, timeout=None):
     self.log = log # print_incoming_text needs log
     self.streaming = False
     self.baudrate = baud
@@ -86,7 +86,6 @@ class OpenBCIBoard(object):
     time.sleep(2)
     #Initialize 32-bit board, doesn't affect 8bit board
     self.ser.write(b'v');
-
 
     #wait for device to be ready
     time.sleep(1)
@@ -113,6 +112,10 @@ class OpenBCIBoard(object):
   def getBoardType(self):
     """ Returns the version of the board """
     return self.board_type
+  
+  def setImpedance(self, flag):
+    """ Enable/disable impedance measure. Not implemented at the moment on Cyton. """
+    return
   
   def ser_write(self, b):
     """Access serial port object for write""" 

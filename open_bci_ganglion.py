@@ -12,8 +12,7 @@ board = OpenBCIBoard()
 board.start(handle_sample)
 
 TODO: support impedance
-TODO: indicate incoming message -- end ascii packet or timeout
-
+TODO: reset board with 'v'?
 """
 import struct
 import time
@@ -54,13 +53,14 @@ class OpenBCIBoard(object):
   Args:
     port: MAC address of the Ganglion Board. "None" to attempt auto-detect.
     aux: enable on not aux channels (i.e. switch to 18bit mode if set)
+    impedance: measures impedance when start streaming
     timeout: in seconds, if set will try to disconnect / reconnect after a period without new data -- should be high if impedance check
     max_packets_to_skip: will try to disconnect / reconnect after too many packets are skipped
     baud, filter_data, daisy: Not used, for compatibility with v3
   """
 
   def __init__(self, port=None, baud=0, filter_data=False,
-    scaled_output=True, daisy=False, log=True, aux=False, timeout=5, max_packets_to_skip=20):
+    scaled_output=True, daisy=False, log=True, aux=False, impedance=False, timeout=5, max_packets_to_skip=20):
     # unused, for compatibility with Cyton v3 API
     self.daisy = False
     # these one are used 
@@ -70,6 +70,7 @@ class OpenBCIBoard(object):
     self.timeout = timeout
     self.max_packets_to_skip = max_packets_to_skip
     self.scaling_output = scaled_output
+    self.impedance = False
 
     # might be handy to know API
     self.board_type = "ganglion"
@@ -98,6 +99,10 @@ class OpenBCIBoard(object):
     """ Returns the version of the board """
     return self.board_type
 
+  def setImpedance(self, flag):
+    """ Enable/disable impedance measure """
+    self.impedance = bool(flag)
+  
   def connect(self):
     """ Connect to the board and configure it. Note: recreates various objects upon call. """
     print ("Init BLE connection with MAC: " + self.port)
@@ -143,7 +148,11 @@ class OpenBCIBoard(object):
   def init_streaming(self):
     """ Tell the board to record like crazy. """
     try:
-      self.ser_write(b'b')
+      if self.impedance:
+        print("Starting with impedance testing")
+        self.ser_write(b'z')
+      else:
+        self.ser_write(b'b')
     except Exception as e:
       print("Something went wrong while asking the board to start streaming: " + str(e))
     self.streaming = True
@@ -332,7 +341,11 @@ class OpenBCIBoard(object):
     self.streaming = False
     # connection might be already down here
     try:
-      self.ser_write(b's')
+      if self.impedance:
+        print("Stopping with impedance testing")
+        self.ser_write(b'Z')
+      else:
+        self.ser_write(b's')
     except Exception as e:
       print("Something went wrong while asking the board to stop streaming: " + str(e))
     if self.log:

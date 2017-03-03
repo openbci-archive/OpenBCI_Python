@@ -173,7 +173,9 @@ if __name__ == '__main__':
     print ("--------------INFO---------------")
     print ("User serial interface enabled...\n\
 View command map at http://docs.openbci.com.\n\
-Type /start to run -- and /stop before issuing new commands afterwards.\n\
+Type /start to run (/startimp for impedance \n\
+checking, if supported) -- and /stop\n\
+before issuing new commands afterwards.\n\
 Type /exit to exit. \n\
 Board outputs are automatically printed as: \n\
 %  <tab>  message\n\
@@ -220,7 +222,25 @@ https://github.com/OpenBCI/OpenBCI_Python")
                 else:
                     lapse = -1
 
-                if("start" in s):
+                if('startimp' in s):
+                    if board.getBoardType() == "cyton":
+                        print ("Impedance checking not supported on cyton.")
+                    else:
+                        board.setImpedance(True)
+                        if(fun != None):
+                            # start streaming in a separate thread so we could always send commands in here
+                            boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
+                            boardThread.daemon = True # will stop on exit
+                            try:
+                                boardThread.start()
+                            except:
+                                    raise
+                        else:
+                            print ("No function loaded")
+                        rec = True
+                    
+                elif("start" in s):
+                    board.setImpedance(False)
                     if(fun != None):
                         # start streaming in a separate thread so we could always send commands in here
                         boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
@@ -232,6 +252,7 @@ https://github.com/OpenBCI/OpenBCI_Python")
                     else:
                         print ("No function loaded")
                     rec = True
+
                 elif('test' in s):
                     test = int(s[s.find("test")+4:])
                     board.test_signal(test)
