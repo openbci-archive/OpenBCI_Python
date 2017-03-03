@@ -9,7 +9,7 @@ class PluginPrint(plugintypes.IPluginExtended):
 		if sample:
             # print impedance if supported
 			if self.imp_channels > 0:
-				sample_string = "ID: %f\n%s\n%s\%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1], str(sample.imp_data)[1:-1])
+				sample_string = "ID: %f\n%s\n%s\n%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1], str(sample.imp_data)[1:-1])
 			else:
 				sample_string = "ID: %f\n%s\n%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1])
 			print "---------------------------------"
