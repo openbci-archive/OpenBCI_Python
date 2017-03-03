@@ -60,7 +60,7 @@ class OpenBCIBoard(object):
   """
 
   def __init__(self, port=None, baud=0, filter_data=False,
-    scaled_output=True, daisy=False, log=True, aux=False, impedance=False, timeout=5, max_packets_to_skip=20):
+    scaled_output=True, daisy=False, log=True, aux=False, impedance=False, timeout=2, max_packets_to_skip=20):
     # unused, for compatibility with Cyton v3 API
     self.daisy = False
     # these one are used 
