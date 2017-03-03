@@ -54,13 +54,13 @@ class OpenBCIBoard(object):
   Args:
     port: MAC address of the Ganglion Board. "None" to attempt auto-detect.
     aux: enable on not aux channels (i.e. switch to 18bit mode if set)
-    timeout: in seconds, if set will try to disconnect / reconnect after a period without new data
+    timeout: in seconds, if set will try to disconnect / reconnect after a period without new data -- should be high if impedance check
     max_packets_to_skip: will try to disconnect / reconnect after too many packets are skipped
     baud, filter_data, daisy: Not used, for compatibility with v3
   """
 
   def __init__(self, port=None, baud=0, filter_data=False,
-    scaled_output=True, daisy=False, log=True, aux=False, timeout=1, max_packets_to_skip=20):
+    scaled_output=True, daisy=False, log=True, aux=False, timeout=5, max_packets_to_skip=20):
     # unused, for compatibility with Cyton v3 API
     self.daisy = False
     # these one are used 
@@ -454,7 +454,7 @@ class GanglionDelegate(DefaultDelegate):
     # Impedance Channel
     elif start_byte >= 201 and start_byte <= 205:
       self.receiving_ASCII = False
-      self.parseImpedance(start_byte, unpac[1:])
+      self.parseImpedance(start_byte, packet[1:])
     # Part of ASCII -- TODO: better formatting of incoming ASCII
     elif start_byte == 206:
       print("%\t" + str(packet[1:]))
@@ -540,8 +540,15 @@ class GanglionDelegate(DefaultDelegate):
 
 
   def parseImpedance(self, packet_id, packet):
-    """ Dealing with impedance data """
-    print "impedance:", packet
+    """ Dealing with impedance data. packet: ASCII data. NB: will take few packet (seconds) to fill"""
+    if packet[-2:] != "Z\n":
+      print('Wrong format for impedance check, should be ASCII ending with "Z\\n"')
+
+    # convert from ASCII to actual value
+    imp_value = int(packet[:-2])
+    # from 201 to 205 codes to the right array size
+    self.lastImpedance[packet_id- 201] =  imp_value
+    self.pushSample(packet_id - 200, self.lastChannelData, self.lastAcceleromoter, self.lastImpedance)
 
     
   def pushSample(self, sample_id, chan_data, aux_data, imp_data):
