@@ -27,9 +27,9 @@ You may also need to alter the settings of your bluetooth adapter in order to re
 
 On linux, assuming `hci0` is the name of your bluetooth adapter:
 
-`sudo echo 9 > /sys/kernel/debug/bluetooth/hci0/conn_min_interval`
+`sudo bash -c 'echo 9 > /sys/kernel/debug/bluetooth/hci0/conn_min_interval'`
 
-`sudo echo 10 > /sys/kernel/debug/bluetooth/hci0/conn_max_interval`
+`sudo bash -c 'echo 10 > /sys/kernel/debug/bluetooth/hci0/conn_max_interval'`
 
 # Audience:
 
