@@ -614,7 +614,7 @@ def conv24bitsToInt(unpacked):
   literal_read = struct.pack('3B', unpacked[0], unpacked[1], unpacked[2])
 
   #3byte int in 2s compliment
-  if (unpacked[0] >= 127):
+  if (unpacked[0] > 127):
     pre_fix = bytes(bytearray.fromhex('FF')) 
   else:
     pre_fix = bytes(bytearray.fromhex('00'))

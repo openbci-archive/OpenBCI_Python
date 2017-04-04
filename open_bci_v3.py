@@ -244,7 +244,7 @@ class OpenBCIBoard(object):
           log_bytes_in = log_bytes_in + '|' + str(literal_read);
 
           #3byte int in 2s compliment
-          if (unpacked[0] >= 127):
+          if (unpacked[0] > 127):
             pre_fix = bytes(bytearray.fromhex('FF')) 
           else:
             pre_fix = bytes(bytearray.fromhex('00'))
