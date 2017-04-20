@@ -26,8 +26,8 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--info', metavar='PLUGIN',
                         help="Show more information about a plugin.")
     parser.add_argument('-p', '--port',
-                        help="Port to connect to OpenBCI Dongle " +
-                        "( ex /dev/ttyUSB0 or /dev/tty.usbserial-* ) or AUTO to attempt auto-dection.")
+                        help="For Cyton, port to connect to OpenBCI Dongle " +
+                        "( ex /dev/ttyUSB0 or /dev/tty.usbserial-* ). For Ganglion, MAC address of the board. For both, AUTO to attempt auto-detection.")
     parser.set_defaults(port="AUTO")
     # baud rate is not currently used
     parser.add_argument('-b', '--baud', default=115200, type=int,
