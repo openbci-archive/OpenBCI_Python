@@ -23,22 +23,22 @@ class PluginCSVCollect(plugintypes.IPluginExtended):
 				self.verbose = True
 
 		self.file_name = self.file_name + '.csv'
-		print "Will export CSV to:", self.file_name
+		print("Will export CSV to:" + self.file_name)
 		#Open in append mode
 		with open(self.file_name, 'a') as f:
 			f.write('%'+self.time_stamp + '\n')
 		
 	def deactivate(self):
-		print "Closing, CSV saved to:", self.file_name
+		print("Closing, CSV saved to:" + self.file_name)
 		return
 
 	def show_help(self):
-		print "Optional argument: [filename] (default: collect.csv)"
+		print("Optional argument: [filename] (default: collect.csv)")
 
 	def __call__(self, sample):
 		t = timeit.default_timer() - self.start_time
 
-		#print timeSinceStart|Sample Id
+		#print(timeSinceStart|Sample Id)
 		if self.verbose:
 			print("CSV: %f | %d" %(t,sample.id))
 
