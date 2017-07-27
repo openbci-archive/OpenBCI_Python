@@ -1,6 +1,7 @@
 
-# requires pyosc
-from OSC import OSCClient, OSCMessage
+# requires python-osc
+from pythonosc import osc_message_builder
+from pythonosc import udp_client
 import plugin_interface as plugintypes
 
 # Use OSC protocol to broadcast data (UDP layer), using "/openbci" stream. (NB. does not check numbers of channel as TCP server)
@@ -31,26 +32,23 @@ class StreamerOSC(plugintypes.IPluginExtended):
 		if len(self.args) > 2:
 			self.address = self.args[2]
 		# init network
-		print "Selecting OSC streaming. IP: ", self.ip, ", port: ", self.port, ", address: ", self.address
-		self.client = OSCClient()
-		self.client.connect( (self.ip, self.port) )
+		print("Selecting OSC streaming. IP: " + self.ip + ", port: " + str(self.port) + ", address: " + self.address)
+		self.client = udp_client.SimpleUDPClient(self.ip, self.port)
 
 	# From IPlugin: close connections, send message to client
 	def deactivate(self):
-		self.client.send(OSCMessage("/quit") )
+		self.client.send_message("/quit")
 	    
 	# send channels values
 	def __call__(self, sample):
-		mes = OSCMessage(self.address)
-		mes.append(sample.channel_data)
 		# silently pass if connection drops
 		try:
-			self.client.send(mes)
+			self.client.send_message(self.address, sample.channel_data)
 		except:
 			return
 
 	def show_help(self):
-	  	print """Optional arguments: [ip [port [address]]]
-	  	\t ip: target IP address (default: 'localhost')
-	  	\t port: target port (default: 12345)
-	  	\t address: select target address (default: '/openbci')"""
+		print("""Optional arguments: [ip [port [address]]]
+			\t ip: target IP address (default: 'localhost')
+			\t port: target port (default: 12345)
+			\t address: select target address (default: '/openbci')""")

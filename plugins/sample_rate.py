@@ -24,11 +24,11 @@ class Monitor(Thread):
 			new_tick = timeit.default_timer()
 			elapsed_time = new_tick - self.tick
 			current_samples_out = nb_samples_out
-			print "--- at t: ", (new_tick - self.start_tick), " ---"
-			print "elapsed_time: ", elapsed_time
-			print "nb_samples_out: ", current_samples_out - self.nb_samples_out
+			print("--- at t: " + str(new_tick - self.start_tick) + " ---")
+			print("elapsed_time: " + str(elapsed_time))
+			print("nb_samples_out: " + str(current_samples_out - self.nb_samples_out))
 			sampling_rate = (current_samples_out - self.nb_samples_out)  / elapsed_time
-			print "sampling rate: ", sampling_rate
+			print("sampling rate: " + str(sampling_rate))
 			self.tick = new_tick
 			self.nb_samples_out = nb_samples_out
 			time.sleep(self.polling_interval)
@@ -49,4 +49,4 @@ class PluginSampleRate(plugintypes.IPluginExtended):
 		monit.start()
 		
 	def show_help(self):
-		print "Optional argument: polling_interval -- in seconds, default: 10."
+		print("Optional argument: polling_interval -- in seconds, default: 10.")

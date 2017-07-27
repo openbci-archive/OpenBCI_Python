@@ -31,10 +31,12 @@ class StreamerLSL(plugintypes.IPluginExtended):
 			imp_id = self.args[5]
 
 		# Create a new streams info, one for EEG values, one for AUX (eg, accelerometer) values
-		print "Creating LSL stream for EEG. Name:", eeg_stream, "- ID:", eeg_id, "- data type: float32.", self.eeg_channels, "channels at", self.sample_rate, "Hz."
+		print("Creating LSL stream for EEG. Name:" + eeg_stream + "- ID:" + eeg_id +
+			"- data type: float32." + str(self.eeg_channels) + "channels at" + str(self.sample_rate) + "Hz.")
 		info_eeg = StreamInfo(eeg_stream, 'EEG', self.eeg_channels,self.sample_rate,'float32',eeg_id);
 		# NB: set float32 instead of int16 so as OpenViBE takes it into account
-		print "Creating LSL stream for AUX. Name:", aux_stream, "- ID:", aux_id, "- data type: float32.", self.aux_channels, "channels at", self.sample_rate, "Hz."
+		print("Creating LSL stream for AUX. Name:" + aux_stream + "- ID:" + aux_id +
+			"- data type: float32." + str(self.aux_channels) + "channels at" + str(self.sample_rate) + "Hz.")
 		info_aux = StreamInfo(aux_stream, 'AUX', self.aux_channels,self.sample_rate,'float32',aux_id);
 
 		# make outlets
@@ -42,7 +44,8 @@ class StreamerLSL(plugintypes.IPluginExtended):
 		self.outlet_aux = StreamOutlet(info_aux)
 
 		if self.imp_channels > 0:
-			print "Creating LSL stream for Impedance. Name:", imp_stream, "- ID:", imp_id, "- data type: float32.", self.imp_channels, "channels at", self.sample_rate, "Hz."
+			print("Creating LSL stream for Impedance. Name:" + imp_stream + "- ID:" + imp_id +
+				"- data type: float32." + str(self.imp_channels) + "channels at" + str(self.sample_rate) + "Hz.")
 			info_imp = StreamInfo(imp_stream, 'Impedance', self.imp_channels,self.sample_rate,'float32',imp_id);
 			self.outlet_imp = StreamOutlet(info_imp)
 
@@ -54,5 +57,5 @@ class StreamerLSL(plugintypes.IPluginExtended):
 			self.outlet_imp.push_sample(sample.imp_data)
 
 	def show_help(self):
-	  	print """Optional arguments: [EEG_stream_name [EEG_stream_ID [AUX_stream_name [AUX_stream_ID [Impedance_steam_name [Impedance_stream_ID]]]]]]
-	  	\t Defaults: "OpenBCI_EEG" / "openbci_eeg_id1" and "OpenBCI_AUX" / "openbci_aux_id1" / "OpenBCI_Impedance" / "openbci_imp_id1"."""
+		print("""Optional arguments: [EEG_stream_name [EEG_stream_ID [AUX_stream_name [AUX_stream_ID [Impedance_steam_name [Impedance_stream_ID]]]]]]
+			\t Defaults: "OpenBCI_EEG" / "openbci_eeg_id1" and "OpenBCI_AUX" / "openbci_aux_id1" / "OpenBCI_Impedance" / "openbci_imp_id1".""")

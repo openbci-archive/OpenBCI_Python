@@ -51,7 +51,7 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
 			self.port = int(self.args[1])
 		
 		# init network
-		print "Selecting raw TCP streaming. IP: ", self.ip, ", port: ", self.port
+		print("Selecting raw TCP streaming. IP: " + self.ip + ", port: " + str(self.port))
 		self.initialize()
 		
 		# init the daemon that monitors connections
@@ -69,7 +69,7 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
 		# create connection
 		self.server_socket.bind((self.ip, self.port))
 		self.server_socket.listen(1)
-		print "Server started on port " + str(self.port)
+		print("Server started on port " + str(self.port))
       
 	# From Streamer, to be called each time we're willing to accept new connections
 	def check_connections(self):
@@ -79,7 +79,7 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
 			# New connection
 			sockfd, addr = self.server_socket.accept()
 			self.CONNECTION_LIST.append(sockfd)
-			print "Client (%s, %s) connected" % addr
+			print("Client (%s, %s) connected" % addr)
 		# and... don't bother with incoming messages
   
 	# From IPlugin: close sockets, send message to client
@@ -117,16 +117,16 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
 					# TODO: should check if the correct number of bytes passed through
 			except:
 				# sometimes (always?) it's only during the second write to a close socket that an error is raised?
-				print "Something bad happened, will close socket"
+				print("Something bad happened, will close socket")
 				outdated_list.append(sock)
 		# now we are outside of the main list, it's time to remove outdated sockets, if any
 		for bad_sock in outdated_list:
-			print "Removing socket..."
+			print("Removing socket...")
 			self.CONNECTION_LIST.remove(bad_sock)
 			# not very costly to be polite
 			bad_sock.close()
 	
 	def show_help(self):
-	  	print """Optional arguments: [ip [port]]
-	  	\t ip: target IP address (default: 'localhost')
-	  	\t port: target port (default: 12345)"""
+		print("""Optional arguments: [ip [port]]
+			\t ip: target IP address (default: 'localhost')
+			\t port: target port (default: 12345)""")

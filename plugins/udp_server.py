@@ -16,30 +16,30 @@ import plugin_interface as plugintypes
 # class PluginPrint(IPlugin):
 #   # args: passed by command line
 #   def activate(self, args):
-#     print "Print activated"
+#     print("Print activated")
 #     # tell outside world that init went good
 #     return True
     
 #   def deactivate(self):
-#     print "Print Deactivated"
+#     print("Print Deactivated")
   
 #   def show_help(self):
-#     print "I do not need any parameter, just printing stuff."
+#     print("I do not need any parameter, just printing stuff.")
   
 #   # called with each new sample
 #   def __call__(self, sample):
 #     sample_string = "ID: %f\n%s\n%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1])
-#     print "---------------------------------"
-#     print sample_string
-#     print "---------------------------------"
+#     print("---------------------------------")
+#     print(sample_string)
+#     print("---------------------------------")
     
 #     # DEBBUGING
 #     # try:
 #     #     sample_string.decode('ascii')
 #     # except UnicodeDecodeError:
-#     #     print "Not a ascii-encoded unicode string"
+#     #     print("Not a ascii-encoded unicode string")
 #     # else:
-#     #     print sample_string
+#     #     print(sample_string)
 
 
 class UDPServer(plugintypes.IPluginExtended):
@@ -49,8 +49,8 @@ class UDPServer(plugintypes.IPluginExtended):
     self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
   def activate(self):
-    print "udp_server plugin"
-    print self.args
+    print("udp_server plugin")
+    print(self.args)
 
     if len(self.args) > 0:
       self.ip = self.args[0]
@@ -58,11 +58,11 @@ class UDPServer(plugintypes.IPluginExtended):
       self.port = int(self.args[1])
     
     # init network
-    print "Selecting raw UDP streaming. IP: ", self.ip, ", port: ", str(self.port)
+    print("Selecting raw UDP streaming. IP: " + self.ip + ", port: " + str(self.port))
 
     self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    print "Server started on port " + str(self.port)
+    print("Server started on port " + str(self.port))
 
   def __call__(self, sample): 
     self.send_data(json.dumps(sample.channel_data))
@@ -75,6 +75,6 @@ class UDPServer(plugintypes.IPluginExtended):
     self.server.close();
 
   def show_help(self):
-      print """Optional arguments: [ip [port]]
+      print("""Optional arguments: [ip [port]]
       \t ip: target IP address (default: 'localhost')
-      \t port: target port (default: 12345)"""
+      \t port: target port (default: 12345)""")
