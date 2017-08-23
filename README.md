@@ -146,7 +146,7 @@ the user to hit enter on the user.py script until you get a response.
 
 #### Ganglion
 
-The Ganglion board is currently supported only on Linux. To launch the script, try to auto-detect the MAC adress of the nearby board and print values upon `/start`:
+The Ganglion board is currently supported only on Linux. The communication is made directly through bluetooth (BLE), instead of using a dongle through a serial port. To launch the script, auto-detect the bluetooth MAC address of the nearby board and print values upon `/start`:
 
 > $sudo python user.py --board ganglion --add print
 
