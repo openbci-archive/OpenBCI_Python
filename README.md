@@ -61,7 +61,7 @@ Then simply run the code given as an argument the port your board is connected t
 Ex Linux:
 > $python user.py -p /dev/ttyUSB0 
 
-The program should establish a serial connection and reset the board to default settings. When a '-->' appears, you can type a character (character map http://docs.openbci.com/software/01-OpenBCI_SDK)  that will be sent to the board using ser.write. This allows you to change the settings on the board. 
+The program should establish a serial connection and reset the board to default settings. When a '-->' appears, you can type a character (Cyton character map is [here](http://docs.openbci.com/OpenBCI%20Software/04-OpenBCI_Cyton_SDK), Ganglion is [here](http://docs.openbci.com/OpenBCI%20Software/06-OpenBCI_Ganglion_SDK))  that will be sent to the board using ser.write. This allows you to change the settings on the board. 
 
 A good first test is to try is to type '?':
 >--> ?
