@@ -30,7 +30,8 @@ import glob
 
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = 0xA0  # start of data packet
-END_BYTE = 0xC0  # end of data packet
+END_BYTE_ACCEL = 0xC0  # end of data packet with accel data
+END_BYTE_AUX = 0xC1  # end of data packet with aux data
 ADS1299_Vref = 4.5  #reference voltage for ADC in ADS1299.  set by its hardware
 ADS1299_gain = 24.0  #assumed gain setting for ADS1299.  set by its Arduino code
 scale_fac_uVolts_per_count = ADS1299_Vref/float((pow(2,23)-1))/ADS1299_gain*1000000.
@@ -68,7 +69,7 @@ class OpenBCIBoard(object):
   """
 
   def __init__(self, port=None, baud=115200, filter_data=True,
-    scaled_output=True, daisy=False, aux=False, impedance=False, log=True, timeout=None):
+    scaled_output=True, scale_accel=True, daisy=False, aux=False, impedance=False, log=True, timeout=None):
     self.log = log # print_incoming_text needs log
     self.streaming = False
     self.baudrate = baud
@@ -94,6 +95,7 @@ class OpenBCIBoard(object):
     self.streaming = False
     self.filtering_data = filter_data
     self.scaling_output = scaled_output
+    self.scaling_aux = scaled_accel
     self.eeg_channels_per_sample = 8 # number of EEG channels per sample *from the board*
     self.aux_channels_per_sample = 3 # number of AUX channels per sample *from the board*
     self.imp_channels_per_sample = 0 # impedance check not supported at the moment
@@ -271,10 +273,10 @@ class OpenBCIBoard(object):
           acc = struct.unpack('>h', read(2))[0]
           log_bytes_in = log_bytes_in + '|' + str(acc);
 
-          if self.scaling_output:
+          if self.scaling_aux:
             aux_data.append(acc*scale_fac_accel_G_per_count)
           else:
-              aux_data.append(acc)
+            aux_data.append(acc)
 
         self.read_state = 3;
       #---------End Byte---------
@@ -282,7 +284,15 @@ class OpenBCIBoard(object):
         val = struct.unpack('B', read(1))[0]
         log_bytes_in = log_bytes_in + '|' + str(val);
         self.read_state = 0 #read next packet
-        if (val == END_BYTE):
+        if (val == END_BYTE_ACCEL):
+          if not self.scaling_aux:
+            self.scaling_aux = True
+          sample = OpenBCISample(packet_id, channel_data, aux_data)
+          self.packets_dropped = 0
+          return sample
+        elif (val == END_BYTE_AUX):
+          if self.scaling_aux:
+            self.scaling_aux = False
           sample = OpenBCISample(packet_id, channel_data, aux_data)
           self.packets_dropped = 0
           return sample
