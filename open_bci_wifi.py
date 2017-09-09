@@ -1,5 +1,5 @@
 """
-Core OpenBCI object for handling connections and samples from the Ganglion board.
+Core OpenBCI object for handling connections and samples from the WiFi Shield
 
 Note that the LIB will take care on its own to print incoming ASCII messages if any (FIXME, BTW).
 
@@ -8,11 +8,13 @@ EXAMPLE USE:
 def handle_sample(sample):
   print(sample.channels_data)
 
-board = OpenBCIBoard()
-board.start(handle_sample)
+wifi = OpenBCIWifi()
+wifi.start(handle_sample)
 
-TODO: support impedance
-TODO: reset board with 'v'?
+TODO: Cyton/Ganglion JSON
+TODO: Ganglion Raw
+TODO: Cyton Raw
+
 """
 import struct
 import time
@@ -23,62 +25,51 @@ import numpy as np
 import sys
 import pdb
 import glob
-# local bluepy should take precedence
-import sys
-sys.path.insert(0,"bluepy/bluepy")
-from btle import Scanner, DefaultDelegate, Peripheral
 
-SAMPLE_RATE = 200.0  # Hz
-scale_fac_uVolts_per_count = 1200 / (8388607.0 * 1.5 * 51.0)
-scale_fac_accel_G_per_count = 0.000032
+SAMPLE_RATE = 0  # Hz
 
-# service for communication, as per docs
-BLE_SERVICE = "fe84"
-# characteristics of interest
-BLE_CHAR_RECEIVE = "2d30c082f39f4ce6923f3484ea480596"
-BLE_CHAR_SEND = "2d30c083f39f4ce6923f3484ea480596"
-BLE_CHAR_DISCONNECT = "2d30c084f39f4ce6923f3484ea480596"
 
 '''
-#Commands for in SDK http://docs.openbci.com/Hardware/08-Ganglion_Data_Forma
+#Commands for in SDK
 
 command_stop = "s";
 command_startBinary = "b";
 '''
 
-class OpenBCIBoard(object):
+
+class OpenBCIWifi(object):
   """
-  Handle a connection to an OpenBCI board.
+  Handle a connection to an OpenBCI wifi shield.
 
   Args:
-    port: MAC address of the Ganglion Board. "None" to attempt auto-detect.
-    aux: enable on not aux channels (i.e. switch to 18bit mode if set)
-    impedance: measures impedance when start streaming
-    timeout: in seconds, if set will try to disconnect / reconnect after a period without new data -- should be high if impedance check
+    ip_address: The IP address of the WiFi Shield, "None" to attempt auto-detect.
+    shield_name: The unique name of the WiFi Shield, such as `OpenBCI-2AD4`, will use SSDP to get IP address still,
+      if `shield_name` is "None" and `ip_address` is "None", will connect to the first WiFi Shield found using SSDP
+    sample_rate: The sample rate to set the attached board to. If the sample rate picked is not a sample rate the attached
+      board can support, i.e. you send 300 to Cyton, then error will be thrown.
+    log:
+    timeout: in seconds, disconnect / reconnect after a period without new data -- should be high if impedance check
     max_packets_to_skip: will try to disconnect / reconnect after too many packets are skipped
-    baud, filter_data, daisy: Not used, for compatibility with v3
   """
 
-  def __init__(self, port=None, baud=0, filter_data=False,
-    scaled_output=True, daisy=False, log=True, aux=False, impedance=False, timeout=2, max_packets_to_skip=20):
-    # unused, for compatibility with Cyton v3 API
-    self.daisy = False
-    # these one are used 
+  def __init__(self, ip_address=None, shield_name=None, sample_rate=None, log=True, timeout=2, max_packets_to_skip=20):
+    # these one are used
     self.log = log # print_incoming_text needs log
-    self.aux = aux
     self.streaming = False
     self.timeout = timeout
     self.max_packets_to_skip = max_packets_to_skip
-    self.scaling_output = scaled_output
     self.impedance = False
+    self.ip_address = ip_address
+    self.shield_name = shield_name
+    self.sample_rate = sample_rate
 
     # might be handy to know API
-    self.board_type = "ganglion"
+    self.board_type = "none"
 
-    print("Looking for Ganglion board")
-    if port == None:
-      port = self.find_port()   
-    self.port = port # find_port might not return string
+    if self.log:
+      print("Looking for Ganglion board")
+    if ip_address is None:
+      self.ip_address = self.find_wifi_shield()
 
     self.connect()
 
@@ -159,11 +150,11 @@ class OpenBCIBoard(object):
     self.packets_dropped = 0
     self.time_last_packet = timeit.default_timer() 
     
-  def find_port(self):
+  def find_wifi_shield(self):
     """Detects Ganglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
 
-    print("Try to detect Ganglion MAC address. NB: Turn on bluetooth and run as root for this to work! Might not work with every BLE dongles.")
-    scan_time = 5
+    print("Try to find WiFi shields on your local wireless network")
+    scan_time = 10
     print("Scanning for 5 seconds nearby devices...")
 
     #   From bluepy example

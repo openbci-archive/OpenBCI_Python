@@ -63,3 +63,7 @@ target/
 # Matlab
 *.m
 
+# PyCharm
+.idea/*
+.idea/codeStyleSettings.xml
+.idea/vcs.xml
