@@ -30,7 +30,7 @@ from btle import Scanner, DefaultDelegate, Peripheral
 
 SAMPLE_RATE = 200.0  # Hz
 scale_fac_uVolts_per_count = 1200 / (8388607.0 * 1.5 * 51.0)
-scale_fac_accel_G_per_count = 0.000032
+scale_fac_accel_G_per_count = 0.000016
 
 # service for communication, as per docs
 BLE_SERVICE = "fe84"
