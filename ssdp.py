@@ -34,7 +34,7 @@ class SSDPResponse(object):
         return "<SSDPResponse({location}, {st}, {usn})>".format(**self.__dict__)
 
 
-def discover(service, timeout=5, retries=1, mx=3):
+def discover(service, timeout=5, retries=1, mx=3, wifi_found_cb=None):
     group = ("239.255.255.250", 1900)
     message = "\r\n".join([
         'M-SEARCH * HTTP/1.1',
