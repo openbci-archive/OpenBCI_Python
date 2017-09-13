@@ -23,8 +23,6 @@ import atexit
 import logging
 import numpy as np
 import sys
-import pdb
-import glob
 import ssdp
 import urllib2
 import xmltodict
