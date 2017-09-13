@@ -26,4 +26,6 @@ if __name__ == '__main__':
     # board.ser.write('v')
     # time.sleep(10)
     shield.start_streaming(printData)
+
+    shield.loop()
     # board.print_bytes_in()
