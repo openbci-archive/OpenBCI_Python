@@ -51,6 +51,8 @@ def discover(service, timeout=5, retries=1, mx=3, wifi_found_cb=None):
         while True:
             try:
                 response = SSDPResponse(sock.recv(1024))
+                if wifi_found_cb is not None:
+                  wifi_found_cb(response)
                 responses[response.location] = response
             except socket.timeout:
                 break

@@ -28,6 +28,7 @@ import glob
 import ssdp
 import urllib2
 import xmltodict
+import re
 
 SAMPLE_RATE = 0  # Hz
 
@@ -153,48 +154,45 @@ class OpenBCIWifi(object):
     self.packets_dropped = 0
     self.time_last_packet = timeit.default_timer()
 
-  def find_wifi_shield(self):
+  def find_wifi_shield(self, shield_name=None):
     """Detects Ganglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
 
     print("Try to find WiFi shields on your local wireless network")
     scan_time = 5
     print("Scanning for 5 seconds nearby devices...")
 
-    ssdp_hits = ssdp.discover("urn:schemas-upnp-org:device:Basic:1", timeout=3)
     list_ip = []
     list_id = []
-    device_descriptions = []
-    if len(ssdp_hits) > 0:
-      for ssdp_hit in ssdp_hits:
-        res = urllib2.urlopen(ssdp_hit.location).read()
-        device_description = xmltodict.parse(res)
-        list_id.append(str(device_description['root']['device']['serialNumber']))
-        list_ip.append(str(device_description['root']['URLBase']))
+    found_shield = False
+    def wifi_shield_found(response):
+      res = urllib2.urlopen(response.location).read()
+      device_description = xmltodict.parse(res)
+      cur_shield_name = str(device_description['root']['device']['serialNumber'])
+      cur_base_url = str(device_description['root']['URLBase'])
+      cur_ip_address = re.findall(r'[0-9]+(?:\.[0-9]+){3}', cur_base_url )[0]
+      list_id.append(cur_shield_name)
+      list_ip.append(cur_ip_address)
+      if shield_name is not None:
+        if shield_name == cur_shield_name:
+          found_shield = True
+          return cur_ip_address
 
-    nb_devices = len(devices)
-    list_ip = []
-    list_id = []
-    if nb_devices < 1:
-      print("No WiFi Shield found. Check connectivity.")
-      return ""
-    else:
-      print("Found " + str(nb_devices) + ", detecting wifi shields")
+
+    ssdp_hits = ssdp.discover("urn:schemas-upnp-org:device:Basic:1", timeout=3, wifi_found_cb=wifi_shield_found)
 
     nb_wifi_shields = 0
-
-    for dev in devices:
-      # "Ganglion" should appear inside the "value" associated to "Complete Local Name", e.g. "Ganglion-b2a6"
-      print(dev)
+    if not found_shield:
+      nb_wifi_shields = len(list_id)
+    else:
+      nb_wifi_shields = 1
 
     if nb_wifi_shields < 1:
       print("No WiFi Shield found ;(")
       raise OSError('Cannot find OpenBCI WiFi Shield with local name')
 
     if nb_wifi_shields > 1:
-      print("Found " + str(nb_wifi_shields) + ", selecting first")
-
-    print("Selecting Shield named " + list_ip[0] + " for " + list_id[0])
-    return list_ip[0]
+      print("Found " + str(nb_wifi_shields) + ", selecting first named: " + list_id[0] + " with IPV4: " + list_ip[0])
+      return list_ip[0]
 
   def ser_write(self, b):
     """Access serial port object for write"""
