@@ -1,5 +1,5 @@
 """
-Core OpenBCI object for handling connections and samples from the gnaglion board.
+Core OpenBCI object for handling connections and samples from the Ganglion board.
 
 Note that the LIB will take care on its own to print incoming ASCII messages if any (FIXME, BTW).
 
