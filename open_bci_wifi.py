@@ -30,6 +30,7 @@ import re
 import asyncore
 import socket
 import requests
+import json
 
 SAMPLE_RATE = 0  # Hz
 
@@ -250,14 +251,16 @@ class OpenBCIWifi(object):
           callback: A callback function -- or a list of functions -- that will receive a single argument of the
               OpenBCISample object captured.
         """
-        if not self.streaming:
-            self.init_streaming()
-
         start_time = timeit.default_timer()
 
         # Enclose callback funtion in a list if it comes alone
         if not isinstance(callback, list):
-            callback = [callback]
+            self.local_wifi_server.set_callback(callback)
+        else:
+            self.local_wifi_server.set_callback(callback[0])
+
+        if not self.streaming:
+            self.init_streaming()
 
         # while self.streaming:
         #     # should the board get disconnected and we could not wait for notification anymore, a reco should be attempted through timeout mechanism
@@ -402,25 +405,53 @@ class OpenBCISample(object):
 
 
 class WiFiShieldHandler(asyncore.dispatcher_with_send):
+    def __init__(self, sock, callback=None):
+        asyncore.dispatcher_with_send.__init__(self, sock)
+
+        self.callback = callback
 
     def handle_read(self):
-        data = self.recv(8192)
-        if data:
-            print(data)
+        data = self.recv(3000)  # 3000 is the max data the WiFi shield is allowed to send over TCP
+        if len(data) > 2:
+            try:
+                possible_chunks = data.split('\r\n')
+                if len(possible_chunks) > 1:
+                    possible_chunks = possible_chunks[:-1]
+                for possible_chunk in possible_chunks:
+                    if len(possible_chunk) > 2:
+                        chunk_dict = json.loads(possible_chunk)
+                        if 'chunk' in chunk_dict:
+                            for sample in chunk_dict['chunk']:
+                                if self.callback is not None:
+                                    self.callback(sample)
+                        else:
+                            print("not a sample packet")
+            except ValueError as e:
+                print("failed to parse: %s" % data)
+                print e
+            except BaseException as e:
+                print e
 
 
 class WiFiShieldServer(asyncore.dispatcher):
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, callback=None):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
         self.bind((host, port))
         self.listen(5)
+        self.callback = None
+        self.handler = None
 
     def handle_accept(self):
         pair = self.accept()
         if pair is not None:
             sock, addr = pair
             print 'Incoming connection from %s' % repr(addr)
-            handler = WiFiShieldHandler(sock)
+            self.handler = WiFiShieldHandler(sock, self.callback)
+
+    def set_callback(self, callback):
+        self.callback = callback
+        if self.handler is not None:
+            self.handler.callback = callback

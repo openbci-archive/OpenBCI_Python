@@ -1,17 +1,10 @@
 import sys; sys.path.append('..') # help python find open_bci_v3.py relative to scripts folder
 import open_bci_wifi as bci
-import os
 import logging
-import time
 
 
 def printData(sample):
-    #os.system('clear')
-    print "----------------"
-    print("%f" %(sample.id))
-    print sample.channel_data
-    # print sample.aux_data
-    print "----------------"
+    print sample
 
 
 if __name__ == '__main__':
