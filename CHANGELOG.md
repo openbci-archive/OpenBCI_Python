@@ -1,3 +1,16 @@
+# v1.0.0
+
+### New Features
+
+* High speed mode for WiFi shield sends raw data - #51
+* Unit testing with Nosetests
+* Continuous Integration with Travis.ci
+
+### Breaking Changes
+
+* Refactored library for pip
+
+# v0.1
 
 ## dev
 
