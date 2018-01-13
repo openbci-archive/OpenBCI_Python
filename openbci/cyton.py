@@ -237,22 +237,22 @@ class OpenBCICyton(object):
         channel_data = []
         for c in range(self.eeg_channels_per_sample):
 
-          #3 byte ints
+          # 3 byte ints
           literal_read = read(3)
 
           unpacked = struct.unpack('3B', literal_read)
-          log_bytes_in = log_bytes_in + '|' + str(literal_read);
+          log_bytes_in = log_bytes_in + '|' + str(literal_read)
 
-          #3byte int in 2s compliment
+          # 3byte int in 2s compliment
           if (unpacked[0] > 127):
             pre_fix = bytes(bytearray.fromhex('FF')) 
           else:
             pre_fix = bytes(bytearray.fromhex('00'))
 
 
-          literal_read = pre_fix + literal_read;
+          literal_read = pre_fix + literal_read
 
-          #unpack little endian(>) signed integer(i) (makes unpacking platform independent)
+          # unpack little endian(>) signed integer(i) (makes unpacking platform independent)
           myInt = struct.unpack('>i', literal_read)[0]
 
           if self.scaling_output:
@@ -260,7 +260,7 @@ class OpenBCICyton(object):
           else:
             channel_data.append(myInt)
 
-        self.read_state = 2;
+        self.read_state = 2
 
       #---------Accelerometer Data---------
       elif self.read_state == 2:

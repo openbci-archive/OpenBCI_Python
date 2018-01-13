@@ -247,7 +247,7 @@ class OpenBCIWiFi(object):
             raise RuntimeError("Error code: %d %s" % (res_command_post.status_code, res_command_post.text))
 
     def getSampleRate(self):
-        return SAMPLE_RATE
+        return self.sample_rate
 
     def getNbEEGChannels(self):
         """Will not get new data on impedance check."""
@@ -403,16 +403,6 @@ class OpenBCIWiFi(object):
         self.disconnect()
         self.connect()
         self.init_streaming()
-
-
-class OpenBCISample(object):
-    """Object encapulsating a single sample from the OpenBCI board."""
-
-    def __init__(self, packet_id, channel_data, aux_data, imp_data):
-        self.id = packet_id
-        self.channel_data = channel_data
-        self.aux_data = aux_data
-        self.imp_data = imp_data
 
 
 class WiFiShieldHandler(asyncore.dispatcher_with_send):
