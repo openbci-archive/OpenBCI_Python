@@ -10,8 +10,8 @@ Requires:
 import argparse
 import cPickle as pickle
 import json
-import sys; sys.path.append('..') # help python find open_bci_v3.py relative to scripts folder
-import open_bci_v3 as open_bci
+import sys; sys.path.append('..') # help python find cyton.py relative to scripts folder
+from openbci import cyton as open_bci
 import socket
 
 
@@ -67,7 +67,7 @@ class UDPServer(object):
 
 
 args = parser.parse_args()
-obci = open_bci.OpenBCIBoard(args.serial, int(args.baud))
+obci = open_bci.OpenBCICyton(args.serial, int(args.baud))
 if args.filter_data:
   obci.filter_data = True
 sock_server = UDPServer(args.host, int(args.port), args.json)

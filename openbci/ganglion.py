@@ -46,7 +46,7 @@ command_stop = "s";
 command_startBinary = "b";
 '''
 
-class OpenBCIBoard(object):
+class OpenBCIGanglion(object):
   """
   Handle a connection to an OpenBCI board.
 

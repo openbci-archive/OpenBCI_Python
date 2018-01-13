@@ -1,5 +1,5 @@
-import sys; sys.path.append('..') # help python find open_bci_v3.py relative to scripts folder
-import open_bci_v3 as bci
+import sys; sys.path.append('..') # help python find cyton.py relative to scripts folder
+from openbci import cyton as bci
 import streamer_tcp_server
 import time, timeit
 from threading import Thread
@@ -135,5 +135,5 @@ if __name__ == '__main__':
   # daemonize theard to terminate it altogether with the main when time will come
   monit.daemon = True
   monit.start()
-  board = bci.OpenBCIBoard(port=port, baud=baud, filter_data=False)
+  board = bci.OpenBCICyton(port=port, baud=baud, filter_data=False)
   board.startStreaming(streamData)

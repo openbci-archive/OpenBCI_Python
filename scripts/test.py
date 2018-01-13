@@ -1,6 +1,5 @@
-import sys; sys.path.append('..') # help python find open_bci_v3.py relative to scripts folder
-import open_bci_v3 as bci
-import os
+import sys; sys.path.append('..') # help python find cyton.py relative to scripts folder
+from openbci import cyton as bci
 import logging
 import time
 
@@ -20,7 +19,7 @@ if __name__ == '__main__':
 	baud = 115200
 	logging.basicConfig(filename="test.log",format='%(asctime)s - %(levelname)s : %(message)s',level=logging.DEBUG)
 	logging.info('---------LOG START-------------')
-	board = bci.OpenBCIBoard(port=port, scaled_output=False, log=True)
+	board = bci.OpenBCICyton(port=port, scaled_output=False, log=True)
 	print("Board Instantiated")
 	board.ser.write('v')
 	time.sleep(10)

@@ -16,21 +16,19 @@ TODO: Ganglion Raw
 TODO: Cyton Raw
 
 """
-import struct
-import time
-import timeit
-import atexit
-import logging
-import numpy as np
-import sys
-import ssdp
-import urllib2
-import xmltodict
-import re
 import asyncore
-import socket
-import requests
+import atexit
 import json
+import logging
+import re
+import socket
+import timeit
+import urllib2
+
+import requests
+import xmltodict
+
+from openbci.utils import ssdp
 
 SAMPLE_RATE = 0  # Hz
 
@@ -42,7 +40,7 @@ command_startBinary = "b";
 '''
 
 
-class OpenBCIWifi(object):
+class OpenBCIWiFi(object):
     """
     Handle a connection to an OpenBCI wifi shield.
 
@@ -57,18 +55,20 @@ class OpenBCIWifi(object):
       max_packets_to_skip: will try to disconnect / reconnect after too many packets are skipped
     """
 
-    def __init__(self, ip_address=None, shield_name=None, sample_rate=None, log=True, timeout=2,
-                 max_packets_to_skip=20, latency=10000):
+    def __init__(self, ip_address=None, shield_name=None, sample_rate=None, log=True, timeout=3,
+                 max_packets_to_skip=20, latency=10000, high_speed=True, ssdp_attempts=5):
         # these one are used
-        self.log = log  # print_incoming_text needs log
-        self.streaming = False
-        self.timeout = timeout
-        self.max_packets_to_skip = max_packets_to_skip
+        self.high_speed = high_speed
         self.impedance = False
         self.ip_address = ip_address
-        self.shield_name = shield_name
-        self.sample_rate = sample_rate
         self.latency = latency
+        self.log = log  # print_incoming_text needs log
+        self.max_packets_to_skip = max_packets_to_skip
+        self.sample_rate = sample_rate
+        self.shield_name = shield_name
+        self.ssdp_attempts = ssdp_attempts
+        self.streaming = False
+        self.timeout = timeout
 
         # might be handy to know API
         self.board_type = "none"
@@ -91,7 +91,14 @@ class OpenBCIWifi(object):
             print("Opened socket on %s:%d" % (self.local_ip_address, self.local_wifi_server_port))
 
         if ip_address is None:
-            self.find_wifi_shield(wifi_shield_cb=self.on_shield_found)
+            for i in range(ssdp_attempts):
+                try:
+                    self.find_wifi_shield(wifi_shield_cb=self.on_shield_found)
+                    break
+                except OSError:
+                    # Try again
+                    if self.log:
+                        print("Did not find any WiFi Shields")
         else:
             self.on_shield_found(ip_address)
 
@@ -147,11 +154,15 @@ class OpenBCIWifi(object):
             if self.log:
                 print("Connected to %s with %s channels" % (self.board_type, self.eeg_channels_per_sample))
 
+        if self.high_speed:
+            output_style = 'raw'
+        else:
+            output_style = 'json'
         res_tcp_post = requests.post("http://%s/tcp" % self.ip_address,
                           json={
                                 'ip': self.local_ip_address,
                                 'port': self.local_wifi_server_port,
-                                'output': 'json',
+                                'output': output_style,
                                 'delimiter': True,
                                 'latency': self.latency
                                 })
@@ -178,7 +189,7 @@ class OpenBCIWifi(object):
 
         if self.log:
             print("Try to find WiFi shields on your local wireless network")
-            print("Scanning for 5 seconds nearby devices...")
+            print("Scanning for %d seconds nearby devices..." % self.timeout)
 
         list_ip = []
         list_id = []
@@ -202,7 +213,7 @@ class OpenBCIWifi(object):
                     if wifi_shield_cb is not None:
                         wifi_shield_cb(cur_ip_address)
 
-        ssdp_hits = ssdp.discover("urn:schemas-upnp-org:device:Basic:1", timeout=3, wifi_found_cb=wifi_shield_found)
+        ssdp_hits = ssdp.discover("urn:schemas-upnp-org:device:Basic:1", timeout=self.timeout, wifi_found_cb=wifi_shield_found)
 
         nb_wifi_shields = len(list_id)
 
@@ -405,37 +416,45 @@ class OpenBCISample(object):
 
 
 class WiFiShieldHandler(asyncore.dispatcher_with_send):
-    def __init__(self, sock, callback=None):
+    def __init__(self, sock, callback=None, high_speed=True):
         asyncore.dispatcher_with_send.__init__(self, sock)
 
+        self.high_speed = high_speed
         self.callback = callback
 
     def handle_read(self):
         data = self.recv(3000)  # 3000 is the max data the WiFi shield is allowed to send over TCP
         if len(data) > 2:
-            try:
-                possible_chunks = data.split('\r\n')
-                if len(possible_chunks) > 1:
-                    possible_chunks = possible_chunks[:-1]
-                for possible_chunk in possible_chunks:
-                    if len(possible_chunk) > 2:
-                        chunk_dict = json.loads(possible_chunk)
-                        if 'chunk' in chunk_dict:
-                            for sample in chunk_dict['chunk']:
-                                if self.callback is not None:
-                                    self.callback(sample)
-                        else:
-                            print("not a sample packet")
-            except ValueError as e:
-                print("failed to parse: %s" % data)
-                print e
-            except BaseException as e:
-                print e
+            if self.high_speed:
+                # TODO: parsing
+                print len(data)
+                packets = len(data)/33
+                for i in range(packets):
+                    pass
+            else:
+                try:
+                    possible_chunks = data.split('\r\n')
+                    if len(possible_chunks) > 1:
+                        possible_chunks = possible_chunks[:-1]
+                    for possible_chunk in possible_chunks:
+                        if len(possible_chunk) > 2:
+                            chunk_dict = json.loads(possible_chunk)
+                            if 'chunk' in chunk_dict:
+                                for sample in chunk_dict['chunk']:
+                                    if self.callback is not None:
+                                        self.callback(sample)
+                            else:
+                                print("not a sample packet")
+                except ValueError as e:
+                    print("failed to parse: %s" % data)
+                    print e
+                except BaseException as e:
+                    print e
 
 
 class WiFiShieldServer(asyncore.dispatcher):
 
-    def __init__(self, host, port, callback=None):
+    def __init__(self, host, port, callback=None, high_speed=True):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
@@ -443,13 +462,14 @@ class WiFiShieldServer(asyncore.dispatcher):
         self.listen(5)
         self.callback = None
         self.handler = None
+        self.high_speed = high_speed
 
     def handle_accept(self):
         pair = self.accept()
         if pair is not None:
             sock, addr = pair
             print 'Incoming connection from %s' % repr(addr)
-            self.handler = WiFiShieldHandler(sock, self.callback)
+            self.handler = WiFiShieldHandler(sock, self.callback, high_speed=self.high_speed)
 
     def set_callback(self, callback):
         self.callback = callback

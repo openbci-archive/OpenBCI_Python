@@ -55,7 +55,7 @@ command_biasAuto = "`";
 command_biasFixed = "~";
 '''
 
-class OpenBCIBoard(object):
+class OpenBCICyton(object):
   """
 
   Handle a connection to an OpenBCI board.

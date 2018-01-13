@@ -37,6 +37,30 @@ This python code is meant to be used by people familiar with python and programm
 
 If this is not what you are looking for, you can visit http://openbci.com/downloads and browse other OpenBCI software that will fit your needs.
 
+## Install
+
+### Using PyPI
+
+```
+pip install openbci
+```
+
+Anaconda is not currently supported, if you want to use anaconda, you need to create a virtual environment in anaconda, activate it and use the above command to install it.
+
+### From sources
+
+For the latest version, you can install the package from the sources using the setup.py script
+
+```
+python setup.py install
+```
+
+or in developer mode to be able to modify the sources.
+
+```
+python setup.py develop
+```
+
 ## Functionality
 
 ### Basic usage
