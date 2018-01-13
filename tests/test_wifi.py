@@ -38,7 +38,7 @@ class TestOpenBCIWiFi(TestCase):
         self.assertEqual(wifi.high_speed, expected_high_speed)
         self.assertEqual(wifi.ssdp_attempts, expected_ssdp_attempts)
 
-        mock_on_shield_found.called_with(expected_ip_address)
+        mock_on_shield_found.assert_called_with(expected_ip_address)
 
 
 if __name__ == '__main__':

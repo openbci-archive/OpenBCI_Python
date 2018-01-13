@@ -25,6 +25,18 @@ class TestConstants(TestCase):
     def test_cyton_variables(self):
         self.assertEqual(k.CYTON_ACCEL_SCALE_FACTOR_GAIN, 0.002 / (pow(2, 4)))
 
+    def test_errors(self):
+        self.assertEqual(k.ERROR_INVALID_BYTE_LENGTH, 'Invalid Packet Byte Length')
+        self.assertEqual(k.ERROR_INVALID_BYTE_START, 'Invalid Start Byte')
+        self.assertEqual(k.ERROR_INVALID_BYTE_STOP, 'Invalid Stop Byte')
+        self.assertEqual(k.ERROR_INVALID_DATA, 'Invalid data - try again')
+        self.assertEqual(k.ERROR_INVALID_TYPW, 'Invalid type - check comments for input type')
+        self.assertEqual(k.ERROR_MISSING_REGISTER_SETTING, 'Missing register setting')
+        self.assertEqual(k.ERROR_MISSING_REQUIRED_PROPERTY, 'Missing property in JSON')
+        self.assertEqual(k.ERROR_TIME_SYNC_IS_NULL, "'this.sync.curSyncObj' must not be null")
+        self.assertEqual(k.ERROR_TIME_SYNC_NO_COMMA, 'Missed the time sync sent confirmation. Try sync again')
+        self.assertEqual(k.ERROR_UNDEFINED_OR_NULL_INPUT, 'Undefined or Null Input')
+
     def test_number_of_channels(self):
         self.assertEqual(k.NUMBER_OF_CHANNELS_CYTON, 8)
         self.assertEqual(k.NUMBER_OF_CHANNELS_DAISY, 16)
@@ -33,6 +45,7 @@ class TestConstants(TestCase):
     def test_raw(self):
         self.assertEqual(k.RAW_BYTE_START, 0xA0)
         self.assertEqual(k.RAW_BYTE_STOP, 0xC0)
+        self.assertEqual(k.RAW_PACKET_ACCEL_NUMBER_AXIS, 3)
         self.assertEqual(k.RAW_PACKET_SIZE, 255)
         self.assertEqual(k.RAW_PACKET_POSITION_CHANNEL_DATA_START, 2)
         self.assertEqual(k.RAW_PACKET_POSITION_CHANNEL_DATA_STOP, 25)

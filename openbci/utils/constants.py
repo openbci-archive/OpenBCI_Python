@@ -18,6 +18,18 @@ class Constants:
 
     CYTON_ACCEL_SCALE_FACTOR_GAIN = 0.002 / (pow(2, 4))  # assume set to +/4G, so 2 mG
 
+    """ Errors """
+    ERROR_INVALID_BYTE_LENGTH = 'Invalid Packet Byte Length'
+    ERROR_INVALID_BYTE_START = 'Invalid Start Byte'
+    ERROR_INVALID_BYTE_STOP = 'Invalid Stop Byte'
+    ERROR_INVALID_DATA = 'Invalid data - try again'
+    ERROR_INVALID_TYPW = 'Invalid type - check comments for input type'
+    ERROR_MISSING_REGISTER_SETTING = 'Missing register setting'
+    ERROR_MISSING_REQUIRED_PROPERTY = 'Missing property in JSON'
+    ERROR_TIME_SYNC_IS_NULL = "'this.sync.curSyncObj' must not be null"
+    ERROR_TIME_SYNC_NO_COMMA = 'Missed the time sync sent confirmation. Try sync again'
+    ERROR_UNDEFINED_OR_NULL_INPUT = 'Undefined or Null Input'
+
     """ Possible number of channels """
 
     NUMBER_OF_CHANNELS_CYTON = 8
@@ -26,6 +38,7 @@ class Constants:
 
     RAW_BYTE_START = 0xA0
     RAW_BYTE_STOP = 0xC0
+    RAW_PACKET_ACCEL_NUMBER_AXIS = 3
     RAW_PACKET_SIZE = 255
     """
     OpenBCI Raw Packet Positions
