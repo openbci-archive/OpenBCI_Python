@@ -9,6 +9,7 @@
 ### Breaking Changes
 
 * Refactored library for pip
+* Moved plugins folder into openbci dir so plugins can be imported when installed with pip
 
 # v0.1
 
