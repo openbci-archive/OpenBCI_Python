@@ -36,10 +36,15 @@ class Constants:
     NUMBER_OF_CHANNELS_DAISY = 16
     NUMBER_OF_CHANNELS_GANGLION = 4
 
+    """ Protocols """
+    PROTOCOL_BLE = 'ble'
+    PROTOCOL_SERIAL = 'serial'
+    PROTOCOL_WIFI = 'wifi'
+
     RAW_BYTE_START = 0xA0
     RAW_BYTE_STOP = 0xC0
     RAW_PACKET_ACCEL_NUMBER_AXIS = 3
-    RAW_PACKET_SIZE = 255
+    RAW_PACKET_SIZE = 33
     """
     OpenBCI Raw Packet Positions
     0:[startByte] | 1:[sampleNumber] | 2:[Channel-1.1] | 3:[Channel-1.2] | 4:[Channel-1.3] | 5:[Channel-2.1] | 6:[Channel-2.2] | 7:[Channel-2.3] | 8:[Channel-3.1] | 9:[Channel-3.2] | 10:[Channel-3.3] | 11:[Channel-4.1] | 12:[Channel-4.2] | 13:[Channel-4.3] | 14:[Channel-5.1] | 15:[Channel-5.2] | 16:[Channel-5.3] | 17:[Channel-6.1] | 18:[Channel-6.2] | 19:[Channel-6.3] | 20:[Channel-7.1] | 21:[Channel-7.2] | 22:[Channel-7.3] | 23:[Channel-8.1] | 24:[Channel-8.2] | 25:[Channel-8.3] | 26:[Aux-1.1] | 27:[Aux-1.2] | 28:[Aux-2.1] | 29:[Aux-2.2] | 30:[Aux-3.1] | 31:[Aux-3.2] | 32:StopByte

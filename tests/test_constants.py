@@ -42,11 +42,17 @@ class TestConstants(TestCase):
         self.assertEqual(k.NUMBER_OF_CHANNELS_DAISY, 16)
         self.assertEqual(k.NUMBER_OF_CHANNELS_GANGLION, 4)
 
+    def test_protocols(self):
+        """ Protocols """
+        self.assertEqual(k.PROTOCOL_BLE, 'ble')
+        self.assertEqual(k.PROTOCOL_SERIAL, 'serial')
+        self.assertEqual(k.PROTOCOL_WIFI, 'wifi')
+
     def test_raw(self):
         self.assertEqual(k.RAW_BYTE_START, 0xA0)
         self.assertEqual(k.RAW_BYTE_STOP, 0xC0)
         self.assertEqual(k.RAW_PACKET_ACCEL_NUMBER_AXIS, 3)
-        self.assertEqual(k.RAW_PACKET_SIZE, 255)
+        self.assertEqual(k.RAW_PACKET_SIZE, 33)
         self.assertEqual(k.RAW_PACKET_POSITION_CHANNEL_DATA_START, 2)
         self.assertEqual(k.RAW_PACKET_POSITION_CHANNEL_DATA_STOP, 25)
         self.assertEqual(k.RAW_PACKET_POSITION_SAMPLE_NUMBER, 1)

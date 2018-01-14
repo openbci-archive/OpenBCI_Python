@@ -14,6 +14,99 @@ from openbci.utils import (k,
 
 class TestParseRaw(TestCase):
 
+    def test_get_channel_data_array(self):
+        expected_gains = [24, 24, 24, 24, 24, 24, 24, 24]
+        expected_sample_number = 0
+
+        data = sample_packet(expected_sample_number)
+
+        parser = ParseRaw(gains=expected_gains, scaled_output=True)
+
+        scale_factors = parser.get_ads1299_scale_factors(expected_gains)
+
+        expected_channel_data = []
+        for i in range(k.NUMBER_OF_CHANNELS_CYTON):
+            expected_channel_data.append(scale_factors[i] * (i + 1))
+
+        parser.raw_data_to_sample.raw_data_packet = data
+
+        actual_channel_data = parser.get_channel_data_array(parser.raw_data_to_sample)
+
+        self.assertListEqual(actual_channel_data, expected_channel_data)
+
+    def test_get_data_array_accel(self):
+        expected_sample_number = 0
+
+        data = sample_packet(expected_sample_number)
+
+        parser = ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24], scaled_output=True)
+
+        expected_accel_data = []
+        for i in range(k.RAW_PACKET_ACCEL_NUMBER_AXIS):
+            expected_accel_data.append(k.CYTON_ACCEL_SCALE_FACTOR_GAIN * i)
+
+        parser.raw_data_to_sample.raw_data_packet = data
+
+        actual_accel_data = parser.get_data_array_accel(parser.raw_data_to_sample)
+
+        self.assertListEqual(actual_accel_data, expected_accel_data)
+
+    def test_interpret_16_bit_as_int_32(self):
+
+        parser = ParseRaw()
+
+        # 0x0690 === 1680
+        self.assertEqual(parser.interpret_16_bit_as_int_32(bytearray([0x06, 0x90])),
+                         1680,
+                         'converts a small positive number')
+
+        # 0x02C0 === 704
+        self.assertEqual(parser.interpret_16_bit_as_int_32(bytearray([0x02, 0xC0])),
+                         704,
+                         'converts a large positive number')
+
+        # 0xFFFF === -1
+        self.assertEqual(parser.interpret_16_bit_as_int_32(bytearray([0xFF, 0xFF])),
+                         -1,
+                         'converts a small negative number')
+
+        # 0x81A1 === -32351
+        self.assertEqual(parser.interpret_16_bit_as_int_32(bytearray([0x81, 0xA1])),
+                         -32351,
+                         'converts a large negative number')
+
+    def test_interpret_24_bit_as_int_32(self):
+
+        parser = ParseRaw()
+
+        # 0x000690 === 1680
+        expected_value = 1680
+        actual_value = parser.interpret_24_bit_as_int_32(bytearray([0x00, 0x06, 0x90]))
+        self.assertEqual(actual_value,
+                         expected_value,
+                         'converts a small positive number')
+
+        # 0x02C001 === 180225
+        expected_value = 180225
+        actual_value = parser.interpret_24_bit_as_int_32(bytearray([0x02, 0xC0, 0x01]))
+        self.assertEqual(actual_value,
+                         expected_value,
+                         'converts a large positive number')
+
+        # 0xFFFFFF === -1
+        expected_value = -1
+        actual_value = parser.interpret_24_bit_as_int_32(bytearray([0xFF, 0xFF, 0xFF]))
+        self.assertEqual(actual_value,
+                         expected_value,
+                         'converts a small negative number')
+
+        # 0x81A101 === -8281855
+        expected_value = -8281855
+        actual_value = parser.interpret_24_bit_as_int_32(bytearray([0x81, 0xA1, 0x01]))
+        self.assertEqual(actual_value,
+                         expected_value,
+                         'converts a large negative number')
+
     def test_parse_raw_init(self):
         expected_board_type = k.BOARD_DAISY
         expected_gains = [24, 24, 24, 24, 24, 24, 24, 24]
@@ -30,24 +123,6 @@ class TestParseRaw(TestCase):
         self.assertEqual(parser.board_type, expected_board_type)
         self.assertEqual(parser.scaled_output, expected_scaled_output)
         self.assertEqual(parser.log, expected_log)
-
-    def test_parse_raw_standard_cyton_scaled(self):
-        expected_sample_number = 3
-        expected_board_type = k.BOARD_CYTON
-        expected_scaled_output = False
-        expected_log = True
-        expected_gains = [24, 24, 24, 24, 24, 24, 24, 24]
-
-        data = sample_packet(expected_sample_number)
-
-        parser = ParseRaw(board_type=expected_board_type,
-                          gains=expected_gains,
-                          log=expected_log,
-                          scaled_output=expected_scaled_output)
-
-        actual_sample = parser.raw_to_sample(data)
-
-        self.assertEqual(actual_sample.sample_number, expected_sample_number)
 
     def test_get_ads1299_scale_factors_volts(self):
         gains = [24, 24, 24, 24, 24, 24, 24, 24]

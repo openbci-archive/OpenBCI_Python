@@ -1,3 +1,6 @@
+import time
+import struct
+
 from constants import Constants as k
 
 
@@ -20,8 +23,8 @@ class ParseRaw(object):
 
         self.raw_data_to_sample = RawDataToSample(gains=gains,
                                                   scale=scaled_output,
+                                                  scale_factors=self.scale_factors,
                                                   verbose=log)
-
 
     def is_stop_byte(self, byte):
         """
@@ -46,33 +49,53 @@ class ParseRaw(object):
             out.append(scale_factor)
         return out
 
-    """
-    /**
-* @description Takes a buffer filled with 3 16 bit integers from an OpenBCI device and converts based on settings
-*                  of the MPU, values are in ?
-* @param dataBuf - Buffer that is 6 bytes long
-* @returns {Array} - Array of floats 3 elements long
-* @author AJ Keller (@aj-ptw)
-*/
-function getDataArrayAccel (dataBuf) {
-  let accelData = [];
-  for (let i = 0; i < ACCEL_NUMBER_AXIS; i++) {
-    let index = i * 2;
-    accelData.push(utilitiesModule.interpret16bitAsInt32(dataBuf.slice(index, index + 2)) * SCALE_FACTOR_ACCEL);
-  }
-  return accelData;
-}
-    """
-    def get_data_array_accel(self, data):
-        pass
+    def get_channel_data_array(self, raw_data_to_sample):
+        """
 
-    def get_data_array_accel_no_scale(self, data):
-        pass
+        :param raw_data_to_sample: RawDataToSample
+        :return:
+        """
+        channel_data = []
+        number_of_channels = len(raw_data_to_sample.scale_factors)
+        daisy = number_of_channels == k.NUMBER_OF_CHANNELS_DAISY
+        channels_in_packet = k.NUMBER_OF_CHANNELS_CYTON
+        if not daisy:
+            channels_in_packet = number_of_channels
+        # Channel data arrays are always 8 long
 
+        for i in range(channels_in_packet):
+            counts = self.interpret_24_bit_as_int_32(raw_data_to_sample.raw_data_packet[(i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START:(i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START + 3])
+            channel_data.append(raw_data_to_sample.scale_factors[i] * counts if raw_data_to_sample.scale else counts)
 
+        return channel_data
+
+    def get_data_array_accel(self, raw_data_to_sample):
+        accel_data = []
+        for i in range(k.RAW_PACKET_ACCEL_NUMBER_AXIS):
+            counts = self.interpret_16_bit_as_int_32(raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_START_AUX + (i * 2): k.RAW_PACKET_POSITION_START_AUX + (i * 2) + 2])
+            accel_data.append(k.CYTON_ACCEL_SCALE_FACTOR_GAIN * counts if raw_data_to_sample.scale else counts)
+        return accel_data
 
     def get_raw_packet_type(self, stop_byte):
         return stop_byte & 0xF
+
+    def interpret_16_bit_as_int_32(self, two_byte_buffer):
+        return struct.unpack('>h', two_byte_buffer)[0]
+
+    def interpret_24_bit_as_int_32(self, three_byte_buffer):
+        # 3 byte ints
+        unpacked = struct.unpack('3B', three_byte_buffer)
+
+        # 3byte int in 2s compliment
+        if unpacked[0] > 127:
+            pre_fix = bytes(bytearray.fromhex('FF'))
+        else:
+            pre_fix = bytes(bytearray.fromhex('00'))
+
+        three_byte_buffer = pre_fix + three_byte_buffer
+
+        # unpack little endian(>) signed integer(i) (makes unpacking platform independent)
+        return struct.unpack('>i', three_byte_buffer)[0]
 
     def parse_packet_standard_accel(self, raw_data_to_sample):
 
@@ -89,39 +112,31 @@ function getDataArrayAccel (dataBuf) {
             raise RuntimeError(k.ERROR_UNDEFINED_OR_NULL_INPUT)
 
         # Check to make sure the buffer is the right size.
-        if len(raw_data_to_sample.rawDataPacket) != k.RAW_PACKET_SIZE:
+        if len(raw_data_to_sample.raw_data_packet) != k.RAW_PACKET_SIZE:
             raise RuntimeError(k.ERROR_INVALID_BYTE_LENGTH)
 
         # Verify the correct stop byte.
-        if raw_data_to_sample.rawDataPacket[0] != k.RAW_BYTE_START:
+        if raw_data_to_sample.raw_data_packet[0] != k.RAW_BYTE_START:
             raise RuntimeError(k.ERROR_INVALID_BYTE_START)
 
         sample_object = OpenBCISample()
 
+        sample_object.accel_data = self.get_data_array_accel(raw_data_to_sample)
 
-        if raw_data_to_sample.scale: 
-            sample_object.accel_data = self.get_data_array_accel(raw_data_to_sample.rawDataPacket[k.RAW_PACKET_POSITION_START_AUX:k.RAW_PACKET_POSITION_STOP_AUX + 1])
-        else:
-            sample_object.accel_data = self.get_data_array_accel_no_scale(raw_data_to_sample.rawDataPacket[k.RAW_PACKET_POSITION_START_AUX, k.RAW_PACKET_POSITION_STOP_AUX + 1])
+        sample_object.channel_data = self.get_channel_data_array(raw_data_to_sample)
 
-        if (o.scale) sample_object.channelData = getChannelDataArray(o);
-        else sample_object.channelDataCounts = getChannelDataArrayNoScale(o);
+        sample_object.sample_number = raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_SAMPLE_NUMBER]
+        sample_object.start_byte = raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_START_BYTE]
+        sample_object.stop_byte = raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_STOP_BYTE]
 
-        sample_object.auxData = Buffer.
-        from
-        (o.rawDataPacket.slice(k.OBCIPacketPositionStartAux, k.OBCIPacketPositionStopAux + 1));
+        sample_object.valid = True
 
-        sample_object.sampleNumber = o.rawDataPacket[k.OBCIPacketPositionSampleNumber];
-        sample_object.startByte = o.rawDataPacket[0];
-        sample_object.stopByte = o.rawDataPacket[k.OBCIPacketPositionStopByte];
+        now_ms = int(round(time.time() * 1000))
 
-        sample_object.valid = true;
+        sample_object.timestamp = now_ms
+        sample_object.boardTime = 0
 
-        sample_object.timestamp = Date.now();
-        sample_object.boardTime = 0;
-
-        return sample_object;
-        pass
+        return sample_object
 
     def parse_packet_standard_raw_aux(self, raw_data_to_sample):
         pass
@@ -171,7 +186,8 @@ class RawDataToSample(object):
                  last_sample_number=0,
                  raw_data_packets=None,
                  raw_data_packet=None,
-                 scale=False,
+                 scale=True,
+                 scale_factors=None,
                  time_offset=0,
                  verbose=False):
         """
@@ -187,6 +203,8 @@ class RawDataToSample(object):
             A single raw data packet
         :param scale: boolean
             Default `true`. A gain of 24 for Cyton will be used and 51 for ganglion by default.
+        :param scale_factors: list
+            Calculated scale factors
         :param time_offset: int
             For non time stamp use cases i.e. 0xC0 or 0xC1 (default and raw aux)
         :param verbose:
@@ -198,6 +216,7 @@ class RawDataToSample(object):
         self.raw_data_packets = raw_data_packets if raw_data_packets is not None else []
         self.raw_data_packet = raw_data_packet
         self.scale = scale
+        self.scale_factors = scale_factors if scale_factors is not None else []
         self.verbose = verbose
 
 
@@ -210,16 +229,19 @@ class OpenBCISample(object):
                  error=None,
                  imp_data=None,
                  packet_type=k.RAW_PACKET_TYPE_STANDARD_ACCEL,
+                 protocol=k.PROTOCOL_WIFI,
                  sample_number=0,
                  start_byte=0,
                  stop_byte=0,
                  valid=True):
         self.aux_data = aux_data if aux_data is not None else []
+        self.board_time = board_time
         self.channel_data = channel_data if aux_data is not None else []
         self.error = error
         self.id = sample_number
         self.imp_data = imp_data if aux_data is not None else []
         self.packet_type = packet_type
+        self.protocol = protocol
         self.sample_number = sample_number
         self.start_byte = start_byte
         self.stop_byte = stop_byte
