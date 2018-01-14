@@ -1,0 +1,15 @@
+[report]
+include = */openbci/*
+omit =
+    */python?.?/*
+    */site-packages/nose/*
+    */plugin_interface.py
+    */test_log.py
+    */setup.py
+    */users.py
+    */bluepy/*
+    */externals/*
+    */images/*
+    */plugins/*
+    */scripts/*
+    */tests/*

@@ -67,3 +67,5 @@ target/
 .idea/*
 .idea/codeStyleSettings.xml
 .idea/vcs.xml
+
+.DS_Store
