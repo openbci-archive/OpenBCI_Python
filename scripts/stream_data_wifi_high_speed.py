@@ -4,7 +4,7 @@ import logging
 
 
 def printData(sample):
-    print sample
+    print sample.sample_number
 
 
 if __name__ == '__main__':

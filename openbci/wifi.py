@@ -28,7 +28,7 @@ import urllib2
 import requests
 import xmltodict
 
-from openbci.utils import ssdp
+from openbci.utils import k, ParseRaw, ssdp
 
 SAMPLE_RATE = 0  # Hz
 
@@ -406,21 +406,27 @@ class OpenBCIWiFi(object):
 
 
 class WiFiShieldHandler(asyncore.dispatcher_with_send):
-    def __init__(self, sock, callback=None, high_speed=True):
+    def __init__(self, sock, callback=None, high_speed=True, parser=None):
         asyncore.dispatcher_with_send.__init__(self, sock)
 
         self.high_speed = high_speed
         self.callback = callback
+        self.parser = parser if parser is not None else ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24])
 
     def handle_read(self):
         data = self.recv(3000)  # 3000 is the max data the WiFi shield is allowed to send over TCP
         if len(data) > 2:
             if self.high_speed:
-                # TODO: parsing
-                print len(data)
                 packets = len(data)/33
+                raw_data_packets = []
                 for i in range(packets):
-                    pass
+                    raw_data_packets.append(bytearray(data[i * k.RAW_PACKET_SIZE: i * k.RAW_PACKET_SIZE + k.RAW_PACKET_SIZE]))
+                samples = self.parser.transform_raw_data_packets_to_sample(raw_data_packets=raw_data_packets)
+
+                for sample in samples:
+                    if self.callback is not None:
+                        self.callback(sample)
+
             else:
                 try:
                     possible_chunks = data.split('\r\n')
@@ -444,7 +450,7 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
 
 class WiFiShieldServer(asyncore.dispatcher):
 
-    def __init__(self, host, port, callback=None, high_speed=True):
+    def __init__(self, host, port, callback=None, gains=None, high_speed=True):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
@@ -452,6 +458,7 @@ class WiFiShieldServer(asyncore.dispatcher):
         self.listen(5)
         self.callback = None
         self.handler = None
+        self.parser = ParseRaw(gains=gains)
         self.high_speed = high_speed
 
     def handle_accept(self):
@@ -459,9 +466,12 @@ class WiFiShieldServer(asyncore.dispatcher):
         if pair is not None:
             sock, addr = pair
             print 'Incoming connection from %s' % repr(addr)
-            self.handler = WiFiShieldHandler(sock, self.callback, high_speed=self.high_speed)
+            self.handler = WiFiShieldHandler(sock, self.callback, high_speed=self.high_speed, parser=self.parser)
 
     def set_callback(self, callback):
         self.callback = callback
         if self.handler is not None:
             self.handler.callback = callback
+
+    def set_gains(self, gains):
+        self.parser.set_ads1299_scale_factors(gains)

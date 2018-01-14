@@ -156,7 +156,7 @@ class TestParseRaw(TestCase):
                          "should be able to get scale factors for gains in volts")
 
     def test_parse_packet_standard_accel(self):
-        data = sample_packet(0)
+        data = sample_packet()
 
         expected_scale_factor = 4.5 / 24 / (pow(2, 23) - 1)
 
@@ -176,10 +176,6 @@ class TestParseRaw(TestCase):
         self.assertEqual(sample.start_byte, 0xA0)
         self.assertEqual(sample.stop_byte, 0xC0)
         self.assertTrue(sample.valid)
-
-
-
-
 
     @mock.patch.object(ParseRaw, 'parse_packet_standard_accel')
     def test_transform_raw_data_packet_to_sample_accel(self, mock_parse_packet_standard_accel):
@@ -237,6 +233,17 @@ class TestParseRaw(TestCase):
 
         mock_parse_packet_time_synced_raw_aux.assert_called_once()
 
+    def test_transform_raw_data_packets_to_sample(self):
+        datas = [sample_packet(0), sample_packet(1), sample_packet(2)]
+
+        parser = ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24])
+
+        samples = parser.transform_raw_data_packets_to_sample(datas)
+
+        self.assertEqual(len(samples), len(datas))
+
+        for i in range(len(samples)):
+            self.assertEqual(samples[i].sample_number, i)
 
 
 if __name__ == '__main__':

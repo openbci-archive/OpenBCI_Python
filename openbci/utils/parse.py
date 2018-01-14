@@ -104,7 +104,6 @@ class ParseRaw(object):
         :param raw_data_to_sample: RawDataToSample
         :return:
         """
-
         # Check to make sure data is not null.
         if raw_data_to_sample is None:
             raise RuntimeError(k.ERROR_UNDEFINED_OR_NULL_INPUT)
@@ -147,6 +146,9 @@ class ParseRaw(object):
     def parse_packet_time_synced_raw_aux(self, raw_data_to_sample):
         pass
 
+    def set_ads1299_scale_factors(self, gains, micro_volts=None):
+        self.scale_factors = self.get_ads1299_scale_factors(gains, micro_volts=micro_volts)
+
     def transform_raw_data_packet_to_sample(self, raw_data):
         """
         Used transform raw data packets into fully qualified packets
@@ -176,6 +178,38 @@ class ParseRaw(object):
             sample.valid = False
 
         return sample
+
+    """
+    /**
+ * @description Used transform raw data packets into fully qualified packets
+ * @param o {RawDataToSample} - Used to hold data and configuration settings
+ * @return {Array} samples An array of {Sample}
+ * @author AJ Keller (@aj-ptw)
+ */
+function transformRawDataPacketsToSample (o) {
+  let samples = [];
+  for (let i = 0; i < o.rawDataPackets.length; i++) {
+    o.rawDataPacket = o.rawDataPackets[i];
+    const sample = transformRawDataPacketToSample(o);
+    samples.push(sample);
+    if (sample.hasOwnProperty('sampleNumber')) {
+      o['lastSampleNumber'] = sample.sampleNumber;
+    } else if (!sample.hasOwnProperty('impedanceValue')) {
+      o['lastSampleNumber'] = o.rawDataPacket[k.OBCIPacketPositionSampleNumber];
+    }
+  }
+  return samples;
+}
+    """
+    def transform_raw_data_packets_to_sample(self, raw_data_packets):
+        samples = []
+
+        for raw_data_packet in raw_data_packets:
+            sample = self.transform_raw_data_packet_to_sample(raw_data_packet)
+            samples.append(sample)
+            self.raw_data_to_sample.last_sample_number = sample.sample_number
+
+        return samples
 
 
 class RawDataToSample(object):

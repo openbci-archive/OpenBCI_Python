@@ -15,7 +15,7 @@ def make_tail_byte_from_packet_type(packet_type):
 
 
 def sample_number_normalize(sample_number=None):
-    if sample_number is None:
+    if sample_number is not None:
         if sample_number > k.SAMPLE_NUMBER_MAX_CYTON:
             sample_number = k.SAMPLE_NUMBER_MAX_CYTON
     else:
@@ -24,7 +24,7 @@ def sample_number_normalize(sample_number=None):
     return sample_number
 
 
-def sample_packet(sample_number):
+def sample_packet(sample_number=0x45):
     return bytearray([0xA0, sample_number_normalize(sample_number), 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 5, 0, 0, 6, 0, 0, 7, 0, 0, 8, 0, 0, 0, 1, 0, 2, make_tail_byte_from_packet_type(k.RAW_PACKET_TYPE_STANDARD_ACCEL)])
 
 
