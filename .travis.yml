@@ -20,7 +20,7 @@ addons:
 install:
   - conda create -n testenv --yes pip python=$PYTHON
   - source activate testenv
-  - conda install --yes --quiet numpy pyserial mock nose coverage
+  - conda install --yes --quiet numpy pyserial xmltodict mock nose coverage
   - pip install codecov
   - python setup.py build install
 
