@@ -34,8 +34,9 @@ try:
 except:
     DefaultDelegate = object
     STUB_BTLE = True
-finally:
-    from bluepy.btle import Scanner, DefaultDelegate, Peripheral
+else:
+    from bluepy.btle import Scanner, DefaultDelegate, Peripheral    
+
 
 SAMPLE_RATE = 200.0  # Hz
 scale_fac_uVolts_per_count = 1200 / (8388607.0 * 1.5 * 51.0)
