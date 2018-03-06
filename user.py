@@ -1,12 +1,11 @@
 #!/usr/bin/env python2.7
 import argparse  # new in Python2.7
-import os
-import time
-import string
 import atexit
-import threading
 import logging
+import string
 import sys
+import threading
+import time
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -60,10 +59,10 @@ if __name__ == '__main__':
 
     if args.board == "cyton":
         print ("Board type: OpenBCI Cyton (v3 API)")
-        import open_bci_v3 as bci
+        from openbci import cyton as bci
     elif args.board == "ganglion":
         print ("Board type: OpenBCI Ganglion")
-        import open_bci_ganglion as bci
+        import openbci.ganglion as bci
     else:
         raise ValueError('Board type %r was not recognized. Known are 3 and 4' % args.board)
 
@@ -112,12 +111,12 @@ if __name__ == '__main__':
         print ("user.py: Logging Disabled.")
 
     print ("\n-------INSTANTIATING BOARD-------")
-    board = bci.OpenBCIBoard(port=args.port,
-                             daisy=args.daisy,
-                             filter_data=args.filtering,
-                             scaled_output=True,
-                             log=args.log,
-                             aux=args.aux)
+    board = bci.OpenBCIGanglion(port=args.port,
+                                daisy=args.daisy,
+                                filter_data=args.filtering,
+                                scaled_output=True,
+                                log=args.log,
+                                aux=args.aux)
 
     #  Info about effective number of channels and sampling rate
     if board.daisy:

@@ -9,3 +9,4 @@ websocket-client==0.32.0
 wheel==0.24.0
 Yapsy==1.11.23
 bluepy==1.0.5
+xmltodict

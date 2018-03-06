@@ -1,11 +1,110 @@
-OpenBCI_Python
-==============
+# OpenBCI Python
 
-The Python software library designed to work with OpenBCI hardware.
+<p align="center">
+  <img alt="banner" src="/images/openbci_large.png/" width="400">
+</p>
+<p align="center" href="">
+  Provide a stable Python driver for all OpenBCI Biosensors
+</p>
 
-Please direct any questions, suggestions and bug reports to the github repo at: https://github.com/OpenBCI/OpenBCI_Python
+[![Build Status](https://travis-ci.org/OpenBCI/OpenBCI_Python.svg?branch=master)](https://travis-ci.org/OpenBCI/OpenBCI_Python)
 
-## Dependancies:
+## Welcome!
+
+First and foremost, Welcome! :tada: Willkommen! :confetti_ball: Bienvenue! :balloon::balloon::balloon:
+
+Thank you for visiting the OpenBCI Python repository. This python code is meant to be used by people familiar with python and programming in general. It's purpose is to allow for programmers to interface with OpenBCI technology directly, both to acquire data and to write programs that can use that data on a live setting, using python.
+
+This document (the README file) is a hub to give you some information about the project. Jump straight to one of the sections below, or just scroll down to find out more.
+
+* [What are we doing? (And why?)](#what-are-we-doing)
+* [Who are we?](#who-are-we)
+* [What do we need?](#what-do-we-need)
+* [How can you get involved?](#get-involved)
+* [Get in touch](#contact-us)
+* [Find out more](#find-out-more)
+* [Glossary](#glossary)
+* [Dependencies](#dependencies)
+* [Install](#install)
+* [Functionality](#functionality)
+
+## What are we doing?
+
+### The problem
+
+* OpenBCI is an incredible biosensor that can be challenging to work with
+* Data comes into the computer very quickly
+* Complex byte streams
+* Lot's of things can go wrong when dealing with a raw serial byte stream
+* The boards all use different physical technologies to move data to computers such as bluetooth or wifi
+* Developers want to integrate OpenBCI with other platforms and interfaces
+
+So, if even the very best developers want to use Python with their OpenBCI boards, they are left scratching their heads with where to begin.
+
+### The solution
+
+The OpenBCI Python  will:
+
+* Allow Python users to install one module and use any board they choose
+* Provide examples of using Python to port data to other apps like lab streaming layer
+* Perform the heavy lifting when extracting and transforming raw binary byte streams
+* Use unit tests to ensure perfect quality of core code
+
+Using this repo provides a building block for developing with Python. The goal for the Python library is to ***provide a stable Python driver for all OpenBCI Biosensors***
+
+## Who are we?
+
+The founder of the OpenBCI Python repository is Jermey Frey. The Python driver is one of the most popular repositories and has the most contributors!
+
+The contributors to these repos are people using Python mainly for their data acquisition and analytics.
+
+## What do we need?
+
+**You**! In whatever way you can help.
+
+We need expertise in programming, user experience, software sustainability, documentation and technical writing and project management.
+
+We'd love your feedback along the way.
+
+Our primary goal is to provide a stable Python driver for all OpenBCI Biosensors, and we're excited to support the professional development of any and all of our contributors. If you're looking to learn to code, try out working collaboratively, or translate you skills to the digital domain, we're here to help.
+
+## Get involved
+
+If you think you can help in any of the areas listed above (and we bet you can) or in any of the many areas that we haven't yet thought of (and here we're *sure* you can) then please check out our [contributors' guidelines](CONTRIBUTING.md) and our [roadmap](ROADMAP.md).
+
+Please note that it's very important to us that we maintain a positive and supportive environment for everyone who wants to participate. When you join us we ask that you follow our [code of conduct](CODE_OF_CONDUCT.md) in all interactions both on and offline.
+
+## Contact us
+
+If you want to report a problem or suggest an enhancement we'd love for you to [open an issue](../../issues) at this github repository because then we can get right on it. But you can also contact [AJ][link_aj_keller] by email (pushtheworldllc AT gmail DOT com) or on [twitter](https://twitter.com/aj-ptw).
+
+## Find out more
+
+You might be interested in:
+
+* Purchase a [Cyton][link_shop_cyton] | [Ganglion][link_shop_ganglion] | [WiFi Shield][link_shop_wifi_shield] from [OpenBCI][link_openbci]
+* Get taught how to use OpenBCI devices by [Push The World][link_ptw] BCI Consulting
+
+And of course, you'll want to know our:
+
+* [Contributors' guidelines](CONTRIBUTING.md)
+* [Roadmap](ROADMAP.md)
+
+## Glossary
+
+OpenBCI boards are commonly referred to as _biosensors_. A biosensor converts biological data into digital data. 
+
+The [Ganglion][link_shop_ganglion] has 4 channels, meaning the Ganglion can take four simultaneous voltage readings.
+ 
+The [Cyton][link_shop_cyton] has 8 channels and [Cyton with Daisy][link_shop_cyton_daisy] has 16 channels. 
+
+Generally speaking, the Cyton records at a high quality with less noise. Noise is anything that is not signal.
+
+## Thank you
+
+Thank you so much (Danke schön! Merci beaucoup!) for visiting the project and we do hope that you'll join us on this amazing journey to make programming with OpenBCI fun and easy.
+
+## Dependencies
 
 * Python 2.7 or later (https://www.python.org/download/releases/2.7/)
 * Numpy 1.7 or later (http://www.numpy.org/)
@@ -31,17 +130,35 @@ On linux, assuming `hci0` is the name of your bluetooth adapter:
 
 `sudo bash -c 'echo 10 > /sys/kernel/debug/bluetooth/hci0/conn_max_interval'`
 
-# Audience:
+## Install
 
-This python code is meant to be used by people familiar with python and programming in general. It's purpose is to allow for programmers to interface with OpenBCI technology directly, both to acquire data and to write programs that can use that data on a live setting, using python.
+### Using PyPI
 
-If this is not what you are looking for, you can visit http://openbci.com/downloads and browse other OpenBCI software that will fit your needs.
+```
+pip install openbci
+```
+
+Anaconda is not currently supported, if you want to use anaconda, you need to create a virtual environment in anaconda, activate it and use the above command to install it.
+
+### From sources
+
+For the latest version, you can install the package from the sources using the setup.py script
+
+```
+python setup.py install
+```
+
+or in developer mode to be able to modify the sources.
+
+```
+python setup.py develop
+```
 
 ## Functionality
 
 ### Basic usage
 
-The startStreaming function of the Board object takes a callback function and begins streaming data from the board. Each packet it receives is then parsed as an OpenBCISample which is passed to the callback function as an argument. 
+The startStreaming function of the Board object takes a callback function and begins streaming data from the board. Each packet it receives is then parsed as an OpenBCISample which is passed to the callback function as an argument.
 
 OpenBCISample members:
 -id:
@@ -55,13 +172,13 @@ OpenBCISample members:
 
 ### user.py
 
-This code provides a simple user interface (called user.py) to handle various plugins and communicate with the board. To use it, connect the board to your computer using the dongle (see http://docs.openbci.com/tutorials/01-GettingStarted for details). 
+This code provides a simple user interface (called user.py) to handle various plugins and communicate with the board. To use it, connect the board to your computer using the dongle (see http://docs.openbci.com/tutorials/01-GettingStarted for details).
 
 Then simply run the code given as an argument the port your board is connected to:
 Ex Linux:
-> $python user.py -p /dev/ttyUSB0 
+> $python user.py -p /dev/ttyUSB0
 
-The program should establish a serial connection and reset the board to default settings. When a '-->' appears, you can type a character (character map http://docs.openbci.com/software/01-OpenBCI_SDK)  that will be sent to the board using ser.write. This allows you to change the settings on the board. 
+The program should establish a serial connection and reset the board to default settings. When a '-->' appears, you can type a character (character map http://docs.openbci.com/software/01-OpenBCI_SDK)  that will be sent to the board using ser.write. This allows you to change the settings on the board.
 
 A good first test is to try is to type '?':
 >--> ?
@@ -88,15 +205,15 @@ Alternatively, there are 6 test signals pre configured:
 
 The / is used in the interface to execute a pre-configured command. Writing anything without a preceding '/' will automatically write those characters, one by one, to the board.
 
-For example, writing 
-> -->x3020000X 
+For example, writing
+> -->x3020000X
 will do the following:
 
 ‘x’ enters Channel Settings mode. Channel 3 is set up to be powered up, with gain of 2, normal input, removed from BIAS generation, removed from SRB2, removed from SRB1. The final ‘X’ latches the settings to the ADS1299 channel settings register.
 
 Pre-configured commands that use the / prefix are:
 
-test (As explained above) 
+test (As explained above)
 
 > --> /test4
 
@@ -123,7 +240,7 @@ Serial established...
 View command map at http://docs.openbci.com.
 Type start to run. Type /exit to exit.
 
---> 
+-->
 OpenBCI V3 8bit Board
 Setting ADS1299 Channel Values
 ADS1299 Device ID: 0x3E
@@ -176,17 +293,17 @@ Add new functionalities to user.py by creating new scripts inside the `plugins` 
 
 ```python
 	import plugin_interface as plugintypes
-	
+
 	class PluginPrint(plugintypes.IPluginExtended):
 		def activate(self):
 			print "Print activated"
-		
+
 		def deactivate(self):
 			print "Goodbye"
-			
+
 		def show_help(self):
 			print "I do not need any parameter, just printing stuff."
-				
+
 		# called with each new sample
 		def __call__(self, sample):
 			print "----------------"
@@ -219,7 +336,7 @@ You're done, your plugin should be automatically detected by `user.py`.
 
 * `sample_rate`: Print effective sampling rate averaged over XX seconds (default: 10).
 
-* `streamer_tcp`: Acts as a TCP server, using a "raw" protocol to send value. 
+* `streamer_tcp`: Acts as a TCP server, using a "raw" protocol to send value.
 	* The stream can be acquired with [OpenViBE](http://openvibe.inria.fr/) acquisition server, selecting telnet, big endian, float 32 bits, forcing 250 sampling rate (125 if daisy mode is used).
 	* Default IP: localhost, default port: 12345
 
@@ -245,3 +362,19 @@ Note: copy `open_bci_v3.py` there if you want to run the code -- no proper packa
 * `test.py`: minimal example, printing values.
 * `stream_data.py` a version of a TCP streaming server that somehow oversamples OpenBCI from 250 to 256Hz.
 * `upd_server.py` *DEPRECATED* (Use Plugin): see https://github.com/OpenBCI/OpenBCI_Node for implementation example.
+
+## <a name="license"></a> License:
+
+MIT
+
+[link_aj_keller]: https://github.com/aj-ptw
+[link_shop_wifi_shield]: https://shop.openbci.com/collections/frontpage/products/wifi-shield?variant=44534009550
+[link_shop_ganglion]: https://shop.openbci.com/collections/frontpage/products/pre-order-ganglion-board
+[link_shop_cyton]: https://shop.openbci.com/collections/frontpage/products/cyton-biosensing-board-8-channel
+[link_shop_cyton_daisy]: https://shop.openbci.com/collections/frontpage/products/cyton-daisy-biosensing-boards-16-channel
+[link_nodejs_cyton]: https://github.com/openbci/openbci_nodejs_cyton
+[link_nodejs_ganglion]: https://github.com/openbci/openbci_nodejs_ganglion
+[link_nodejs_wifi]: https://github.com/openbci/openbci_nodejs_wifi
+[link_javascript_utilities]: https://github.com/OpenBCI/OpenBCI_JavaScript_Utilities
+[link_ptw]: https://www.pushtheworldllc.com
+[link_openbci]: http://www.openbci.com
