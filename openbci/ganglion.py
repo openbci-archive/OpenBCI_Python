@@ -34,6 +34,9 @@ try:
 except:
     DefaultDelegate = object
     STUB_BTLE = True
+else:
+    from bluepy.btle import Scanner, DefaultDelegate, Peripheral    
+
 
 SAMPLE_RATE = 200.0  # Hz
 scale_fac_uVolts_per_count = 1200 / (8388607.0 * 1.5 * 51.0)
@@ -78,7 +81,7 @@ class OpenBCIGanglion(object):
     self.timeout = timeout
     self.max_packets_to_skip = max_packets_to_skip
     self.scaling_output = scaled_output
-    self.impedance = False
+    self.impedance = impedance
 
     # might be handy to know API
     self.board_type = "ganglion"
@@ -562,11 +565,11 @@ class GanglionDelegate(DefaultDelegate):
 
   def parseImpedance(self, packet_id, packet):
     """ Dealing with impedance data. packet: ASCII data. NB: will take few packet (seconds) to fill"""
-    if packet[-2:] != "Z\n":
+    if packet[-2:] != b"Z\n":
       print('Wrong format for impedance check, should be ASCII ending with "Z\\n"')
 
     # convert from ASCII to actual value
-    imp_value = int(packet[:-2])
+    imp_value = int(packet[:-2]) / 2
     # from 201 to 205 codes to the right array size
     self.lastImpedance[packet_id- 201] =  imp_value
     self.pushSample(packet_id - 200, self.lastChannelData, self.lastAcceleromoter, self.lastImpedance)
