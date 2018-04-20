@@ -154,6 +154,13 @@ class OpenBCIWiFi(object):
             if self.log:
                 print("Connected to %s with %s channels" % (self.board_type, self.eeg_channels_per_sample))
 
+        gains = None
+        if self.board_type == k.BOARD_CYTON:
+            gains = [24, 24, 24, 24, 24, 24, 24, 24]
+        elif self.board_type == k.BOARD_GANGLION:
+            gains = [51, 51, 51, 51]
+        self.local_wifi_server.set_parser(ParseRaw(gains=gains, board_type=self.board_type))
+
         if self.high_speed:
             output_style = 'raw'
         else:
@@ -475,3 +482,6 @@ class WiFiShieldServer(asyncore.dispatcher):
 
     def set_gains(self, gains):
         self.parser.set_ads1299_scale_factors(gains)
+
+    def set_parser(self, parser):
+        self.parser = parser
