@@ -347,6 +347,50 @@ class OpenBCIWiFi(object):
         except Exception as e:
             print("Something went wrong while setting channels: " + str(e))
 
+    def set_sample_rate(self, sample_rate):
+        """ Change sample rate """
+        try:
+            if self.board_type == k.BOARD_CYTON:
+                if sample_rate == 250:
+                        self.wifi_write('~6')
+                elif sample_rate == 500:
+                        self.wifi_write('~5')
+                elif sample_rate == 1000:
+                        self.wifi_write('~4')
+                elif sample_rate == 2000:
+                        self.wifi_write('~3')
+                elif sample_rate == 4000:
+                        self.wifi_write('~2')
+                elif sample_rate == 8000:
+                        self.wifi_write('~1')
+                elif sample_rate == 16000:
+                        self.wifi_write('~0')
+                else:
+                    print("Sample rate not supported: " + str(sample_rate))
+            elif self.board_type == k.BOARD_GANGLION:
+                if sample_rate == 200:
+                        self.wifi_write('~7')
+                elif sample_rate == 400:
+                        self.wifi_write('~6')
+                elif sample_rate == 800:
+                        self.wifi_write('~5')
+                elif sample_rate == 1600:
+                        self.wifi_write('~4')
+                elif sample_rate == 3200:
+                        self.wifi_write('~3')
+                elif sample_rate == 6400:
+                        self.wifi_write('~2')
+                elif sample_rate == 12800:
+                        self.wifi_write('~1')
+                elif sample_rate == 25600:
+                        self.wifi_write('~0')
+                else:
+                    print("Sample rate not supported: " + str(sample_rate))
+            else:
+                print("Board type not supported for setting sample rate")
+        except Exception as e:
+            print("Something went wrong while setting sample rate: " + str(e))
+
     """
 
     Clean Up (atexit)
