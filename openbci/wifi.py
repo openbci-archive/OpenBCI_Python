@@ -391,6 +391,21 @@ class OpenBCIWiFi(object):
         except Exception as e:
             print("Something went wrong while setting sample rate: " + str(e))
 
+    def set_accelerometer(self, toggle_position):
+        """ Enable / disable accelerometer """
+        try:
+            if self.board_type == k.BOARD_GANGLION:
+                # Commands to set toggle to on position
+                if toggle_position == 1:
+                    self.wifi_write('n')
+                # Commands to set toggle to off position
+                elif toggle_position == 0:
+                    self.wifi_write('N')
+            else:
+                print("Board type not supported for setting accelerometer")
+        except Exception as e:
+            print("Something went wrong while setting accelerometer: " + str(e))
+
     """
 
     Clean Up (atexit)
