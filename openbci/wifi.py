@@ -56,7 +56,8 @@ class OpenBCIWiFi(object):
     """
 
     def __init__(self, ip_address=None, shield_name=None, sample_rate=None, log=True, timeout=3,
-                 max_packets_to_skip=20, latency=10000, high_speed=True, ssdp_attempts=5):
+                 max_packets_to_skip=20, latency=10000, high_speed=True, ssdp_attempts=5,
+                 num_channels=8):
         # these one are used
         self.high_speed = high_speed
         self.impedance = False
@@ -64,6 +65,7 @@ class OpenBCIWiFi(object):
         self.latency = latency
         self.log = log  # print_incoming_text needs log
         self.max_packets_to_skip = max_packets_to_skip
+        self.num_channles = num_channels
         self.sample_rate = sample_rate
         self.shield_name = shield_name
         self.ssdp_attempts = ssdp_attempts
@@ -157,6 +159,8 @@ class OpenBCIWiFi(object):
         gains = None
         if self.board_type == k.BOARD_CYTON:
             gains = [24, 24, 24, 24, 24, 24, 24, 24]
+        elif self.board_type == k.BOARD_DAISY:
+            gains = [24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24]
         elif self.board_type == k.BOARD_GANGLION:
             gains = [51, 51, 51, 51]
         self.local_wifi_server.set_parser(ParseRaw(gains=gains, board_type=self.board_type))

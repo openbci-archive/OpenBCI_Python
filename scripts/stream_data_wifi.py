@@ -4,7 +4,8 @@ import logging
 
 
 def printData(sample):
-    print(sample)
+    print(sample.sample_number)
+    print(sample.channel_data)
 
 
 if __name__ == '__main__':
