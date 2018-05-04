@@ -179,6 +179,57 @@ class ParseRaw(object):
 
         return sample
 
+    def make_daisy_sample_object_wifi(self, lower_sample_object, upper_sample_object):
+        """
+        /**
+         * @description Used to make one sample object from two sample objects. The sample number of the new daisy sample will
+         *      be the upperSampleObject's sample number divded by 2. This allows us to preserve consecutive sample numbers that
+         *      flip over at 127 instead of 255 for an 8 channel. The daisySampleObject will also have one `channelData` array
+         *      with 16 elements inside it, with the lowerSampleObject in the lower indices and the upperSampleObject in the
+         *      upper set of indices. The auxData from both channels shall be captured in an object called `auxData` which
+         *      contains two arrays referenced by keys `lower` and `upper` for the `lowerSampleObject` and `upperSampleObject`,
+         *      respectively. The timestamps shall be averaged and moved into an object called `timestamp`. Further, the
+         *      un-averaged timestamps from the `lowerSampleObject` and `upperSampleObject` shall be placed into an object called
+         *      `_timestamps` which shall contain two keys `lower` and `upper` which contain the original timestamps for their
+         *      respective sampleObjects.
+         * @param lowerSampleObject {Object} - Lower 8 channels with odd sample number
+         * @param upperSampleObject {Object} - Upper 8 channels with even sample number
+         * @returns {Object} - The new merged daisy sample object
+         */
+        """
+        daisy_sample_object = OpenBCISample()
+
+        if lower_sample_object.channel_data is not None:
+            daisy_sample_object.channel_data = lower_sample_object.channel_data + upper_sample_object.channel_data
+
+        daisy_sample_object.sample_number = upper_sample_object.sample_number
+        daisy_sample_object.id = daisy_sample_object.sample_number
+
+        daisy_sample_object.aux_data = {
+            'lower': lower_sample_object.aux_data,
+            'upper': upper_sample_object.aux_data
+        }
+
+        if lower_sample_object.timestamp:
+            daisy_sample_object.timestamp = lower_sample_object.timestamp
+
+        daisy_sample_object.stop_byte = lower_sample_object.stop_byte
+
+        daisy_sample_object._timestamps = {
+            'lower': lower_sample_object.timestamp,
+            'upper': upper_sample_object.timestamp
+        }
+
+        if lower_sample_object.accel_data is not None:
+            if lower_sample_object.accel_data[0] > 0 or lower_sample_object.accel_data[1] > 0 or lower_sample_object.accel_data[2] > 0:
+                daisy_sample_object.accel_data = lower_sample_object.accel_data
+            else:
+                daisy_sample_object.accel_data = upper_sample_object.accel_data
+
+        daisy_sample_object.valid = True
+
+        return daisy_sample_object
+
     """
     /**
  * @description Used transform raw data packets into fully qualified packets
@@ -279,4 +330,6 @@ class OpenBCISample(object):
         self.sample_number = sample_number
         self.start_byte = start_byte
         self.stop_byte = stop_byte
+        self.timestamp = 0
+        self._timestamps = {}
         self.valid = valid
