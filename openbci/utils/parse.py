@@ -179,6 +179,76 @@ class ParseRaw(object):
 
         return sample
 
+    def make_daisy_sample_object_wifi(self, lower_sample_object, upper_sample_object):
+        pass
+
+    """
+    /**
+ * @description Used to make one sample object from two sample objects. The sample number of the new daisy sample will
+ *      be the upperSampleObject's sample number divded by 2. This allows us to preserve consecutive sample numbers that
+ *      flip over at 127 instead of 255 for an 8 channel. The daisySampleObject will also have one `channelData` array
+ *      with 16 elements inside it, with the lowerSampleObject in the lower indices and the upperSampleObject in the
+ *      upper set of indices. The auxData from both channels shall be captured in an object called `auxData` which
+ *      contains two arrays referenced by keys `lower` and `upper` for the `lowerSampleObject` and `upperSampleObject`,
+ *      respectively. The timestamps shall be averaged and moved into an object called `timestamp`. Further, the
+ *      un-averaged timestamps from the `lowerSampleObject` and `upperSampleObject` shall be placed into an object called
+ *      `_timestamps` which shall contain two keys `lower` and `upper` which contain the original timestamps for their
+ *      respective sampleObjects.
+ * @param lowerSampleObject {Object} - Lower 8 channels with odd sample number
+ * @param upperSampleObject {Object} - Upper 8 channels with even sample number
+ * @returns {Object} - The new merged daisy sample object
+ */
+function makeDaisySampleObjectWifi (lowerSampleObject, upperSampleObject) {
+  let daisySampleObject = {};
+
+  if (lowerSampleObject.hasOwnProperty('channelData')) {
+    daisySampleObject['channelData'] = lowerSampleObject.channelData.concat(upperSampleObject.channelData);
+  }
+
+  if (lowerSampleObject.hasOwnProperty('channelDataCounts')) {
+    daisySampleObject['channelDataCounts'] = lowerSampleObject.channelDataCounts.concat(upperSampleObject.channelDataCounts);
+  }
+
+  daisySampleObject['sampleNumber'] = upperSampleObject.sampleNumber;
+
+  daisySampleObject['auxData'] = {
+    'lower': lowerSampleObject.auxData,
+    'upper': upperSampleObject.auxData
+  };
+
+  if (lowerSampleObject.hasOwnProperty('timestamp')) {
+    daisySampleObject['timestamp'] = lowerSampleObject.timestamp;
+  }
+
+  daisySampleObject.stopByte = lowerSampleObject.stopByte;
+
+  daisySampleObject['_timestamps'] = {
+    'lower': lowerSampleObject.timestamp,
+    'upper': upperSampleObject.timestamp
+  };
+
+  if (lowerSampleObject.hasOwnProperty('accelData')) {
+    if (lowerSampleObject.accelData[0] > 0 || lowerSampleObject.accelData[1] > 0 || lowerSampleObject.accelData[2] > 0) {
+      daisySampleObject.accelData = lowerSampleObject.accelData;
+    } else {
+      daisySampleObject.accelData = upperSampleObject.accelData;
+    }
+  }
+
+  if (lowerSampleObject.hasOwnProperty('accelDataCounts')) {
+    if (lowerSampleObject.accelDataCounts[0] > 0 || lowerSampleObject.accelDataCounts[1] > 0 || lowerSampleObject.accelDataCounts[2] > 0) {
+      daisySampleObject.accelDataCounts = lowerSampleObject.accelDataCounts;
+    } else {
+      daisySampleObject.accelDataCounts = upperSampleObject.accelDataCounts;
+    }
+  }
+
+  daisySampleObject['valid'] = true;
+
+  return daisySampleObject;
+}
+    """
+
     """
     /**
  * @description Used transform raw data packets into fully qualified packets

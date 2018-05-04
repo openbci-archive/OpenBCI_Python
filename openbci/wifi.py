@@ -59,6 +59,7 @@ class OpenBCIWiFi(object):
                  max_packets_to_skip=20, latency=10000, high_speed=True, ssdp_attempts=5,
                  num_channels=8):
         # these one are used
+        self.daisy = False
         self.high_speed = high_speed
         self.impedance = False
         self.ip_address = ip_address
@@ -159,10 +160,14 @@ class OpenBCIWiFi(object):
         gains = None
         if self.board_type == k.BOARD_CYTON:
             gains = [24, 24, 24, 24, 24, 24, 24, 24]
+            self.daisy = False
         elif self.board_type == k.BOARD_DAISY:
             gains = [24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24]
+            self.daisy = True
         elif self.board_type == k.BOARD_GANGLION:
             gains = [51, 51, 51, 51]
+            self.daisy = False
+        self.local_wifi_server.set_daisy(daisy=self.daisy)
         self.local_wifi_server.set_parser(ParseRaw(gains=gains, board_type=self.board_type))
 
         if self.high_speed:
@@ -448,7 +453,7 @@ class OpenBCIWiFi(object):
             # log how many packets where sent succesfully in between warnings
             if self.log_packet_count:
                 logging.info('Data packets received:' + str(self.log_packet_count))
-                self.log_packet_count = 0;
+                self.log_packet_count = 0
             logging.warning(text)
         print("Warning: %s" % text)
 
@@ -476,11 +481,13 @@ class OpenBCIWiFi(object):
 
 
 class WiFiShieldHandler(asyncore.dispatcher_with_send):
-    def __init__(self, sock, callback=None, high_speed=True, parser=None):
+    def __init__(self, sock, callback=None, high_speed=True,
+                 parser=None, daisy=False):
         asyncore.dispatcher_with_send.__init__(self, sock)
 
-        self.high_speed = high_speed
         self.callback = callback
+        self.high_speed = high_speed
+        self.last_odd_sample = None
         self.parser = parser if parser is not None else ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24])
 
     def handle_read(self):
@@ -494,6 +501,26 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                 samples = self.parser.transform_raw_data_packets_to_sample(raw_data_packets=raw_data_packets)
 
                 for sample in samples:
+                    # if a daisy module is attached, wait to concatenate two samples (main board + daisy)
+                    #  before passing it to callback
+                    if self.daisy:
+                        # odd sample: daisy sample, save for later
+                        if ~sample.sample_number % 2:
+                            self.last_odd_sample = sample
+                        # even sample: concatenate and send if last sample was the fist part, otherwise drop the packet
+                        elif sample.sample_number - 1 == self.last_odd_sample.id:
+                            # the aux data will be the average between the two samples, as the channel
+                            # samples themselves have been averaged by the board
+                            avg_aux_data = list(
+                                (np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
+                            whole_sample = OpenBCISample(sample.id,
+                                                         sample.channel_data + self.last_odd_sample.channel_data,
+                                                         avg_aux_data)
+                            for call in callback:
+                                call(whole_sample)
+                    else:
+                        for call in callback:
+                            call(sample)
                     if self.callback is not None:
                         self.callback(sample)
 
@@ -520,11 +547,12 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
 
 class WiFiShieldServer(asyncore.dispatcher):
 
-    def __init__(self, host, port, callback=None, gains=None, high_speed=True):
+    def __init__(self, host, port, callback=None, gains=None, high_speed=True, daisy=False):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
         self.bind((host, port))
+        self.daisy = daisy
         self.listen(5)
         self.callback = None
         self.handler = None
@@ -536,12 +564,18 @@ class WiFiShieldServer(asyncore.dispatcher):
         if pair is not None:
             sock, addr = pair
             print 'Incoming connection from %s' % repr(addr)
-            self.handler = WiFiShieldHandler(sock, self.callback, high_speed=self.high_speed, parser=self.parser)
+            self.handler = WiFiShieldHandler(sock, self.callback, high_speed=self.high_speed,
+                                             parser=self.parser, daisy=self.daisy)
 
     def set_callback(self, callback):
         self.callback = callback
         if self.handler is not None:
             self.handler.callback = callback
+
+    def set_daisy(self, daisy):
+        self.daisy = daisy
+        if self.handler is not None:
+            self.handler.daisy = daisy
 
     def set_gains(self, gains):
         self.parser.set_ads1299_scale_factors(gains)
