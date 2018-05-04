@@ -2,8 +2,7 @@ from unittest import TestCase, main, skip
 import mock
 
 from openbci.utils import (k,
-                           new_sample,
-                           new_sample_no_scale,
+                           OpenBCISample,
                            ParseRaw,
                            sample_packet,
                            sample_packet_standard_raw_aux,
@@ -250,104 +249,66 @@ class TestParseRaw(TestCase):
     def test_make_daisy_sample_object_wifi(self):
         parser = ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24])
         # Make the lower sample(channels 1 - 8)
-        lower_sample_object = new_sample(1)
+        lower_sample_object = OpenBCISample(sample_number=1)
         lower_sample_object.channel_data = [1, 2, 3, 4, 5, 6, 7, 8]
         lower_sample_object.aux_data = [0, 1, 2]
         lower_sample_object.timestamp = 4
         lower_sample_object.accel_data = [0, 0, 0]
         # Make the upper sample(channels 9 - 16)
-        upper_sample_object = new_sample(2)
-        upper_sample_object.channelData = [9, 10, 11, 12, 13, 14, 15, 16]
-        upper_sample_object.accelData = [0, 1, 2]
-        lower_sample_object.auxData = [3, 4, 5]
+        upper_sample_object = OpenBCISample(sample_number=2)
+        upper_sample_object.channel_data = [9, 10, 11, 12, 13, 14, 15, 16]
+        upper_sample_object.accel_data = [0, 1, 2]
+        upper_sample_object.aux_data = [3, 4, 5]
         upper_sample_object.timestamp = 8
 
         daisy_sample_object = parser.make_daisy_sample_object_wifi(lower_sample_object, upper_sample_object);
 
-        lower_sample_object_no_scale = new_sample(1)
-        lower_sample_object_no_scale.channelDataCounts = [1, 2, 3, 4, 5, 6, 7, 8]
-        lower_sample_object_no_scale.auxData = [0, 1, 2]
-        lower_sample_object_no_scale.accelDataCounts = [0, 0, 0]
-        lower_sample_object_no_scale.timestamp = 4
-
-        # Make the upper sample(channels 9 - 16)
-        upper_sample_object_no_scale = new_sample(2)
-        upper_sample_object_no_scale.channelDataCounts = [9, 10, 11, 12, 13, 14, 15, 16]
-        lower_sample_object_no_scale.accelDataCounts = [0, 1, 2]
-        upper_sample_object_no_scale.auxData = [3, 4, 5]
-        upper_sample_object_no_scale.timestamp = 8
-
-        # Call the function under test
-        daisy_sample_object_no_scale = parser.make_daisy_sample_object_wifi(lower_sample_object_no_scale,
-                                                                   upper_sample_object_no_scale)
-
         # should have valid object true
         self.assertTrue(daisy_sample_object.valid)
-        self.assertTrue(daisy_sample_object_no_scale.valid)
 
         # should make a channelData array 16 elements long
         self.assertEqual(len(daisy_sample_object.channel_data), k.NUMBER_OF_CHANNELS_DAISY)
-        self.assertEqual(len(daisy_sample_object_no_scale.channel_data_counts), k.NUMBER_OF_CHANNELS_DAISY)
 
         # should make a channelData array with lower array in front of upper array
         for i in range(16):
             self.assertEqual(daisy_sample_object.channel_data[i], i + 1)
-            self.assertEqual(daisy_sample_object_no_scale.channel_data_counts[i], i + 1)
 
+        self.assertEqual(daisy_sample_object.id, daisy_sample_object.sample_number)
         self.assertEqual(daisy_sample_object.sample_number, daisy_sample_object.sample_number)
-        self.assertEqual(daisy_sample_object_no_scale.sample_number, daisy_sample_object_no_scale.sample_number)
 
         # should put the aux packets in an object
-        self.assertIsNotNone(daisy_sample_object.aux_data.lower)
-        self.assertIsNotNone(daisy_sample_object.aux_data.upper)
-        self.assertIsNotNone(daisy_sample_object_no_scale.aux_data.lower)
-        self.assertIsNotNone(daisy_sample_object_no_scale.aux_data.upper)
+        self.assertIsNotNone(daisy_sample_object.aux_data['lower'])
+        self.assertIsNotNone(daisy_sample_object.aux_data['upper'])
 
         # should put the aux packets in an object in the right order
         for i in range(3):
             self.assertEqual(daisy_sample_object.aux_data['lower'][i], i)
             self.assertEqual(daisy_sample_object.aux_data['upper'][i], i + 3)
-            self.assertEqual(daisy_sample_object_no_scale.aux_data['lower'][i], i)
-            self.assertEqual(daisy_sample_object_no_scale.aux_data['upper'][i], i + 3)
 
         # should take the lower timestamp
         self.assertEqual(daisy_sample_object.timestamp, lower_sample_object.timestamp)
-        self.assertEqual(daisy_sample_object_no_scale.timestamp, lower_sample_object.timestamp)
 
         # should take the lower stopByte
         self.assertEqual(daisy_sample_object.stop_byte, lower_sample_object.stop_byte)
-        self.assertEqual(daisy_sample_object_no_scale.stop_byte, lower_sample_object.stop_byte)
 
         # should place the old timestamps in an object
-        self.assertEqual(daisy_sample_object._timestamps.lower, lower_sample_object.timestamp)
-        self.assertEqual(daisy_sample_object._timestamps.upper, upper_sample_object.timestamp)
-        self.assertEqual(daisy_sample_object_no_scale._timestamps.lower, lower_sample_object_no_scale.timestamp)
-        self.assertEqual(daisy_sample_object_no_scale._timestamps.upper, upper_sample_object_no_scale.timestamp)
+        self.assertEqual(daisy_sample_object._timestamps['lower'], lower_sample_object.timestamp)
+        self.assertEqual(daisy_sample_object._timestamps['upper'], upper_sample_object.timestamp)
 
         # should store an accelerometer value if present
         self.assertIsNotNone(daisy_sample_object.accel_data)
         self.assertListEqual(daisy_sample_object.accel_data, [0, 1, 2])
-        self.assertIsNotNone(daisy_sample_object_no_scale.accel_data_counts)
-        self.assertListEqual(daisy_sample_object_no_scale.accel_data_counts, [0, 1, 2])
 
-        lower_sample = new_sample(1)
+        lower_sample = OpenBCISample(sample_number=1)
         lower_sample.accel_data = [0, 1, 2]
-        upper_sample = new_sample(2)
+        upper_sample = OpenBCISample(sample_number=2)
         upper_sample.accel_data = [0, 0, 0]
-
-        lower_sample_no_scale = new_sample_no_scale(1)
-        lower_sample_no_scale.accel_data_counts = [0, 1, 2]
-        upper_sample_no_scale = new_sample_no_scale(2)
-        upper_sample_no_scale.accel_data_counts = [0, 0, 0]
 
         # Call the function under test
         daisy_sample = parser.make_daisy_sample_object_wifi(lower_sample, upper_sample)
-        daisy_sample_no_scale = parser.make_daisy_sample_object_wifi(lower_sample_no_scale, upper_sample_no_scale)
 
         self.assertIsNotNone(daisy_sample.accel_data)
         self.assertListEqual(daisy_sample.accel_data, [0, 1, 2])
-        self.assertIsNotNone(daisy_sample_no_scale.accel_data_counts)
-        self.assertListEqual(daisy_sample_no_scale.accel_data_counts, [0, 1, 2])
 
 
 if __name__ == '__main__':

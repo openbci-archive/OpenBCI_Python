@@ -62,33 +62,3 @@ def sample_packet_impedance(channel_number):
 
 def sample_packet_user_defined():
     return bytearray([0xA0, 0x00, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, make_tail_byte_from_packet_type(k.OBCIStreamPacketUserDefinedType)]);
-
-
-def new_sample(sample_number):
-    sample_number = sample_number_normalize(sample_number)
-    return {
-        'start_byte': k.RAW_BYTE_START,
-        'sample_number': sample_number,
-        'channel_data': [],
-        'accel_data': [],
-        'aux_data': None,
-        'stop_byte': k.RAW_BYTE_STOP,
-        'board_time': 0,
-        'timestamp': 0,
-        'valid': True
-    }
-
-
-def new_sample_no_scale(sample_number):
-    sample_number = sample_number_normalize(sample_number)
-    return {
-        'start_byte': k.RAW_BYTE_START,
-        'sample_number': sample_number,
-        'channel_data_counts': [],
-        'accel_data_counts': [],
-        'aux_data': None,
-        'stop_byte': k.RAW_BYTE_STOP,
-        'board_time': 0,
-        'timestamp': 0,
-        'valid': True
-    }

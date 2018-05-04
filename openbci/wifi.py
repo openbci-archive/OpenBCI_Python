@@ -28,7 +28,7 @@ import urllib2
 import requests
 import xmltodict
 
-from openbci.utils import k, ParseRaw, ssdp
+from openbci.utils import k, ParseRaw, OpenBCISample, ssdp
 
 SAMPLE_RATE = 0  # Hz
 
@@ -486,8 +486,9 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
         asyncore.dispatcher_with_send.__init__(self, sock)
 
         self.callback = callback
+        self.daisy = daisy
         self.high_speed = high_speed
-        self.last_odd_sample = None
+        self.last_odd_sample = OpenBCISample()
         self.parser = parser if parser is not None else ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24])
 
     def handle_read(self):
@@ -508,21 +509,15 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                         if ~sample.sample_number % 2:
                             self.last_odd_sample = sample
                         # even sample: concatenate and send if last sample was the fist part, otherwise drop the packet
-                        elif sample.sample_number - 1 == self.last_odd_sample.id:
+                        elif sample.sample_number - 1 == self.last_odd_sample.sample_number:
                             # the aux data will be the average between the two samples, as the channel
                             # samples themselves have been averaged by the board
-                            avg_aux_data = list(
-                                (np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
-                            whole_sample = OpenBCISample(sample.id,
-                                                         sample.channel_data + self.last_odd_sample.channel_data,
-                                                         avg_aux_data)
-                            for call in callback:
-                                call(whole_sample)
+                            daisy_sample = self.parser.make_daisy_sample_object_wifi(self.last_odd_sample, sample)
+                            if self.callback is not None:
+                                self.callback(daisy_sample)
                     else:
-                        for call in callback:
-                            call(sample)
-                    if self.callback is not None:
-                        self.callback(sample)
+                        if self.callback is not None:
+                            self.callback(sample)
 
             else:
                 try:

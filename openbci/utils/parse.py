@@ -180,74 +180,55 @@ class ParseRaw(object):
         return sample
 
     def make_daisy_sample_object_wifi(self, lower_sample_object, upper_sample_object):
-        pass
+        """
+        /**
+         * @description Used to make one sample object from two sample objects. The sample number of the new daisy sample will
+         *      be the upperSampleObject's sample number divded by 2. This allows us to preserve consecutive sample numbers that
+         *      flip over at 127 instead of 255 for an 8 channel. The daisySampleObject will also have one `channelData` array
+         *      with 16 elements inside it, with the lowerSampleObject in the lower indices and the upperSampleObject in the
+         *      upper set of indices. The auxData from both channels shall be captured in an object called `auxData` which
+         *      contains two arrays referenced by keys `lower` and `upper` for the `lowerSampleObject` and `upperSampleObject`,
+         *      respectively. The timestamps shall be averaged and moved into an object called `timestamp`. Further, the
+         *      un-averaged timestamps from the `lowerSampleObject` and `upperSampleObject` shall be placed into an object called
+         *      `_timestamps` which shall contain two keys `lower` and `upper` which contain the original timestamps for their
+         *      respective sampleObjects.
+         * @param lowerSampleObject {Object} - Lower 8 channels with odd sample number
+         * @param upperSampleObject {Object} - Upper 8 channels with even sample number
+         * @returns {Object} - The new merged daisy sample object
+         */
+        """
+        daisy_sample_object = OpenBCISample()
 
-    """
-    /**
- * @description Used to make one sample object from two sample objects. The sample number of the new daisy sample will
- *      be the upperSampleObject's sample number divded by 2. This allows us to preserve consecutive sample numbers that
- *      flip over at 127 instead of 255 for an 8 channel. The daisySampleObject will also have one `channelData` array
- *      with 16 elements inside it, with the lowerSampleObject in the lower indices and the upperSampleObject in the
- *      upper set of indices. The auxData from both channels shall be captured in an object called `auxData` which
- *      contains two arrays referenced by keys `lower` and `upper` for the `lowerSampleObject` and `upperSampleObject`,
- *      respectively. The timestamps shall be averaged and moved into an object called `timestamp`. Further, the
- *      un-averaged timestamps from the `lowerSampleObject` and `upperSampleObject` shall be placed into an object called
- *      `_timestamps` which shall contain two keys `lower` and `upper` which contain the original timestamps for their
- *      respective sampleObjects.
- * @param lowerSampleObject {Object} - Lower 8 channels with odd sample number
- * @param upperSampleObject {Object} - Upper 8 channels with even sample number
- * @returns {Object} - The new merged daisy sample object
- */
-function makeDaisySampleObjectWifi (lowerSampleObject, upperSampleObject) {
-  let daisySampleObject = {};
+        if lower_sample_object.channel_data is not None:
+            daisy_sample_object.channel_data = lower_sample_object.channel_data + upper_sample_object.channel_data
 
-  if (lowerSampleObject.hasOwnProperty('channelData')) {
-    daisySampleObject['channelData'] = lowerSampleObject.channelData.concat(upperSampleObject.channelData);
-  }
+        daisy_sample_object.sample_number = upper_sample_object.sample_number
+        daisy_sample_object.id = daisy_sample_object.sample_number
 
-  if (lowerSampleObject.hasOwnProperty('channelDataCounts')) {
-    daisySampleObject['channelDataCounts'] = lowerSampleObject.channelDataCounts.concat(upperSampleObject.channelDataCounts);
-  }
+        daisy_sample_object.aux_data = {
+            'lower': lower_sample_object.aux_data,
+            'upper': upper_sample_object.aux_data
+        }
 
-  daisySampleObject['sampleNumber'] = upperSampleObject.sampleNumber;
+        if lower_sample_object.timestamp:
+            daisy_sample_object.timestamp = lower_sample_object.timestamp
 
-  daisySampleObject['auxData'] = {
-    'lower': lowerSampleObject.auxData,
-    'upper': upperSampleObject.auxData
-  };
+        daisy_sample_object.stop_byte = lower_sample_object.stop_byte
 
-  if (lowerSampleObject.hasOwnProperty('timestamp')) {
-    daisySampleObject['timestamp'] = lowerSampleObject.timestamp;
-  }
+        daisy_sample_object._timestamps = {
+            'lower': lower_sample_object.timestamp,
+            'upper': upper_sample_object.timestamp
+        }
 
-  daisySampleObject.stopByte = lowerSampleObject.stopByte;
+        if lower_sample_object.accel_data is not None:
+            if lower_sample_object.accel_data[0] > 0 or lower_sample_object.accel_data[1] > 0 or lower_sample_object.accel_data[2] > 0:
+                daisy_sample_object.accel_data = lower_sample_object.accel_data
+            else:
+                daisy_sample_object.accel_data = upper_sample_object.accel_data
 
-  daisySampleObject['_timestamps'] = {
-    'lower': lowerSampleObject.timestamp,
-    'upper': upperSampleObject.timestamp
-  };
+        daisy_sample_object.valid = True
 
-  if (lowerSampleObject.hasOwnProperty('accelData')) {
-    if (lowerSampleObject.accelData[0] > 0 || lowerSampleObject.accelData[1] > 0 || lowerSampleObject.accelData[2] > 0) {
-      daisySampleObject.accelData = lowerSampleObject.accelData;
-    } else {
-      daisySampleObject.accelData = upperSampleObject.accelData;
-    }
-  }
-
-  if (lowerSampleObject.hasOwnProperty('accelDataCounts')) {
-    if (lowerSampleObject.accelDataCounts[0] > 0 || lowerSampleObject.accelDataCounts[1] > 0 || lowerSampleObject.accelDataCounts[2] > 0) {
-      daisySampleObject.accelDataCounts = lowerSampleObject.accelDataCounts;
-    } else {
-      daisySampleObject.accelDataCounts = upperSampleObject.accelDataCounts;
-    }
-  }
-
-  daisySampleObject['valid'] = true;
-
-  return daisySampleObject;
-}
-    """
+        return daisy_sample_object
 
     """
     /**
@@ -349,4 +330,6 @@ class OpenBCISample(object):
         self.sample_number = sample_number
         self.start_byte = start_byte
         self.stop_byte = stop_byte
+        self.timestamp = 0
+        self._timestamps = {}
         self.valid = valid
