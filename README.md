@@ -134,7 +134,7 @@ $$$
 Warning: Connecting pins to high frequency 2x amp signal
 
 --> a
-Corresponding SD file OBCI_18.TXT$$$
+Corresponding SD file OCBI_18.TXT$$$
 --> /start T:3
 
 ```
