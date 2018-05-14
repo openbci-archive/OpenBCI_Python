@@ -23,7 +23,10 @@ import logging
 import re
 import socket
 import timeit
-import urllib2
+try:
+    import urllib2
+except ImportError:
+    import urllib
 
 import requests
 import xmltodict
@@ -89,7 +92,7 @@ class OpenBCIWiFi(object):
 
         # Intentionally bind to port 0
         self.local_wifi_server = WiFiShieldServer(self.local_ip_address, 0)
-        self.local_wifi_server_port = self.local_wifi_server.getsockname()[1]
+        self.local_wifi_server_port = self.local_wifi_server.socket.getsockname()[1]
         if self.log:
             print("Opened socket on %s:%d" % (self.local_ip_address, self.local_wifi_server_port))
 
@@ -139,7 +142,7 @@ class OpenBCIWiFi(object):
             raise ValueError('self.ip_address cannot be None')
 
         if self.log:
-            print ("Init WiFi connection with IP: " + self.ip_address)
+            print("Init WiFi connection with IP: " + self.ip_address)
 
         """
         Docs on these HTTP requests and more are found:
@@ -495,7 +498,7 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
         data = self.recv(3000)  # 3000 is the max data the WiFi shield is allowed to send over TCP
         if len(data) > 2:
             if self.high_speed:
-                packets = len(data)/33
+                packets = int(len(data)/33)
                 raw_data_packets = []
                 for i in range(packets):
                     raw_data_packets.append(bytearray(data[i * k.RAW_PACKET_SIZE: i * k.RAW_PACKET_SIZE + k.RAW_PACKET_SIZE]))
@@ -535,9 +538,9 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                                 print("not a sample packet")
                 except ValueError as e:
                     print("failed to parse: %s" % data)
-                    print e
+                    print(e)
                 except BaseException as e:
-                    print e
+                    print(e)
 
 
 class WiFiShieldServer(asyncore.dispatcher):
@@ -558,7 +561,7 @@ class WiFiShieldServer(asyncore.dispatcher):
         pair = self.accept()
         if pair is not None:
             sock, addr = pair
-            print 'Incoming connection from %s' % repr(addr)
+            print('Incoming connection from %s' % repr(addr))
             self.handler = WiFiShieldHandler(sock, self.callback, high_speed=self.high_speed,
                                              parser=self.parser, daisy=self.daisy)
 

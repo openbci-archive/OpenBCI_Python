@@ -1,4 +1,4 @@
-from constants import Constants as k
+from openbci.utils.constants import Constants as k
 
 
 def make_tail_byte_from_packet_type(packet_type):

@@ -1,7 +1,7 @@
 import time
 import struct
 
-from constants import Constants as k
+from openbci.utils.constants import Constants as k
 
 
 class ParseRaw(object):

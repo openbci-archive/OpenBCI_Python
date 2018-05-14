@@ -53,10 +53,10 @@ class Monitor(Thread):
             elapsed_time = new_tick - self.tick
             current_samples_in =  nb_samples_in
             current_samples_out = nb_samples_out
-            print "--- at t: ", (new_tick - self.start_tick), " ---"
-            print "elapsed_time: ", elapsed_time
-            print "nb_samples_in: ", current_samples_in - self.nb_samples_in
-            print "nb_samples_out: ", current_samples_out - self.nb_samples_out
+            print("--- at t: ", (new_tick - self.start_tick), " ---")
+            print("elapsed_time: ", elapsed_time)
+            print("nb_samples_in: ", current_samples_in - self.nb_samples_in)
+            print("nb_samples_out: ", current_samples_out - self.nb_samples_out)
             self.tick = new_tick
             self.nb_samples_in = nb_samples_in
             self.nb_samples_out = nb_samples_out
@@ -75,7 +75,7 @@ def streamData(sample):
     global last_id
     # TODO: duplicate packet if skipped to stay sync
     if sample.id != last_id + 1:
-        print "time", tick, ": paquet skipped!"
+        print("time", tick, ": paquet skipped!")
     if sample.id == 255:
         last_id = -1
     else:
@@ -109,10 +109,10 @@ def streamData(sample):
             # OK, it's a very rough interpolation
             interpol_values[i] = (last_values[i] + sample.channel_data[i]) / 2
         if DEBUG:
-            print "  --"
-            print "  last values: ", last_values
-            print "  interpolation: ", interpol_values
-            print "  current sample: ", sample.channel_data
+            print("  --")
+            print("  last values: ", last_values)
+            print("  interpolation: ", interpol_values)
+            print("  current sample: ", sample.channel_data)
         # send to clients interpolated sample
         # leftover_duplications = 0
         server.broadcast_values(interpol_values)
