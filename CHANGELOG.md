@@ -1,3 +1,30 @@
+# v1.0.0
+
+### New Features
+
+* High speed mode for WiFi shield sends raw data - #51
+* Unit testing with Nosetests
+* Continuous Integration with Travis.ci
+
+### Breaking Changes
+
+* Refactored library for pip
+* Moved plugins folder into openbci dir so plugins can be imported when installed with pip
+
+
+## Beta 0
+
+* Adds high speed for Daisy over WiFi - now all boards are supported!
+
+## Alpha 1
+
+* Adds high speed for Ganglion over WiFi
+
+## Alpha 0
+
+* Adds high speed for Cyton over WiFi
+
+# v0.1
 
 ## dev
 

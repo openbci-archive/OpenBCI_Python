@@ -1,10 +1,12 @@
 """A sample client for the OpenBCI UDP server."""
 
 import argparse
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import _pickle as pickle
 import json
-import sys; sys.path.append('..') # help python find open_bci_v3.py relative to scripts folder
-import open_bci_v3 as open_bci
+import sys; sys.path.append('..') # help python find cyton.py relative to scripts folder
 import socket
 
 
@@ -42,12 +44,12 @@ class UDPClient(object):
       if self.json:
         sample = json.loads(data)
         # In JSON mode we only recieve channel data.
-        print data
+        print(data)
       else:
         sample = pickle.loads(data)
         # Note that sample is an OpenBCISample object.
-        print sample.id
-        print sample.channel_data
+        print(sample.id)
+        print(sample.channel_data)
 
 
 args = parser.parse_args()
