@@ -13,12 +13,18 @@
 #   limitations under the License.
 
 import socket
-import httplib
-import StringIO
+try:
+    import httplib
+except ImportError:
+    import http.client
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 
 class SSDPResponse(object):
-    class _FakeSocket(StringIO.StringIO):
+    class _FakeSocket(StringIO):
         def makefile(self, *args, **kw):
             return self
 

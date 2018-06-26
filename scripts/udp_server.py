@@ -8,7 +8,10 @@ Requires:
 """
 
 import argparse
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import _pickle as pickle
 import json
 import sys; sys.path.append('..') # help python find cyton.py relative to scripts folder
 from openbci import cyton as open_bci
@@ -49,7 +52,7 @@ class UDPServer(object):
     self.ip = ip
     self.port = port
     self.json = json
-    print "Selecting raw UDP streaming. IP: ", self.ip, ", port: ", str(self.port)
+    print("Selecting raw UDP streaming. IP: ", self.ip, ", port: ", str(self.port))
     self.server = socket.socket(
         socket.AF_INET, # Internet
         socket.SOCK_DGRAM)

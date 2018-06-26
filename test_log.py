@@ -5,11 +5,11 @@ import time
 
 def printData(sample):
 	#os.system('clear')
-	print "----------------"
+	print("----------------")
 	print("%f" %(sample.id))
-	print sample.channel_data
-	print sample.aux_data
-	print "----------------"
+	print(sample.channel_data)
+	print(sample.aux_data)
+	print("----------------")
 
 
 
