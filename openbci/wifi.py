@@ -215,7 +215,7 @@ class OpenBCIWiFi(object):
         found_shield = False
 
         def wifi_shield_found(response):
-            res = urllib2.urlopen(response.location).read()
+            res = requests.get(response.location, verify=False).text
             device_description = xmltodict.parse(res)
             cur_shield_name = str(device_description['root']['device']['serialNumber'])
             cur_base_url = str(device_description['root']['URLBase'])
