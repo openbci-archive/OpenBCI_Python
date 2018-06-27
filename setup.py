@@ -9,6 +9,6 @@ setup(name = 'OpenBCI_Python',
       packages=find_packages(),
       install_requires=['numpy'],
       url='https://github.com/openbci/openbci_python',  # use the URL to the github repo
-      download_url='https://github.com/openbci/openbci_python/archive/v0.1.0.tar.gz',
+      download_url='https://github.com/openbci/openbci_python/archive/v1.0.0.tar.gz',
       keywords=['device', 'control', 'eeg', 'emg', 'ekg', 'ads1299', 'openbci', 'ganglion', 'cyton', 'wifi'],  # arbitrary keywords
       zip_safe=False)
