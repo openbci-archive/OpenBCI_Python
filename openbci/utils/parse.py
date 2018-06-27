@@ -321,7 +321,8 @@ class OpenBCISample(object):
                  sample_number=0,
                  start_byte=0,
                  stop_byte=0,
-                 valid=True):
+                 valid=True,
+                 accel_data=None):
         self.aux_data = aux_data if aux_data is not None else []
         self.board_time = board_time
         self.channel_data = channel_data if aux_data is not None else []
@@ -336,3 +337,4 @@ class OpenBCISample(object):
         self.timestamp = 0
         self._timestamps = {}
         self.valid = valid
+        self.accel_data = accel_data if accel_data is not None else []
