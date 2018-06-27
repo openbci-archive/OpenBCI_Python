@@ -135,7 +135,7 @@ On linux, assuming `hci0` is the name of your bluetooth adapter:
 ### Using PyPI
 
 ```
-pip install openbci
+pip install openbci-python
 ```
 
 Anaconda is not currently supported, if you want to use anaconda, you need to create a virtual environment in anaconda, activate it and use the above command to install it.
