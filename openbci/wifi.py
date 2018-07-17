@@ -63,13 +63,14 @@ class OpenBCIWiFi(object):
                  num_channels=8):
         # these one are used
         self.daisy = False
+        self.gains = None
         self.high_speed = high_speed
         self.impedance = False
         self.ip_address = ip_address
         self.latency = latency
         self.log = log  # print_incoming_text needs log
         self.max_packets_to_skip = max_packets_to_skip
-        self.num_channles = num_channels
+        self.num_channels = num_channels
         self.sample_rate = sample_rate
         self.shield_name = shield_name
         self.ssdp_attempts = ssdp_attempts
@@ -160,18 +161,18 @@ class OpenBCIWiFi(object):
             if self.log:
                 print("Connected to %s with %s channels" % (self.board_type, self.eeg_channels_per_sample))
 
-        gains = None
+        self.gains = None
         if self.board_type == k.BOARD_CYTON:
-            gains = [24, 24, 24, 24, 24, 24, 24, 24]
+            self.gains = [24, 24, 24, 24, 24, 24, 24, 24]
             self.daisy = False
         elif self.board_type == k.BOARD_DAISY:
-            gains = [24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24]
+            self.gains = [24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24]
             self.daisy = True
         elif self.board_type == k.BOARD_GANGLION:
-            gains = [51, 51, 51, 51]
+            self.gains = [51, 51, 51, 51]
             self.daisy = False
         self.local_wifi_server.set_daisy(daisy=self.daisy)
-        self.local_wifi_server.set_parser(ParseRaw(gains=gains, board_type=self.board_type))
+        self.local_wifi_server.set_parser(ParseRaw(gains=self.gains, board_type=self.board_type))
 
         if self.high_speed:
             output_style = 'raw'
@@ -283,7 +284,7 @@ class OpenBCIWiFi(object):
         """
         start_time = timeit.default_timer()
 
-        # Enclose callback funtion in a list if it comes alone
+        # Enclose callback function in a list if it comes alone
         if not isinstance(callback, list):
             self.local_wifi_server.set_callback(callback)
         else:
@@ -325,7 +326,7 @@ class OpenBCIWiFi(object):
             except Exception as e:
                 print("Something went wrong while setting signal: " + str(e))
         elif signal == 1:
-            self.warn("Eisabling synthetic square wave")
+            self.warn("Enabling synthetic square wave")
             try:
                 self.wifi_write('[')
             except Exception as e:
@@ -336,6 +337,8 @@ class OpenBCIWiFi(object):
     def set_channel(self, channel, toggle_position):
         """ Enable / disable channels """
         try:
+            if channel > self.num_channels:
+                raise ValueError('Cannot set non-existant channel')
             # Commands to set toggle to on position
             if toggle_position == 1:
                 if channel is 1:
@@ -346,6 +349,30 @@ class OpenBCIWiFi(object):
                     self.wifi_write('#')
                 if channel is 4:
                     self.wifi_write('$')
+                if channel is 5:
+                    self.wifi_write('%')
+                if channel is 6:
+                    self.wifi_write('^')
+                if channel is 7:
+                    self.wifi_write('&')
+                if channel is 8:
+                    self.wifi_write('*')
+                if channel is 9:
+                    self.wifi_write('Q')
+                if channel is 10:
+                    self.wifi_write('W')
+                if channel is 11:
+                    self.wifi_write('E')
+                if channel is 12:
+                    self.wifi_write('R')
+                if channel is 13:
+                    self.wifi_write('T')
+                if channel is 14:
+                    self.wifi_write('Y')
+                if channel is 15:
+                    self.wifi_write('U')
+                if channel is 16:
+                    self.wifi_write('I')
             # Commands to set toggle to off position
             elif toggle_position == 0:
                 if channel is 1:
@@ -356,13 +383,88 @@ class OpenBCIWiFi(object):
                     self.wifi_write('3')
                 if channel is 4:
                     self.wifi_write('4')
+                if channel is 5:
+                    self.wifi_write('5')
+                if channel is 6:
+                    self.wifi_write('6')
+                if channel is 7:
+                    self.wifi_write('7')
+                if channel is 8:
+                    self.wifi_write('8')
+                if channel is 9:
+                    self.wifi_write('q')
+                if channel is 10:
+                    self.wifi_write('w')
+                if channel is 11:
+                    self.wifi_write('e')
+                if channel is 12:
+                    self.wifi_write('r')
+                if channel is 13:
+                    self.wifi_write('t')
+                if channel is 14:
+                    self.wifi_write('y')
+                if channel is 15:
+                    self.wifi_write('u')
+                if channel is 16:
+                    self.wifi_write('i')
         except Exception as e:
             print("Something went wrong while setting channels: " + str(e))
 
+    # See Cyton SDK for options
+    def set_channel_settings(self, channel, enabled=True, gain=24, input_type=0, include_bias=True, use_srb2=True, use_srb1=True):
+        try:
+            if channel > self.num_channels:
+                raise ValueError('Cannot set non-existant channel')
+            if self.board_type == k.BOARD_GANGLION:
+                raise ValueError('Cannot use with Ganglion')
+            ch_array = list("12345678QWERTYUI")        
+            #defaults
+            command = list("x1060110X")
+            # Set channel
+            command[1] = ch_array[channel-1]
+            # Set power down if needed (default channel enabled)
+            if not enabled:
+                command[2] = '1'
+            # Set gain (default 24)
+            if gain == 1:
+                command[3] = '0'
+            if gain == 2:
+                command[3] = '1'
+            if gain == 4:
+                command[3] = '2'
+            if gain == 6:
+                command[3] = '3'
+            if gain == 8:
+                command[3] = '4'
+            if gain == 12:
+                command[3] = '5'
+
+            #TODO: Implement input type (default normal)
+
+            # Set bias inclusion (default include)
+            if not include_bias:
+                command[5] = '0'
+            # Set srb2 use (default use)
+            if not use_srb2:
+                command[6] = '0'
+            # Set srb1 use (default don't use)
+            if use_srb1:
+                command[6] = '1'
+            command_send = ''.join(command)
+            self.wifi_write(command_send)
+            
+            #Make sure to update gain in wifi
+            self.gains[channel-1] = gain
+            self.local_wifi_server.set_gains(gains=self.gains)
+            self.local_wifi_server.set_parser(ParseRaw(gains=self.gains, board_type=self.board_type))
+            
+        except ValueError as e:
+            print("Something went wrong while setting channel settings: " + str(e))
+    
     def set_sample_rate(self, sample_rate):
         """ Change sample rate """
         try:
-            if self.board_type == k.BOARD_CYTON:
+            if self.board_type == k.BOARD_CYTON or self.board_type == k.BOARD_DAISY:
                 if sample_rate == 250:
                         self.wifi_write('~6')
                 elif sample_rate == 500:
@@ -511,7 +613,7 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                         # odd sample: daisy sample, save for later
                         if ~sample.sample_number % 2:
                             self.last_odd_sample = sample
-                        # even sample: concatenate and send if last sample was the fist part, otherwise drop the packet
+                        # even sample: concatenate and send if last sample was the first part, otherwise drop the packet
                         elif sample.sample_number - 1 == self.last_odd_sample.sample_number:
                             # the aux data will be the average between the two samples, as the channel
                             # samples themselves have been averaged by the board
@@ -580,3 +682,5 @@ class WiFiShieldServer(asyncore.dispatcher):
 
     def set_parser(self, parser):
         self.parser = parser
+        if self.handler is not None:
+            self.handler.parser = parser
