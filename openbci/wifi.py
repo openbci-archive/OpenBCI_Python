@@ -155,7 +155,7 @@ class OpenBCIWiFi(object):
         if res_board.status_code == 200:
             board_info = res_board.json()
             if not board_info['board_connected']:
-                raise RuntimeError("No board connected to WiFi Shield. Learn at docs.openbci.com")
+                raise RuntimeError("No board connected to WiFi Shield. To learn how to connect to a Cyton or Ganglion visit http://docs.openbci.com/Tutorials/03-Wifi_Getting_Started_Guide")
             self.board_type = board_info['board_type']
             self.eeg_channels_per_sample = board_info['num_channels']
             if self.log:
