@@ -111,12 +111,19 @@ if __name__ == '__main__':
         print ("user.py: Logging Disabled.")
 
     print ("\n-------INSTANTIATING BOARD-------")
-    board = bci.OpenBCIGanglion(port=args.port,
-                                daisy=args.daisy,
-                                filter_data=args.filtering,
-                                scaled_output=True,
-                                log=args.log,
-                                aux=args.aux)
+    if args.board == "cyton":
+        board = bci.OpenBCICyton(port=args.port,
+                                 baud=args.baud,
+                                 daisy=args.daisy,
+                                 filter_data=args.filtering,
+                                 scaled_output=True,
+                                 log=args.log)
+    elif args.board == "ganglion":
+        board = bci.OpenBCIGanglion(port=args.port,
+                                    filter_data=args.filtering,
+                                    scaled_output=True,
+                                    log=args.log,
+                                    aux=args.aux)
 
     #  Info about effective number of channels and sampling rate
     if board.daisy:
