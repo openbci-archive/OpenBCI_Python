@@ -55,6 +55,7 @@ command_biasAuto = "`";
 command_biasFixed = "~";
 '''
 
+
 class OpenBCICyton(object):
   """
 
