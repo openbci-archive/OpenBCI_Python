@@ -129,7 +129,6 @@ class OpenBCIWiFi(object):
         s.connect(("8.8.8.8", 80))
         local_ip_address = s.getsockname()[0]
         s.close()
-        print(local_ip_address)
         return local_ip_address
 
     def getBoardType(self):
