@@ -223,7 +223,7 @@ class ParseRaw(object):
             'upper': upper_sample_object.timestamp
         }
 
-        if lower_sample_object.accel_data is not None:
+        if lower_sample_object.accel_data:
             if lower_sample_object.accel_data[0] > 0 or lower_sample_object.accel_data[1] > 0 or lower_sample_object.accel_data[2] > 0:
                 daisy_sample_object.accel_data = lower_sample_object.accel_data
             else:

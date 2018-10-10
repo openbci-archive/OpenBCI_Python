@@ -60,7 +60,7 @@ class OpenBCIWiFi(object):
 
     def __init__(self, ip_address=None, shield_name=None, sample_rate=None, log=True, timeout=3,
                  max_packets_to_skip=20, latency=10000, high_speed=True, ssdp_attempts=5,
-                 num_channels=8):
+                 num_channels=8, local_ip_address=None):
         # these one are used
         self.daisy = False
         self.gains = None
@@ -89,7 +89,9 @@ class OpenBCIWiFi(object):
         if self.log:
             print("Welcome to OpenBCI Native WiFi Shield Driver - Please contribute code!")
 
-        self.local_ip_address = self._get_local_ip_address()
+        self.local_ip_address = local_ip_address
+        if not self.local_ip_address:
+            self.local_ip_address = self._get_local_ip_address()
 
         # Intentionally bind to port 0
         self.local_wifi_server = WiFiShieldServer(self.local_ip_address, 0)
@@ -251,8 +253,8 @@ class OpenBCIWiFi(object):
     def wifi_write(self, output):
         """
         Pass through commands from the WiFi Shield to the Carrier board
-        :param output: 
-        :return: 
+        :param output:
+        :return:
         """
         res_command_post = requests.post("http://%s/command" % self.ip_address,
                                          json={'command': output})
@@ -417,7 +419,7 @@ class OpenBCIWiFi(object):
                 raise ValueError('Cannot set non-existant channel')
             if self.board_type == k.BOARD_GANGLION:
                 raise ValueError('Cannot use with Ganglion')
-            ch_array = list("12345678QWERTYUI")        
+            ch_array = list("12345678QWERTYUI")
             #defaults
             command = list("x1060110X")
             # Set channel
@@ -452,15 +454,15 @@ class OpenBCIWiFi(object):
                 command[6] = '1'
             command_send = ''.join(command)
             self.wifi_write(command_send)
-            
+
             #Make sure to update gain in wifi
             self.gains[channel-1] = gain
             self.local_wifi_server.set_gains(gains=self.gains)
             self.local_wifi_server.set_parser(ParseRaw(gains=self.gains, board_type=self.board_type))
-            
+
         except ValueError as e:
             print("Something went wrong while setting channel settings: " + str(e))
-    
+
     def set_sample_rate(self, sample_rate):
         """ Change sample rate """
         try:
