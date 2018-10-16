@@ -24,14 +24,8 @@ install:
   # Install test and coverage requirements
   - pip install codecov mock nose coverage
 
-before_install:
-  - export PYTHONPATH=$PYTHONPATH:$(pwd)
-  # We need to create a (fake) display on Travis (allows Mayavi tests to run)
-  - export DISPLAY=:99.0
-  - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset
-
-
-# command to run tests
-script: nosetests  --with-coverage --cover-package=openbci
+# Run tests
+script:
+  - nosetests  --with-coverage --cover-package=openbci
 after_success:
   - codecov
