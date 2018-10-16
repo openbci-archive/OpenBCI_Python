@@ -13,6 +13,7 @@ addons:
       - libatlas-dev
       - libatlas3gf-base
       - libblas-dev
+      - libglib2.0-dev
       - liblapack-dev
       - python-matplotlib
       - gfortran
