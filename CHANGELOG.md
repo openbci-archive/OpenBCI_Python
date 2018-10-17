@@ -3,6 +3,7 @@
 ### Bug Fixes
 
 * user.py always loaded the ganglion and didnt work with the cyton any more.
+* Multiple other fixes
 
 # v1.0.0
 
