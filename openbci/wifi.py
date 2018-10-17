@@ -23,6 +23,7 @@ import logging
 import re
 import socket
 import timeit
+
 try:
     import urllib2
 except ImportError:
@@ -157,7 +158,8 @@ class OpenBCIWiFi(object):
         if res_board.status_code == 200:
             board_info = res_board.json()
             if not board_info['board_connected']:
-                raise RuntimeError("No board connected to WiFi Shield. To learn how to connect to a Cyton or Ganglion visit http://docs.openbci.com/Tutorials/03-Wifi_Getting_Started_Guide")
+                raise RuntimeError(
+                    "No board connected to WiFi Shield. To learn how to connect to a Cyton or Ganglion visit http://docs.openbci.com/Tutorials/03-Wifi_Getting_Started_Guide")
             self.board_type = board_info['board_type']
             self.eeg_channels_per_sample = board_info['num_channels']
             if self.log:
@@ -181,13 +183,13 @@ class OpenBCIWiFi(object):
         else:
             output_style = 'json'
         res_tcp_post = requests.post("http://%s/tcp" % self.ip_address,
-                          json={
-                                'ip': self.local_ip_address,
-                                'port': self.local_wifi_server_port,
-                                'output': output_style,
-                                'delimiter': True,
-                                'latency': self.latency
-                                })
+                                     json={
+                                         'ip': self.local_ip_address,
+                                         'port': self.local_wifi_server_port,
+                                         'output': output_style,
+                                         'delimiter': True,
+                                         'latency': self.latency
+                                     })
         if res_tcp_post.status_code == 200:
             tcp_status = res_tcp_post.json()
             if tcp_status['connected']:
@@ -204,7 +206,8 @@ class OpenBCIWiFi(object):
             self.packets_dropped = 0
             self.time_last_packet = timeit.default_timer()
         else:
-            raise EnvironmentError("Unable to start streaming. Check API for status code %d on /stream/start" % res_stream_start.status_code)
+            raise EnvironmentError(
+                "Unable to start streaming. Check API for status code %d on /stream/start" % res_stream_start.status_code)
 
     def find_wifi_shield(self, shield_name=None, wifi_shield_cb=None):
         """Detects Ganglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
@@ -235,7 +238,8 @@ class OpenBCIWiFi(object):
                     if wifi_shield_cb is not None:
                         wifi_shield_cb(cur_ip_address)
 
-        ssdp_hits = ssdp.discover("urn:schemas-upnp-org:device:Basic:1", timeout=self.timeout, wifi_found_cb=wifi_shield_found)
+        ssdp_hits = ssdp.discover("urn:schemas-upnp-org:device:Basic:1", timeout=self.timeout,
+                                  wifi_found_cb=wifi_shield_found)
 
         nb_wifi_shields = len(list_id)
 
@@ -245,9 +249,9 @@ class OpenBCIWiFi(object):
 
         if nb_wifi_shields > 1:
             print(
-                "Found " + str(nb_wifi_shields) +
-                ", selecting first named: " + list_id[0] +
-                " with IPV4: " + list_ip[0])
+                    "Found " + str(nb_wifi_shields) +
+                    ", selecting first named: " + list_id[0] +
+                    " with IPV4: " + list_ip[0])
             return list_ip[0]
 
     def wifi_write(self, output):
@@ -413,17 +417,18 @@ class OpenBCIWiFi(object):
             print("Something went wrong while setting channels: " + str(e))
 
     # See Cyton SDK for options
-    def set_channel_settings(self, channel, enabled=True, gain=24, input_type=0, include_bias=True, use_srb2=True, use_srb1=True):
+    def set_channel_settings(self, channel, enabled=True, gain=24, input_type=0, include_bias=True, use_srb2=True,
+                             use_srb1=True):
         try:
             if channel > self.num_channels:
                 raise ValueError('Cannot set non-existant channel')
             if self.board_type == k.BOARD_GANGLION:
                 raise ValueError('Cannot use with Ganglion')
             ch_array = list("12345678QWERTYUI")
-            #defaults
+            # defaults
             command = list("x1060110X")
             # Set channel
-            command[1] = ch_array[channel-1]
+            command[1] = ch_array[channel - 1]
             # Set power down if needed (default channel enabled)
             if not enabled:
                 command[2] = '1'
@@ -441,7 +446,7 @@ class OpenBCIWiFi(object):
             if gain == 12:
                 command[3] = '5'
 
-            #TODO: Implement input type (default normal)
+            # TODO: Implement input type (default normal)
 
             # Set bias inclusion (default include)
             if not include_bias:
@@ -455,8 +460,8 @@ class OpenBCIWiFi(object):
             command_send = ''.join(command)
             self.wifi_write(command_send)
 
-            #Make sure to update gain in wifi
-            self.gains[channel-1] = gain
+            # Make sure to update gain in wifi
+            self.gains[channel - 1] = gain
             self.local_wifi_server.set_gains(gains=self.gains)
             self.local_wifi_server.set_parser(ParseRaw(gains=self.gains, board_type=self.board_type))
 
@@ -468,38 +473,38 @@ class OpenBCIWiFi(object):
         try:
             if self.board_type == k.BOARD_CYTON or self.board_type == k.BOARD_DAISY:
                 if sample_rate == 250:
-                        self.wifi_write('~6')
+                    self.wifi_write('~6')
                 elif sample_rate == 500:
-                        self.wifi_write('~5')
+                    self.wifi_write('~5')
                 elif sample_rate == 1000:
-                        self.wifi_write('~4')
+                    self.wifi_write('~4')
                 elif sample_rate == 2000:
-                        self.wifi_write('~3')
+                    self.wifi_write('~3')
                 elif sample_rate == 4000:
-                        self.wifi_write('~2')
+                    self.wifi_write('~2')
                 elif sample_rate == 8000:
-                        self.wifi_write('~1')
+                    self.wifi_write('~1')
                 elif sample_rate == 16000:
-                        self.wifi_write('~0')
+                    self.wifi_write('~0')
                 else:
                     print("Sample rate not supported: " + str(sample_rate))
             elif self.board_type == k.BOARD_GANGLION:
                 if sample_rate == 200:
-                        self.wifi_write('~7')
+                    self.wifi_write('~7')
                 elif sample_rate == 400:
-                        self.wifi_write('~6')
+                    self.wifi_write('~6')
                 elif sample_rate == 800:
-                        self.wifi_write('~5')
+                    self.wifi_write('~5')
                 elif sample_rate == 1600:
-                        self.wifi_write('~4')
+                    self.wifi_write('~4')
                 elif sample_rate == 3200:
-                        self.wifi_write('~3')
+                    self.wifi_write('~3')
                 elif sample_rate == 6400:
-                        self.wifi_write('~2')
+                    self.wifi_write('~2')
                 elif sample_rate == 12800:
-                        self.wifi_write('~1')
+                    self.wifi_write('~1')
                 elif sample_rate == 25600:
-                        self.wifi_write('~0')
+                    self.wifi_write('~0')
                 else:
                     print("Sample rate not supported: " + str(sample_rate))
             else:
@@ -602,10 +607,11 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
         data = self.recv(3000)  # 3000 is the max data the WiFi shield is allowed to send over TCP
         if len(data) > 2:
             if self.high_speed:
-                packets = int(len(data)/33)
+                packets = int(len(data) / 33)
                 raw_data_packets = []
                 for i in range(packets):
-                    raw_data_packets.append(bytearray(data[i * k.RAW_PACKET_SIZE: i * k.RAW_PACKET_SIZE + k.RAW_PACKET_SIZE]))
+                    raw_data_packets.append(
+                        bytearray(data[i * k.RAW_PACKET_SIZE: i * k.RAW_PACKET_SIZE + k.RAW_PACKET_SIZE]))
                 samples = self.parser.transform_raw_data_packets_to_sample(raw_data_packets=raw_data_packets)
 
                 for sample in samples:

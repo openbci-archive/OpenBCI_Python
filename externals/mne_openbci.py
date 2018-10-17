@@ -5,6 +5,7 @@
 # License: BSD (3-clause)
 
 import warnings
+
 np = None
 try:
     import numpy as np
@@ -17,6 +18,7 @@ try:
     from mne.io.base import _BaseRaw
 except ImportError:
     raise ImportError('MNE is needed to use function.')
+
 
 class RawOpenBCI(_BaseRaw):
     """Raw object from OpenBCI file
@@ -59,6 +61,7 @@ class RawOpenBCI(_BaseRaw):
     --------
     mne.io.Raw : Documentation of attribute and methods.
     """
+
     @verbose
     def __init__(self, input_fname, montage=None, eog=None,
                  misc=(-3, -2, -1), stim_channel=None, scale=1e-6, sfreq=250,

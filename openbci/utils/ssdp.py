@@ -14,6 +14,7 @@
 
 import socket
 import sys
+
 pyVersion = sys.version_info[0]
 if pyVersion == 2:
     # Imports for Python 2
@@ -31,12 +32,12 @@ class SSDPResponse(object):
             return self
 
     def __init__(self, response):
-        
+
         if pyVersion == 2:
             r = httplib.HTTPResponse(self._FakeSocket(response))
         else:
             r = http.client.HTTPResponse(self._FakeSocket(response))
-        
+
         r.begin()
         self.location = r.getheader("location")
         self.usn = r.getheader("usn")
@@ -53,8 +54,8 @@ def discover(service, timeout=5, retries=1, mx=3, wifi_found_cb=None):
         'M-SEARCH * HTTP/1.1',
         'HOST: {0}:{1}',
         'MAN: "ssdp:discover"',
-        'ST: {st}','MX: {mx}','',''])
-    
+        'ST: {st}', 'MX: {mx}', '', ''])
+
     socket.setdefaulttimeout(timeout)
     responses = {}
     for _ in range(retries):
@@ -63,13 +64,13 @@ def discover(service, timeout=5, retries=1, mx=3, wifi_found_cb=None):
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
         sockMessage = message.format(*group, st=service, mx=mx)
         if pyVersion == 3:
-          sockMessage = sockMessage.encode("utf-8")
+            sockMessage = sockMessage.encode("utf-8")
         sock.sendto(sockMessage, group)
         while True:
             try:
                 response = SSDPResponse(sock.recv(1024))
                 if wifi_found_cb is not None:
-                  wifi_found_cb(response)
+                    wifi_found_cb(response)
                 responses[response.location] = response
             except socket.timeout:
                 break

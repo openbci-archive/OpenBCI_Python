@@ -8,15 +8,17 @@ Requires:
 """
 
 import argparse
+
 try:
     import cPickle as pickle
 except ImportError:
     import _pickle as pickle
 import json
-import sys; sys.path.append('..') # help python find cyton.py relative to scripts folder
+import sys;
+
+sys.path.append('..')  # help python find cyton.py relative to scripts folder
 from openbci import cyton as open_bci
 import socket
-
 
 parser = argparse.ArgumentParser(
     description='Run a UDP server streaming OpenBCI data.')
@@ -48,30 +50,30 @@ parser.add_argument(
 
 class UDPServer(object):
 
-  def __init__(self, ip, port, json):
-    self.ip = ip
-    self.port = port
-    self.json = json
-    print("Selecting raw UDP streaming. IP: ", self.ip, ", port: ", str(self.port))
-    self.server = socket.socket(
-        socket.AF_INET, # Internet
-        socket.SOCK_DGRAM)
+    def __init__(self, ip, port, json):
+        self.ip = ip
+        self.port = port
+        self.json = json
+        print("Selecting raw UDP streaming. IP: ", self.ip, ", port: ", str(self.port))
+        self.server = socket.socket(
+            socket.AF_INET,  # Internet
+            socket.SOCK_DGRAM)
 
-  def send_data(self, data):
-    self.server.sendto(data, (self.ip, self.port))
+    def send_data(self, data):
+        self.server.sendto(data, (self.ip, self.port))
 
-  def handle_sample(self, sample):
-    if self.json:
-      # Just send channel data.
-      self.send_data(json.dumps(sample.channel_data))
-    else:
-      # Pack up and send the whole OpenBCISample object.
-      self.send_data(pickle.dumps(sample))
+    def handle_sample(self, sample):
+        if self.json:
+            # Just send channel data.
+            self.send_data(json.dumps(sample.channel_data))
+        else:
+            # Pack up and send the whole OpenBCISample object.
+            self.send_data(pickle.dumps(sample))
 
 
 args = parser.parse_args()
 obci = open_bci.OpenBCICyton(args.serial, int(args.baud))
 if args.filter_data:
-  obci.filter_data = True
+    obci.filter_data = True
 sock_server = UDPServer(args.host, int(args.port), args.json)
 obci.start_streaming(sock_server.handle_sample)

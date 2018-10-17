@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     print ("------------user.py-------------")
     parser = argparse.ArgumentParser(description="OpenBCI 'user'")
-    parser.add_argument('--board', default="cyton", 
+    parser.add_argument('--board', default="cyton",
                         help="Choose between [cyton] and [ganglion] boards.")
     parser.add_argument('-l', '--list', action='store_true',
                         help="List available plugins.")
@@ -26,7 +26,7 @@ if __name__ == '__main__':
                         help="Show more information about a plugin.")
     parser.add_argument('-p', '--port',
                         help="For Cyton, port to connect to OpenBCI Dongle " +
-                        "( ex /dev/ttyUSB0 or /dev/tty.usbserial-* ). For Ganglion, MAC address of the board. For both, AUTO to attempt auto-detection.")
+                             "( ex /dev/ttyUSB0 or /dev/tty.usbserial-* ). For Ganglion, MAC address of the board. For both, AUTO to attempt auto-detection.")
     parser.set_defaults(port="AUTO")
     # baud rate is not currently used
     parser.add_argument('-b', '--baud', default=115200, type=int,
@@ -54,8 +54,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not(args.add):
-        print ("WARNING: no plugin selected, you will only be able to communicate with the board. You should select at least one plugin with '--add [plugin_name]'. Use '--list' to show available plugins or '--info [plugin_name]' to get more information.")
+    if not args.add:
+        print (
+            "WARNING: no plugin selected, you will only be able to communicate with the board. You should select at least one plugin with '--add [plugin_name]'. Use '--list' to show available plugins or '--info [plugin_name]' to get more information.")
 
     if args.board == "cyton":
         print ("Board type: OpenBCI Cyton (v3 API)")
@@ -72,7 +73,7 @@ if __name__ == '__main__':
         args.port = None
     else:
         print("Port: ", args.port)
-    
+
     plugins_paths = ["plugins"]
     if args.plugins_path:
         plugins_paths += args.plugins_path
@@ -91,7 +92,7 @@ if __name__ == '__main__':
         plugin = manager.getPluginByName(args.info)
         if plugin == None:
             # eg: if an import fail inside a plugin, yapsy skip it
-            print ("Error: [ " +  args.info + " ] not found or could not be loaded. Check name and requirements.")
+            print ("Error: [ " + args.info + " ] not found or could not be loaded. Check name and requirements.")
         else:
             print (plugin.description)
             plugin.plugin_object.show_help()
@@ -103,7 +104,8 @@ if __name__ == '__main__':
     # Logging
     if args.log:
         print ("Logging Enabled: " + str(args.log))
-        logging.basicConfig(filename="OBCI.log", format='%(asctime)s - %(levelname)s : %(message)s', level=logging.DEBUG)
+        logging.basicConfig(filename="OBCI.log", format='%(asctime)s - %(levelname)s : %(message)s',
+                            level=logging.DEBUG)
         logging.getLogger('yapsy').setLevel(logging.DEBUG)
         logging.info('---------LOG START-------------')
         logging.info(args)
@@ -130,7 +132,8 @@ if __name__ == '__main__':
         print ("Force daisy mode:")
     else:
         print ("No daisy:")
-        print (board.getNbEEGChannels(), "EEG channels and", board.getNbAUXChannels(), "AUX channels at", board.getSampleRate(), "Hz.")
+        print (board.getNbEEGChannels(), "EEG channels and", board.getNbAUXChannels(), "AUX channels at",
+               board.getSampleRate(), "Hz.")
 
     print ("\n------------PLUGINS--------------")
     # Loop round the plugins and print their names.
@@ -138,7 +141,6 @@ if __name__ == '__main__':
     for plugin in manager.getAllPlugins():
         print ("[ " + plugin.name + " ]")
     print("\n")
-
 
     # Fetch plugins, try to activate them, add to the list if OK
     plug_list = []
@@ -155,7 +157,10 @@ if __name__ == '__main__':
                 print ("Error: [ " + plug_name + " ] not found or could not be loaded. Check name and requirements.")
             else:
                 print ("\nActivating [ " + plug_name + " ] plugin...")
-                if not plug.plugin_object.pre_activate(plug_args, sample_rate=board.getSampleRate(), eeg_channels=board.getNbEEGChannels(), aux_channels=board.getNbAUXChannels(), imp_channels=board.getNbImpChannels()):
+                if not plug.plugin_object.pre_activate(plug_args, sample_rate=board.getSampleRate(),
+                                                       eeg_channels=board.getNbEEGChannels(),
+                                                       aux_channels=board.getNbAUXChannels(),
+                                                       imp_channels=board.getNbImpChannels()):
                     print ("Error while activating [ " + plug_name + " ], check output for more info.")
                 else:
                     print ("Plugin [ " + plug_name + "] added to the list")
@@ -167,12 +172,14 @@ if __name__ == '__main__':
     else:
         fun = callback_list
 
+
     def cleanUp():
         board.disconnect()
         print ("Deactivating Plugins...")
         for plug in plug_list:
             plug.deactivate()
         print ("User.py exiting...")
+
 
     atexit.register(cleanUp)
 
@@ -199,11 +206,11 @@ $$$ signals end of message")
     # d: Channels settings back to default
     s = s + 'd'
 
-    while(s != "/exit"):
+    while (s != "/exit"):
         # Send char and wait for registers to set
         if (not s):
             pass
-        elif("help" in s):
+        elif ("help" in s):
             print ("View command map at: \
 http://docs.openbci.com/software/01-OpenBCI_SDK.\n\
 For user interface: read README or view \
@@ -215,55 +222,55 @@ https://github.com/OpenBCI/OpenBCI_Python")
             # read silently incoming packet if set (used when stream is stopped)
             flush = False
 
-            if('/' == s[0]):
+            if ('/' == s[0]):
                 s = s[1:]
                 rec = False  # current command is recognized or fot
 
-                if("T:" in s):
-                    lapse = int(s[string.find(s, "T:")+2:])
+                if ("T:" in s):
+                    lapse = int(s[string.find(s, "T:") + 2:])
                     rec = True
-                elif("t:" in s):
-                    lapse = int(s[string.find(s, "t:")+2:])
+                elif ("t:" in s):
+                    lapse = int(s[string.find(s, "t:") + 2:])
                     rec = True
                 else:
                     lapse = -1
 
-                if('startimp' in s):
+                if ('startimp' in s):
                     if board.getBoardType() == "cyton":
                         print ("Impedance checking not supported on cyton.")
                     else:
                         board.setImpedance(True)
-                        if(fun != None):
+                        if (fun != None):
                             # start streaming in a separate thread so we could always send commands in here
                             boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
-                            boardThread.daemon = True # will stop on exit
+                            boardThread.daemon = True  # will stop on exit
                             try:
                                 boardThread.start()
                             except:
-                                    raise
+                                raise
                         else:
                             print ("No function loaded")
                         rec = True
-                    
-                elif("start" in s):
+
+                elif ("start" in s):
                     board.setImpedance(False)
-                    if(fun != None):
+                    if (fun != None):
                         # start streaming in a separate thread so we could always send commands in here
                         boardThread = threading.Thread(target=board.start_streaming, args=(fun, lapse))
-                        boardThread.daemon = True # will stop on exit
+                        boardThread.daemon = True  # will stop on exit
                         try:
                             boardThread.start()
                         except:
-                                raise
+                            raise
                     else:
                         print ("No function loaded")
                     rec = True
 
-                elif('test' in s):
-                    test = int(s[s.find("test")+4:])
+                elif ('test' in s):
+                    test = int(s[s.find("test") + 4:])
                     board.test_signal(test)
                     rec = True
-                elif('stop' in s):
+                elif ('stop' in s):
                     board.stop()
                     rec = True
                     flush = True
@@ -279,25 +286,26 @@ https://github.com/OpenBCI/OpenBCI_Python")
                     time.sleep(0.100)
 
             line = ''
-            time.sleep(0.1) #Wait to see if the board has anything to report
+            time.sleep(0.1)  # Wait to see if the board has anything to report
             # The Cyton nicely return incoming packets -- here supposedly messages -- whereas the Ganglion prints incoming ASCII message by itself
             if board.getBoardType() == "cyton":
-              while board.ser_inWaiting():
-                  c = board.ser_read().decode('utf-8', errors='replace') # we're supposed to get UTF8 text, but the board might behave otherwise
-                  line += c
-                  time.sleep(0.001)
-                  if (c == '\n') and not flush:
-                      print('%\t'+line[:-1])
-                      line = ''
+                while board.ser_inWaiting():
+                    c = board.ser_read().decode('utf-8',
+                                                errors='replace')  # we're supposed to get UTF8 text, but the board might behave otherwise
+                    line += c
+                    time.sleep(0.001)
+                    if (c == '\n') and not flush:
+                        print('%\t' + line[:-1])
+                        line = ''
             elif board.getBoardType() == "ganglion":
-                  while board.ser_inWaiting():
-                      board.waitForNotifications(0.001)
+                while board.ser_inWaiting():
+                    board.waitForNotifications(0.001)
 
             if not flush:
                 print(line)
 
         # Take user input
-        #s = input('--> ')
+        # s = input('--> ')
         if sys.hexversion > 0x03000000:
             s = input('--> ')
         else:

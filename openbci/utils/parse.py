@@ -64,7 +64,9 @@ class ParseRaw(object):
         # Channel data arrays are always 8 long
 
         for i in range(channels_in_packet):
-            counts = self.interpret_24_bit_as_int_32(raw_data_to_sample.raw_data_packet[(i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START:(i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START + 3])
+            counts = self.interpret_24_bit_as_int_32(raw_data_to_sample.raw_data_packet[
+                                                     (i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START:(
+                                                                                                                    i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START + 3])
             channel_data.append(raw_data_to_sample.scale_factors[i] * counts if raw_data_to_sample.scale else counts)
 
         return channel_data
@@ -72,7 +74,9 @@ class ParseRaw(object):
     def get_data_array_accel(self, raw_data_to_sample):
         accel_data = []
         for i in range(k.RAW_PACKET_ACCEL_NUMBER_AXIS):
-            counts = self.interpret_16_bit_as_int_32(raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_START_AUX + (i * 2): k.RAW_PACKET_POSITION_START_AUX + (i * 2) + 2])
+            counts = self.interpret_16_bit_as_int_32(raw_data_to_sample.raw_data_packet[
+                                                     k.RAW_PACKET_POSITION_START_AUX + (
+                                                                 i * 2): k.RAW_PACKET_POSITION_START_AUX + (i * 2) + 2])
             accel_data.append(k.CYTON_ACCEL_SCALE_FACTOR_GAIN * counts if raw_data_to_sample.scale else counts)
         return accel_data
 
@@ -224,7 +228,8 @@ class ParseRaw(object):
         }
 
         if lower_sample_object.accel_data:
-            if lower_sample_object.accel_data[0] > 0 or lower_sample_object.accel_data[1] > 0 or lower_sample_object.accel_data[2] > 0:
+            if lower_sample_object.accel_data[0] > 0 or lower_sample_object.accel_data[1] > 0 or \
+                    lower_sample_object.accel_data[2] > 0:
                 daisy_sample_object.accel_data = lower_sample_object.accel_data
             else:
                 daisy_sample_object.accel_data = upper_sample_object.accel_data
@@ -255,6 +260,7 @@ function transformRawDataPacketsToSample (o) {
   return samples;
 }
     """
+
     def transform_raw_data_packets_to_sample(self, raw_data_packets):
         samples = []
 
@@ -268,6 +274,7 @@ function transformRawDataPacketsToSample (o) {
 
 class RawDataToSample(object):
     """Object encapulsating a parsing object."""
+
     def __init__(self,
                  accel_data=None,
                  gains=None,
@@ -310,6 +317,7 @@ class RawDataToSample(object):
 
 class OpenBCISample(object):
     """Object encapulsating a single sample from the OpenBCI board."""
+
     def __init__(self,
                  aux_data=None,
                  board_time=0,
