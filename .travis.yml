@@ -2,7 +2,7 @@ language: python
 env:
     - PYTHON=2.7
     - PYTHON=3.4
-# command to install dependencies\
+# command to install dependencies
 cache: pip
 sudo: false
 virtualenv:
@@ -13,30 +13,19 @@ addons:
       - libatlas-dev
       - libatlas3gf-base
       - libblas-dev
+      - libglib2.0-dev
       - liblapack-dev
       - python-matplotlib
       - gfortran
       - python-tk
 install:
-  - conda create -n testenv --yes pip python=$PYTHON
-  - source activate testenv
-  - conda install --yes --quiet numpy pyserial mock nose coverage
-  - pip install codecov xmltodict bluepy
-  - python setup.py build install
+  # Install project requirements
+  - pip install -r requirements.txt
+  # Install test and coverage requirements
+  - pip install codecov mock nose coverage
 
-# Setup anaconda
-before_install:
-  - wget -q http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p /home/travis/miniconda
-  - export PATH=/home/travis/miniconda/bin:$PATH
-  - conda update --yes --quiet conda
-  # We need to create a (fake) display on Travis (allows Mayavi tests to run)
-  - export DISPLAY=:99.0
-  - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1400x900x24 -ac +extension GLX +render -noreset
-
-
-# command to run tests
-script: nosetests  --with-coverage --cover-package=openbci
+# Run tests
+script:
+  - nosetests  --with-coverage --cover-package=openbci
 after_success:
   - codecov
