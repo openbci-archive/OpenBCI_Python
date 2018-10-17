@@ -76,7 +76,7 @@ class UDPServer(plugintypes.IPluginExtended):
 
     # From IPlugin: close sockets, send message to client
     def deactivate(self):
-        self.server.close();
+        self.server.close()
 
     def show_help(self):
         print("""Optional arguments: [ip [port]]

@@ -177,8 +177,8 @@ class OpenBCIGanglion(object):
     def find_port(self):
         """Detects Ganglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
 
-        print(
-            "Try to detect Ganglion MAC address. NB: Turn on bluetooth and run as root for this to work! Might not work with every BLE dongles.")
+        print("Try to detect Ganglion MAC address. "
+              "NB: Turn on bluetooth and run as root for this to work! Might not work with every BLE dongles.")
         scan_time = 5
         print("Scanning for 5 seconds nearby devices...")
 
@@ -211,7 +211,8 @@ class OpenBCIGanglion(object):
                     if desc == "Complete Local Name" and value.startswith("Ganglion"):
                         list_mac.append(dev.addr)
                         list_id.append(value)
-                        print("Got Ganglion: " + value + ", with MAC: " + dev.addr)
+                        print("Got Ganglion: " + value +
+                              ", with MAC: " + dev.addr)
                         break
         nb_ganglions = len(list_mac)
 
@@ -294,7 +295,7 @@ class OpenBCIGanglion(object):
             if (lapse > 0 and timeit.default_timer() - start_time > lapse):
                 self.stop()
             if self.log:
-                self.log_packet_count = self.log_packet_count + 1;
+                self.log_packet_count = self.log_packet_count + 1
 
             # Checking connection -- timeout and packets dropped
             self.check_connection()
@@ -318,7 +319,8 @@ class OpenBCIGanglion(object):
             except Exception as e:
                 print("Something went wrong while setting signal: " + str(e))
         else:
-            self.warn("%s is not a known test signal. Valid signal is 0-1" % (signal))
+            self.warn(
+                "%s is not a known test signal. Valid signal is 0-1" % signal)
 
     def set_channel(self, channel, toggle_position):
         """ Enable / disable channels """
@@ -392,13 +394,15 @@ class OpenBCIGanglion(object):
         if self.log:
             # log how many packets where sent succesfully in between warnings
             if self.log_packet_count:
-                logging.info('Data packets received:' + str(self.log_packet_count))
-                self.log_packet_count = 0;
+                logging.info('Data packets received:' +
+                             str(self.log_packet_count))
+                self.log_packet_count = 0
             logging.warning(text)
         print("Warning: %s" % text)
 
     def check_connection(self):
-        """ Check connection quality in term of lag and number of packets drop. Reinit connection if necessary. FIXME: parameters given to the board will be lost."""
+        """ Check connection quality in term of lag and number of packets drop. Reinit connection if necessary.
+         FIXME: parameters given to the board will be lost."""
         # stop checking when we're no longer streaming
         if not self.streaming:
             return
@@ -412,7 +416,8 @@ class OpenBCIGanglion(object):
             self.reconnect()
 
     def reconnect(self):
-        """ In case of poor connection, will shut down and relaunch everything. FIXME: parameters given to the board will be lost."""
+        """ In case of poor connection, will shut down and relaunch everything.
+        FIXME: parameters given to the board will be lost."""
         self.warn('Reconnecting')
         self.stop()
         self.disconnect()
@@ -421,7 +426,7 @@ class OpenBCIGanglion(object):
 
 
 class OpenBCISample(object):
-    """Object encapulsating a single sample from the OpenBCI board."""
+    """Object encapsulating a single sample from the OpenBCI board."""
 
     def __init__(self, packet_id, channel_data, aux_data, imp_data):
         self.id = packet_id
@@ -444,7 +449,8 @@ class GanglionDelegate(DefaultDelegate):
         self.lastChannelData = [0, 0, 0, 0]
         # 18bit data got here and then accelerometer with it
         self.lastAcceleromoter = [0, 0, 0]
-        # when the board is manually set in the right mode (z to start, Z to stop), impedance will be measured. 4 channels + ref
+        # when the board is manually set in the right mode (z to start, Z to stop)
+        # impedance will be measured. 4 channels + ref
         self.lastImpedance = [0, 0, 0, 0, 0]
         self.scaling_output = scaling_output
         # handling incoming ASCII messages
@@ -459,11 +465,12 @@ class GanglionDelegate(DefaultDelegate):
 
     """
       PARSER:
-      Parses incoming data packet into OpenBCISample -- see docs. Will call the corresponding parse* function depending on the format of the packet.
+      Parses incoming data packet into OpenBCISample -- see docs. 
+      Will call the corresponding parse* function depending on the format of the packet.
     """
 
     def parse(self, packet):
-        # bluepy returnds INT with python3 and STR with python2
+        # bluepy returns INT with python3 and STR with python2
         if type(packet) is str:
             # convert a list of strings in bytes
             unpac = struct.unpack(str(len(packet)) + 'B', "".join(packet))
@@ -506,7 +513,8 @@ class GanglionDelegate(DefaultDelegate):
     def parseRaw(self, packet_id, packet):
         """ Dealing with "Raw uncompressed" """
         if len(packet) != 19:
-            print('Wrong size, for raw data' + str(len(data)) + ' instead of 19 bytes')
+            print('Wrong size, for raw data' +
+                  str(len(packet)) + ' instead of 19 bytes')
             return
 
         chan_data = []
@@ -514,14 +522,16 @@ class GanglionDelegate(DefaultDelegate):
         for i in range(0, 12, 3):
             chan_data.append(conv24bitsToInt(packet[i:i + 3]))
         # save uncompressed raw channel for future use and append whole sample
-        self.pushSample(packet_id, chan_data, self.lastAcceleromoter, self.lastImpedance)
+        self.pushSample(packet_id, chan_data,
+                        self.lastAcceleromoter, self.lastImpedance)
         self.lastChannelData = chan_data
         self.updatePacketsCount(packet_id)
 
     def parse19bit(self, packet_id, packet):
         """ Dealing with "19-bit compression without Accelerometer" """
         if len(packet) != 19:
-            print('Wrong size, for 19-bit compression data' + str(len(data)) + ' instead of 19 bytes')
+            print('Wrong size, for 19-bit compression data' +
+                  str(len(packet)) + ' instead of 19 bytes')
             return
 
         # should get 2 by 4 arrays of uncompressed data
@@ -535,7 +545,8 @@ class GanglionDelegate(DefaultDelegate):
             # TODO: use more broadly numpy
             full_data = list(np.array(self.lastChannelData) - np.array(delta))
             # NB: aux data updated only in 18bit mode, send values here only to be consistent
-            self.pushSample(sample_id, full_data, self.lastAcceleromoter, self.lastImpedance)
+            self.pushSample(sample_id, full_data,
+                            self.lastAcceleromoter, self.lastImpedance)
             self.lastChannelData = full_data
             delta_id += 1
         self.updatePacketsCount(packet_id)
@@ -543,7 +554,8 @@ class GanglionDelegate(DefaultDelegate):
     def parse18bit(self, packet_id, packet):
         """ Dealing with "18-bit compression without Accelerometer" """
         if len(packet) != 19:
-            print('Wrong size, for 18-bit compression data' + str(len(data)) + ' instead of 19 bytes')
+            print('Wrong size, for 18-bit compression data' +
+                  str(len(packet)) + ' instead of 19 bytes')
             return
 
         # accelerometer X
@@ -566,7 +578,8 @@ class GanglionDelegate(DefaultDelegate):
             # 19bit packets hold deltas between two samples
             # TODO: use more broadly numpy
             full_data = list(np.array(self.lastChannelData) - np.array(delta))
-            self.pushSample(sample_id, full_data, self.lastAcceleromoter, self.lastImpedance)
+            self.pushSample(sample_id, full_data,
+                            self.lastAcceleromoter, self.lastImpedance)
             self.lastChannelData = full_data
             delta_id += 1
         self.updatePacketsCount(packet_id)
@@ -580,7 +593,8 @@ class GanglionDelegate(DefaultDelegate):
         imp_value = int(packet[:-2]) / 2
         # from 201 to 205 codes to the right array size
         self.lastImpedance[packet_id - 201] = imp_value
-        self.pushSample(packet_id - 200, self.lastChannelData, self.lastAcceleromoter, self.lastImpedance)
+        self.pushSample(packet_id - 200, self.lastChannelData,
+                        self.lastAcceleromoter, self.lastImpedance)
 
     def pushSample(self, sample_id, chan_data, aux_data, imp_data):
         """ Add a sample to inner stack, setting ID and dealing with scaling if necessary. """
@@ -637,7 +651,7 @@ def conv24bitsToInt(unpacked):
     else:
         pre_fix = bytes(bytearray.fromhex('00'))
 
-    literal_read = pre_fix + literal_read;
+    literal_read = pre_fix + literal_read
 
     # unpack little endian(>) signed integer(i) (makes unpacking platform independent)
     myInt = struct.unpack('>i', literal_read)[0]
@@ -650,11 +664,11 @@ def conv19bitToInt32(threeByteBuffer):
     if len(threeByteBuffer) != 3:
         raise ValueError("Input should be 3 bytes long.")
 
-    prefix = 0;
+    prefix = 0
 
     # if LSB is 1, negative number, some hasty unsigned to signed conversion to do
     if threeByteBuffer[2] & 0x01 > 0:
-        prefix = 0b1111111111111;
+        prefix = 0b1111111111111
         return ((prefix << 19) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[
             2]) | ~0xFFFFFFFF
     else:
@@ -664,13 +678,13 @@ def conv19bitToInt32(threeByteBuffer):
 def conv18bitToInt32(threeByteBuffer):
     """ Convert 18bit data coded on 3 bytes to a proper integer (LSB bit 1 used as sign) """
     if len(threeByteBuffer) != 3:
-        raise Valuerror("Input should be 3 bytes long.")
+        raise ValueError("Input should be 3 bytes long.")
 
-    prefix = 0;
+    prefix = 0
 
     # if LSB is 1, negative number, some hasty unsigned to signed conversion to do
     if threeByteBuffer[2] & 0x01 > 0:
-        prefix = 0b11111111111111;
+        prefix = 0b11111111111111
         return ((prefix << 18) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[
             2]) | ~0xFFFFFFFF
     else:
@@ -758,7 +772,7 @@ def decompressDeltas19Bit(buffer):
     miniBuf = [(buffer[16] & 0x07), buffer[17], buffer[18]]
     receivedDeltas[1][3] = conv19bitToInt32(miniBuf)
 
-    return receivedDeltas;
+    return receivedDeltas
 
 
 def decompressDeltas18Bit(buffer):
@@ -778,7 +792,7 @@ def decompressDeltas18Bit(buffer):
         ((buffer[0] & 0x3F) << 2 & 0xFF) | (buffer[1] >> 6),
         ((buffer[1] & 0x3F) << 2 & 0xFF) | (buffer[2] >> 6)
     ]
-    receivedDeltas[0][0] = conv18bitToInt32(miniBuf);
+    receivedDeltas[0][0] = conv18bitToInt32(miniBuf)
 
     # Sample 1 - Channel 2
     miniBuf = [
@@ -786,7 +800,7 @@ def decompressDeltas18Bit(buffer):
         (buffer[2] << 4 & 0xFF) | (buffer[3] >> 4),
         (buffer[3] << 4 & 0xFF) | (buffer[4] >> 4)
     ]
-    receivedDeltas[0][1] = conv18bitToInt32(miniBuf);
+    receivedDeltas[0][1] = conv18bitToInt32(miniBuf)
 
     # Sample 1 - Channel 3
     miniBuf = [
@@ -794,7 +808,7 @@ def decompressDeltas18Bit(buffer):
         (buffer[4] << 6 & 0xFF) | (buffer[5] >> 2),
         (buffer[5] << 6 & 0xFF) | (buffer[6] >> 2)
     ]
-    receivedDeltas[0][2] = conv18bitToInt32(miniBuf);
+    receivedDeltas[0][2] = conv18bitToInt32(miniBuf)
 
     # Sample 1 - Channel 4
     miniBuf = [
@@ -802,7 +816,7 @@ def decompressDeltas18Bit(buffer):
         buffer[7],
         buffer[8]
     ]
-    receivedDeltas[0][3] = conv18bitToInt32(miniBuf);
+    receivedDeltas[0][3] = conv18bitToInt32(miniBuf)
 
     # Sample 2 - Channel 1
     miniBuf = [
@@ -810,7 +824,7 @@ def decompressDeltas18Bit(buffer):
         ((buffer[9] & 0x3F) << 2 & 0xFF) | (buffer[10] >> 6),
         ((buffer[10] & 0x3F) << 2 & 0xFF) | (buffer[11] >> 6)
     ]
-    receivedDeltas[1][0] = conv18bitToInt32(miniBuf);
+    receivedDeltas[1][0] = conv18bitToInt32(miniBuf)
 
     # Sample 2 - Channel 2
     miniBuf = [
@@ -818,7 +832,7 @@ def decompressDeltas18Bit(buffer):
         (buffer[11] << 4 & 0xFF) | (buffer[12] >> 4),
         (buffer[12] << 4 & 0xFF) | (buffer[13] >> 4)
     ]
-    receivedDeltas[1][1] = conv18bitToInt32(miniBuf);
+    receivedDeltas[1][1] = conv18bitToInt32(miniBuf)
 
     # Sample 2 - Channel 3
     miniBuf = [
@@ -826,7 +840,7 @@ def decompressDeltas18Bit(buffer):
         (buffer[13] << 6 & 0xFF) | (buffer[14] >> 2),
         (buffer[14] << 6 & 0xFF) | (buffer[15] >> 2)
     ]
-    receivedDeltas[1][2] = conv18bitToInt32(miniBuf);
+    receivedDeltas[1][2] = conv18bitToInt32(miniBuf)
 
     # Sample 2 - Channel 4
     miniBuf = [
@@ -834,6 +848,6 @@ def decompressDeltas18Bit(buffer):
         buffer[16],
         buffer[17]
     ]
-    receivedDeltas[1][3] = conv18bitToInt32(miniBuf);
+    receivedDeltas[1][3] = conv18bitToInt32(miniBuf)
 
-    return receivedDeltas;
+    return receivedDeltas

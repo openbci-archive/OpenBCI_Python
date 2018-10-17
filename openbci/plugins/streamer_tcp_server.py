@@ -1,9 +1,13 @@
 from threading import Thread
-import socket, select, struct, time
+import socket
+import select
+import struct
+import time
 import plugin_interface as plugintypes
 
 
-# Simple TCP server to "broadcast" data to clients, handling deconnections. Binary format use network endianness (i.e., big-endian), float32
+# Simple TCP server to "broadcast" data to clients, handling deconnections.
+# Binary format use network endianness (i.e., big-endian), float32
 
 # TODO: does not listen for anything at the moment, could use it to set options
 
@@ -94,9 +98,9 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
                 # at this point don't bother if message not sent
                 except:
                     continue
-                sock.close();
+                sock.close()
         # close server socket
-        self.server_socket.close();
+        self.server_socket.close()
 
     # broadcast channels values to all clients
     # as_string: many for debug, send values with a nice "[34.45, 30.4, -38.0]"-like format

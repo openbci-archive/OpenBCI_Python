@@ -19,7 +19,7 @@ class PluginCSVCollect(plugintypes.IPluginExtended):
             if 'no_time' in self.args:
                 self.file_name = self.args[0]
             else:
-                self.file_name = self.args[0] + '_' + self.file_name;
+                self.file_name = self.args[0] + '_' + self.file_name
             if 'verbose' in self.args:
                 self.verbose = True
 

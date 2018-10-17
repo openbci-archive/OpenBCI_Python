@@ -66,8 +66,9 @@ class ParseRaw(object):
         for i in range(channels_in_packet):
             counts = self.interpret_24_bit_as_int_32(raw_data_to_sample.raw_data_packet[
                                                      (i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START:(
-                                                                                                                    i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START + 3])
-            channel_data.append(raw_data_to_sample.scale_factors[i] * counts if raw_data_to_sample.scale else counts)
+                                                         i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START + 3])
+            channel_data.append(
+                raw_data_to_sample.scale_factors[i] * counts if raw_data_to_sample.scale else counts)
 
         return channel_data
 
@@ -76,8 +77,9 @@ class ParseRaw(object):
         for i in range(k.RAW_PACKET_ACCEL_NUMBER_AXIS):
             counts = self.interpret_16_bit_as_int_32(raw_data_to_sample.raw_data_packet[
                                                      k.RAW_PACKET_POSITION_START_AUX + (
-                                                                 i * 2): k.RAW_PACKET_POSITION_START_AUX + (i * 2) + 2])
-            accel_data.append(k.CYTON_ACCEL_SCALE_FACTOR_GAIN * counts if raw_data_to_sample.scale else counts)
+                                                         i * 2): k.RAW_PACKET_POSITION_START_AUX + (i * 2) + 2])
+            accel_data.append(k.CYTON_ACCEL_SCALE_FACTOR_GAIN *
+                              counts if raw_data_to_sample.scale else counts)
         return accel_data
 
     def get_raw_packet_type(self, stop_byte):
@@ -102,7 +104,6 @@ class ParseRaw(object):
         return struct.unpack('>i', three_byte_buffer)[0]
 
     def parse_packet_standard_accel(self, raw_data_to_sample):
-
         """
 
         :param raw_data_to_sample: RawDataToSample
@@ -207,7 +208,8 @@ class ParseRaw(object):
         daisy_sample_object = OpenBCISample()
 
         if lower_sample_object.channel_data is not None:
-            daisy_sample_object.channel_data = lower_sample_object.channel_data + upper_sample_object.channel_data
+            daisy_sample_object.channel_data = lower_sample_object.channel_data + \
+                upper_sample_object.channel_data
 
         daisy_sample_object.sample_number = upper_sample_object.sample_number
         daisy_sample_object.id = daisy_sample_object.sample_number

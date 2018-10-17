@@ -1,9 +1,9 @@
+import time
+import logging
+from openbci import cyton as bci
 import sys
 
 sys.path.append('..')  # help python find cyton.py relative to scripts folder
-from openbci import cyton as bci
-import logging
-import time
 
 
 def printData(sample):

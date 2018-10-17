@@ -1,15 +1,16 @@
 # download LSL and pylsl from https://code.google.com/p/labstreaminglayer/
 # Eg: ftp://sccn.ucsd.edu/pub/software/LSL/SDK/liblsl-Python-1.10.2.zip
 # put in "lib" folder (same level as user.py)
+import plugin_interface as plugintypes
+from pylsl import StreamInfo, StreamOutlet
 import sys
 
-sys.path.append('lib')  # help python find pylsl relative to this example program
-
-from pylsl import StreamInfo, StreamOutlet
-import plugin_interface as plugintypes
+# help python find pylsl relative to this example program
+sys.path.append('lib')
 
 
-# Use LSL protocol to broadcast data using one stream for EEG, one stream for AUX, one last for impedance testing (on supported board, if enabled)
+# Use LSL protocol to broadcast data using one stream for EEG, one stream for AUX, one last for impedance testing
+# (on supported board, if enabled)
 class StreamerLSL(plugintypes.IPluginExtended):
     # From IPlugin
     def activate(self):
@@ -60,5 +61,7 @@ class StreamerLSL(plugintypes.IPluginExtended):
             self.outlet_imp.push_sample(sample.imp_data)
 
     def show_help(self):
-        print("""Optional arguments: [EEG_stream_name [EEG_stream_ID [AUX_stream_name [AUX_stream_ID [Impedance_steam_name [Impedance_stream_ID]]]]]]
-			\t Defaults: "OpenBCI_EEG" / "openbci_eeg_id1" and "OpenBCI_AUX" / "openbci_aux_id1" / "OpenBCI_Impedance" / "openbci_imp_id1".""")
+        print("""Optional arguments: 
+        [EEG_stream_name [EEG_stream_ID [AUX_stream_name [AUX_stream_ID [Impedance_steam_name [Impedance_stream_ID]]]]]]
+        \t Defaults: "OpenBCI_EEG" / "openbci_eeg_id1" and "OpenBCI_AUX" / "openbci_aux_id1" 
+        / "OpenBCI_Impedance" / "openbci_imp_id1".""")

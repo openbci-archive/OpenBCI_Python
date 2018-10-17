@@ -4,7 +4,8 @@ from pythonosc import udp_client
 import plugin_interface as plugintypes
 
 
-# Use OSC protocol to broadcast data (UDP layer), using "/openbci" stream. (NB. does not check numbers of channel as TCP server)
+# Use OSC protocol to broadcast data (UDP layer), using "/openbci" stream.
+# (NB. does not check numbers of channel as TCP server)
 
 class StreamerOSC(plugintypes.IPluginExtended):
     """
@@ -48,6 +49,6 @@ class StreamerOSC(plugintypes.IPluginExtended):
 
     def show_help(self):
         print("""Optional arguments: [ip [port [address]]]
-			\t ip: target IP address (default: 'localhost')
-			\t port: target port (default: 12345)
-			\t address: select target address (default: '/openbci')""")
+        \t ip: target IP address (default: 'localhost')
+        \t port: target port (default: 12345)
+        \t address: select target address (default: '/openbci')""")

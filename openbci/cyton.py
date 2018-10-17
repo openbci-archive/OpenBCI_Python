@@ -33,8 +33,10 @@ START_BYTE = 0xA0  # start of data packet
 END_BYTE = 0xC0  # end of data packet
 ADS1299_Vref = 4.5  # reference voltage for ADC in ADS1299.  set by its hardware
 ADS1299_gain = 24.0  # assumed gain setting for ADS1299.  set by its Arduino code
-scale_fac_uVolts_per_count = ADS1299_Vref / float((pow(2, 23) - 1)) / ADS1299_gain * 1000000.
-scale_fac_accel_G_per_count = 0.002 / (pow(2, 4))  # assume set to +/4G, so 2 mG
+scale_fac_uVolts_per_count = ADS1299_Vref / \
+    float((pow(2, 23) - 1)) / ADS1299_gain * 1000000.
+scale_fac_accel_G_per_count = 0.002 / \
+    (pow(2, 4))  # assume set to +/4G, so 2 mG
 '''
 #Commands for in SDK http://docs.openbci.com/software/01-Open BCI_SDK:
 
@@ -94,8 +96,10 @@ class OpenBCICyton(object):
         self.streaming = False
         self.filtering_data = filter_data
         self.scaling_output = scaled_output
-        self.eeg_channels_per_sample = 8  # number of EEG channels per sample *from the board*
-        self.aux_channels_per_sample = 3  # number of AUX channels per sample *from the board*
+        # number of EEG channels per sample *from the board*
+        self.eeg_channels_per_sample = 8
+        # number of AUX channels per sample *from the board*
+        self.aux_channels_per_sample = 3
         self.imp_channels_per_sample = 0  # impedance check not supported at the moment
         self.read_state = 0
         self.daisy = daisy
@@ -127,7 +131,7 @@ class OpenBCICyton(object):
 
     def ser_inWaiting(self):
         """Access serial port object for inWaiting"""
-        return self.ser.inWaiting();
+        return self.ser.inWaiting()
 
     def getSampleRate(self):
         if self.daisy:
@@ -181,7 +185,8 @@ class OpenBCICyton(object):
                 # even sample: concatenate and send if last sample was the fist part, otherwise drop the packet
                 elif sample.id - 1 == self.last_odd_sample.id:
                     # the aux data will be the average between the two samples, as the channel samples themselves have been averaged by the board
-                    avg_aux_data = list((np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
+                    avg_aux_data = list(
+                        (np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
                     whole_sample = OpenBCISample(sample.id, sample.channel_data + self.last_odd_sample.channel_data,
                                                  avg_aux_data)
                     for call in callback:
@@ -191,9 +196,9 @@ class OpenBCICyton(object):
                     call(sample)
 
             if (lapse > 0 and timeit.default_timer() - start_time > lapse):
-                self.stop();
+                self.stop()
             if self.log:
-                self.log_packet_count = self.log_packet_count + 1;
+                self.log_packet_count = self.log_packet_count + 1
 
     """
       PARSER:
@@ -225,10 +230,12 @@ class OpenBCICyton(object):
 
                 if struct.unpack('B', b)[0] == START_BYTE:
                     if (rep != 0):
-                        self.warn('Skipped %d bytes before start found' % (rep))
-                        rep = 0;
-                    packet_id = struct.unpack('B', read(1))[0]  # packet id goes from 0-255
-                    log_bytes_in = str(packet_id);
+                        self.warn(
+                            'Skipped %d bytes before start found' % (rep))
+                        rep = 0
+                    # packet id goes from 0-255
+                    packet_id = struct.unpack('B', read(1))[0]
+                    log_bytes_in = str(packet_id)
 
                     self.read_state = 1
 
@@ -268,18 +275,18 @@ class OpenBCICyton(object):
 
                     # short = h
                     acc = struct.unpack('>h', read(2))[0]
-                    log_bytes_in = log_bytes_in + '|' + str(acc);
+                    log_bytes_in = log_bytes_in + '|' + str(acc)
 
                     if self.scaling_output:
                         aux_data.append(acc * scale_fac_accel_G_per_count)
                     else:
                         aux_data.append(acc)
 
-                self.read_state = 3;
+                self.read_state = 3
             # ---------End Byte---------
             elif self.read_state == 3:
                 val = struct.unpack('B', read(1))[0]
-                log_bytes_in = log_bytes_in + '|' + str(val);
+                log_bytes_in = log_bytes_in + '|' + str(val)
                 self.read_state = 0  # read next packet
                 if (val == END_BYTE):
                     sample = OpenBCISample(packet_id, channel_data, aux_data)
@@ -288,7 +295,7 @@ class OpenBCICyton(object):
                 else:
                     self.warn("ID:<%d> <Unexpected END_BYTE found <%s> instead of <%s>"
                               % (packet_id, val, END_BYTE))
-                    logging.debug(log_bytes_in);
+                    logging.debug(log_bytes_in)
                     self.packets_dropped = self.packets_dropped + 1
 
     """
@@ -322,8 +329,9 @@ class OpenBCICyton(object):
         if self.log:
             # log how many packets where sent succesfully in between warnings
             if self.log_packet_count:
-                logging.info('Data packets received:' + str(self.log_packet_count))
-                self.log_packet_count = 0;
+                logging.info('Data packets received:' +
+                             str(self.log_packet_count))
+                self.log_packet_count = 0
             logging.warning(text)
         print("Warning: %s" % text)
 
@@ -343,10 +351,11 @@ class OpenBCICyton(object):
             c = ''
             # Look for end sequence $$$
             while '$$$' not in line:
+                # we're supposed to get UTF8 text, but the board might behave otherwise
                 c = self.ser.read().decode('utf-8',
-                                           errors='replace')  # we're supposed to get UTF8 text, but the board might behave otherwise
+                                           errors='replace')
                 line += c
-            print(line);
+            print(line)
         else:
             self.warn("No Message")
 
@@ -365,8 +374,9 @@ class OpenBCICyton(object):
             c = ''
             # Look for end sequence $$$
             while '$$$' not in line:
+                # we're supposed to get UTF8 text, but the board might behave otherwise
                 c = serial.read().decode('utf-8',
-                                         errors='replace')  # we're supposed to get UTF8 text, but the board might behave otherwise
+                                         errors='replace')
                 line += c
             if "OpenBCI" in line:
                 return True
@@ -375,7 +385,7 @@ class OpenBCICyton(object):
     def print_register_settings(self):
         self.ser.write(b'?')
         time.sleep(0.5)
-        self.print_incoming_text();
+        self.print_incoming_text()
 
     # DEBBUGING: Prints individual incoming bytes
     def print_bytes_in(self):
@@ -383,7 +393,7 @@ class OpenBCICyton(object):
             self.ser.write(b'b')
             self.streaming = True
         while self.streaming:
-            print(struct.unpack('B', self.ser.read())[0]);
+            print(struct.unpack('B', self.ser.read())[0])
 
             '''Incoming Packet Structure:
           Start Byte(1)|Sample ID(1)|Channel Data(24)|Aux Data(6)|End Byte(1)
@@ -391,7 +401,7 @@ class OpenBCICyton(object):
 
     def print_packets_in(self):
         while self.streaming:
-            b = struct.unpack('B', self.ser.read())[0];
+            b = struct.unpack('B', self.ser.read())[0]
 
             if b == START_BYTE:
                 self.attempt_reconnect = False
@@ -399,41 +409,40 @@ class OpenBCICyton(object):
                     logging.debug('SKIPPED\n' + skipped_str + '\nSKIPPED')
                     skipped_str = ''
 
-                packet_str = "%03d" % (b) + '|';
-                b = struct.unpack('B', self.ser.read())[0];
-                packet_str = packet_str + "%03d" % (b) + '|';
+                packet_str = "%03d" % (b) + '|'
+                b = struct.unpack('B', self.ser.read())[0]
+                packet_str = packet_str + "%03d" % (b) + '|'
 
                 # data channels
                 for i in range(24 - 1):
-                    b = struct.unpack('B', self.ser.read())[0];
-                    packet_str = packet_str + '.' + "%03d" % (b);
+                    b = struct.unpack('B', self.ser.read())[0]
+                    packet_str = packet_str + '.' + "%03d" % (b)
 
-                b = struct.unpack('B', self.ser.read())[0];
-                packet_str = packet_str + '.' + "%03d" % (b) + '|';
+                b = struct.unpack('B', self.ser.read())[0]
+                packet_str = packet_str + '.' + "%03d" % (b) + '|'
 
                 # aux channels
                 for i in range(6 - 1):
-                    b = struct.unpack('B', self.ser.read())[0];
-                    packet_str = packet_str + '.' + "%03d" % (b);
+                    b = struct.unpack('B', self.ser.read())[0]
+                    packet_str = packet_str + '.' + "%03d" % (b)
 
-                b = struct.unpack('B', self.ser.read())[0];
-                packet_str = packet_str + '.' + "%03d" % (b) + '|';
+                b = struct.unpack('B', self.ser.read())[0]
+                packet_str = packet_str + '.' + "%03d" % (b) + '|'
 
                 # end byte
-                b = struct.unpack('B', self.ser.read())[0];
+                b = struct.unpack('B', self.ser.read())[0]
 
                 # Valid Packet
                 if b == END_BYTE:
-                    packet_str = packet_str + '.' + "%03d" % (b) + '|VAL';
+                    packet_str = packet_str + '.' + "%03d" % (b) + '|VAL'
                     print(packet_str)
                     # logging.debug(packet_str)
 
                 # Invalid Packet
                 else:
-                    packet_str = packet_str + '.' + "%03d" % (b) + '|INV';
+                    packet_str = packet_str + '.' + "%03d" % (b) + '|INV'
                     # Reset
                     self.attempt_reconnect = True
-
 
             else:
                 print(b)
@@ -453,7 +462,7 @@ class OpenBCICyton(object):
             return
         # check number of dropped packages and establish connection problem if too large
         if self.packets_dropped > max_packets_to_skip:
-            # if error, attempt to reconect
+            # if error, attempt to reconnect
             self.reconnect()
         # check again again in 2 seconds
         threading.Timer(interval, self.check_connection).start()
@@ -473,11 +482,11 @@ class OpenBCICyton(object):
     # Adds a filter at 60hz to cancel out ambient electrical noise
     def enable_filters(self):
         self.ser.write(b'f')
-        self.filtering_data = True;
+        self.filtering_data = True
 
     def disable_filters(self):
         self.ser.write(b'g')
-        self.filtering_data = False;
+        self.filtering_data = False
 
     def test_signal(self, signal):
         """ Enable / disable test signal """
@@ -500,7 +509,7 @@ class OpenBCICyton(object):
             self.ser.write(b']')
             self.warn("Connecting pins to high frequency 2x amp signal")
         else:
-            self.warn("%s is not a known test signal. Valid signals go from 0-5" % (signal))
+            self.warn("%s is not a known test signal. Valid signals go from 0-5" % signal)
 
     def set_channel(self, channel, toggle_position):
         """ Enable / disable channels """
@@ -591,7 +600,7 @@ class OpenBCICyton(object):
                 openbci_serial = self.openbci_id(s)
                 s.close()
                 if openbci_serial:
-                    openbci_port = port;
+                    openbci_port = port
             except (OSError, serial.SerialException):
                 pass
         if openbci_port == '':

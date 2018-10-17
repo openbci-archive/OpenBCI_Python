@@ -98,7 +98,8 @@ class OpenBCIWiFi(object):
         self.local_wifi_server = WiFiShieldServer(self.local_ip_address, 0)
         self.local_wifi_server_port = self.local_wifi_server.socket.getsockname()[1]
         if self.log:
-            print("Opened socket on %s:%d" % (self.local_ip_address, self.local_wifi_server_port))
+            print("Opened socket on %s:%d" %
+                  (self.local_ip_address, self.local_wifi_server_port))
 
         if ip_address is None:
             for i in range(ssdp_attempts):
@@ -158,25 +159,29 @@ class OpenBCIWiFi(object):
         if res_board.status_code == 200:
             board_info = res_board.json()
             if not board_info['board_connected']:
-                raise RuntimeError(
-                    "No board connected to WiFi Shield. To learn how to connect to a Cyton or Ganglion visit http://docs.openbci.com/Tutorials/03-Wifi_Getting_Started_Guide")
+                raise RuntimeError("No board connected to WiFi Shield. "
+                                   "To learn how to connect to a Cyton or Ganglion visit "
+                                   "http://docs.openbci.com/Tutorials/03-Wifi_Getting_Started_Guide")
             self.board_type = board_info['board_type']
             self.eeg_channels_per_sample = board_info['num_channels']
             if self.log:
-                print("Connected to %s with %s channels" % (self.board_type, self.eeg_channels_per_sample))
+                print("Connected to %s with %s channels" %
+                      (self.board_type, self.eeg_channels_per_sample))
 
         self.gains = None
         if self.board_type == k.BOARD_CYTON:
             self.gains = [24, 24, 24, 24, 24, 24, 24, 24]
             self.daisy = False
         elif self.board_type == k.BOARD_DAISY:
-            self.gains = [24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24]
+            self.gains = [24, 24, 24, 24, 24, 24, 24,
+                          24, 24, 24, 24, 24, 24, 24, 24, 24]
             self.daisy = True
         elif self.board_type == k.BOARD_GANGLION:
             self.gains = [51, 51, 51, 51]
             self.daisy = False
         self.local_wifi_server.set_daisy(daisy=self.daisy)
-        self.local_wifi_server.set_parser(ParseRaw(gains=self.gains, board_type=self.board_type))
+        self.local_wifi_server.set_parser(
+            ParseRaw(gains=self.gains, board_type=self.board_type))
 
         if self.high_speed:
             output_style = 'raw'
@@ -200,7 +205,8 @@ class OpenBCIWiFi(object):
 
     def init_streaming(self):
         """ Tell the board to record like crazy. """
-        res_stream_start = requests.get("http://%s/stream/start" % self.ip_address)
+        res_stream_start = requests.get(
+            "http://%s/stream/start" % self.ip_address)
         if res_stream_start.status_code == 200:
             self.streaming = True
             self.packets_dropped = 0
@@ -223,14 +229,16 @@ class OpenBCIWiFi(object):
         def wifi_shield_found(response):
             res = requests.get(response.location, verify=False).text
             device_description = xmltodict.parse(res)
-            cur_shield_name = str(device_description['root']['device']['serialNumber'])
+            cur_shield_name = str(
+                device_description['root']['device']['serialNumber'])
             cur_base_url = str(device_description['root']['URLBase'])
             cur_ip_address = re.findall(r'[0-9]+(?:\.[0-9]+){3}', cur_base_url)[0]
             list_id.append(cur_shield_name)
             list_ip.append(cur_ip_address)
             found_shield = True
             if shield_name is None:
-                print("Found WiFi Shield %s with IP Address %s" % (cur_shield_name, cur_ip_address))
+                print("Found WiFi Shield %s with IP Address %s" %
+                      (cur_shield_name, cur_ip_address))
                 if wifi_shield_cb is not None:
                     wifi_shield_cb(cur_ip_address)
             else:
@@ -249,9 +257,9 @@ class OpenBCIWiFi(object):
 
         if nb_wifi_shields > 1:
             print(
-                    "Found " + str(nb_wifi_shields) +
-                    ", selecting first named: " + list_id[0] +
-                    " with IPV4: " + list_ip[0])
+                "Found " + str(nb_wifi_shields) +
+                ", selecting first named: " + list_id[0] +
+                " with IPV4: " + list_ip[0])
             return list_ip[0]
 
     def wifi_write(self, output):
@@ -269,8 +277,10 @@ class OpenBCIWiFi(object):
             return ret_val
         else:
             if self.log:
-                print("Error code: %d %s" % (res_command_post.status_code, res_command_post.text))
-            raise RuntimeError("Error code: %d %s" % (res_command_post.status_code, res_command_post.text))
+                print("Error code: %d %s" %
+                      (res_command_post.status_code, res_command_post.text))
+            raise RuntimeError("Error code: %d %s" % (
+                res_command_post.status_code, res_command_post.text))
 
     def getSampleRate(self):
         return self.sample_rate
@@ -300,7 +310,8 @@ class OpenBCIWiFi(object):
             self.init_streaming()
 
         # while self.streaming:
-        #     # should the board get disconnected and we could not wait for notification anymore, a reco should be attempted through timeout mechanism
+        #     # should the board get disconnected and we could not wait for notification anymore
+        #     #  a reco should be attempted through timeout mechanism
         #     try:
         #         # at most we will get one sample per packet
         #         self.waitForNotifications(1. / self.getSampleRate())
@@ -463,7 +474,8 @@ class OpenBCIWiFi(object):
             # Make sure to update gain in wifi
             self.gains[channel - 1] = gain
             self.local_wifi_server.set_gains(gains=self.gains)
-            self.local_wifi_server.set_parser(ParseRaw(gains=self.gains, board_type=self.board_type))
+            self.local_wifi_server.set_parser(
+                ParseRaw(gains=self.gains, board_type=self.board_type))
 
         except ValueError as e:
             print("Something went wrong while setting channel settings: " + str(e))
@@ -564,13 +576,15 @@ class OpenBCIWiFi(object):
         if self.log:
             # log how many packets where sent succesfully in between warnings
             if self.log_packet_count:
-                logging.info('Data packets received:' + str(self.log_packet_count))
+                logging.info('Data packets received:' +
+                             str(self.log_packet_count))
                 self.log_packet_count = 0
             logging.warning(text)
         print("Warning: %s" % text)
 
     def check_connection(self):
-        """ Check connection quality in term of lag and number of packets drop. Reinit connection if necessary. FIXME: parameters given to the board will be lost."""
+        """ Check connection quality in term of lag and number of packets drop. Reinit connection if necessary.
+        FIXME: parameters given to the board will be lost."""
         # stop checking when we're no longer streaming
         if not self.streaming:
             return
@@ -584,7 +598,8 @@ class OpenBCIWiFi(object):
             self.reconnect()
 
     def reconnect(self):
-        """ In case of poor connection, will shut down and relaunch everything. FIXME: parameters given to the board will be lost."""
+        """ In case of poor connection, will shut down and relaunch everything.
+        FIXME: parameters given to the board will be lost."""
         self.warn('Reconnecting')
         self.stop()
         self.disconnect()
@@ -601,10 +616,12 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
         self.daisy = daisy
         self.high_speed = high_speed
         self.last_odd_sample = OpenBCISample()
-        self.parser = parser if parser is not None else ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24])
+        self.parser = parser if parser is not None else ParseRaw(
+            gains=[24, 24, 24, 24, 24, 24, 24, 24])
 
     def handle_read(self):
-        data = self.recv(3000)  # 3000 is the max data the WiFi shield is allowed to send over TCP
+        # 3000 is the max data the WiFi shield is allowed to send over TCP
+        data = self.recv(3000)
         if len(data) > 2:
             if self.high_speed:
                 packets = int(len(data) / 33)
@@ -612,7 +629,8 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                 for i in range(packets):
                     raw_data_packets.append(
                         bytearray(data[i * k.RAW_PACKET_SIZE: i * k.RAW_PACKET_SIZE + k.RAW_PACKET_SIZE]))
-                samples = self.parser.transform_raw_data_packets_to_sample(raw_data_packets=raw_data_packets)
+                samples = self.parser.transform_raw_data_packets_to_sample(
+                    raw_data_packets=raw_data_packets)
 
                 for sample in samples:
                     # if a daisy module is attached, wait to concatenate two samples (main board + daisy)
