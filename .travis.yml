@@ -26,6 +26,7 @@ install:
 
 # Run tests
 script:
+  - python setup.py install
   - nosetests  --with-coverage --cover-package=openbci
 after_success:
   - codecov
