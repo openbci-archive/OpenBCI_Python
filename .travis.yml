@@ -1,7 +1,7 @@
 language: python
-env:
-    - PYTHON=2.7
-    - PYTHON=3.4
+python:
+  - "2.7"
+  - "3.4"
 # command to install dependencies
 cache: pip
 sudo: false
@@ -26,6 +26,7 @@ install:
 
 # Run tests
 script:
+  - python setup.py install
   - nosetests  --with-coverage --cover-package=openbci
 after_success:
   - codecov

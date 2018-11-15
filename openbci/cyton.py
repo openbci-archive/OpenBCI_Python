@@ -81,7 +81,11 @@ class OpenBCICyton(object):
         # might be handy to know API
         self.board_type = "cyton"
         print("Connecting to V3 at port %s" % (port))
-        self.ser = serial.Serial(port=port, baudrate=baud, timeout=timeout)
+        if port == "loop://":
+            # For testing purposes
+            self.ser = serial.serial_for_url(port, baudrate=baud, timeout=timeout)
+        else:
+            self.ser = serial.Serial(port=port, baudrate=baud, timeout=timeout)
 
         print("Serial established...")
 
@@ -91,7 +95,8 @@ class OpenBCICyton(object):
 
         # wait for device to be ready
         time.sleep(1)
-        self.print_incoming_text()
+        if port != "loop://":
+            self.print_incoming_text()
 
         self.streaming = False
         self.filtering_data = filter_data
