@@ -23,20 +23,7 @@ import numpy as np
 import sys
 import pdb
 import glob
-# local bluepy should take precedence
-import sys
-
-sys.path.insert(0, "bluepy/bluepy")
-
-STUB_BTLE = False
-
-try:
-    from btle import Scanner, DefaultDelegate, Peripheral
-except:
-    DefaultDelegate = object
-    STUB_BTLE = True
-else:
-    from bluepy.btle import Scanner, DefaultDelegate, Peripheral
+from bluepy.btle import Scanner, DefaultDelegate, Peripheral
 
 SAMPLE_RATE = 200.0  # Hz
 scale_fac_uVolts_per_count = 1200 / (8388607.0 * 1.5 * 51.0)
