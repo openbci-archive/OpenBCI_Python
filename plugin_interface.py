@@ -17,6 +17,7 @@ NB: because of how yapsy discovery system works, plugins must use the following 
        ...
 """
 
+from __future__ import print_function
 from yapsy.IPlugin import IPlugin
 
 

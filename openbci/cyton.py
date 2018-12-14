@@ -10,12 +10,14 @@ board = OpenBCIBoard()
 board.print_register_settings()
 board.start_streaming(handle_sample)
 
-NOTE: If daisy modules is enabled, the callback will occur every two samples, hence "packet_id" will only contain even numbers. As a side effect, the sampling rate will be divided by 2.
+NOTE: If daisy modules is enabled, the callback will occur every two samples, hence "packet_id"
+ will only contain even numbers. As a side effect, the sampling rate will be divided by 2.
 
 FIXME: at the moment we can just force daisy mode, do not check that the module is detected.
 TODO: enable impedance
 
 """
+from __future__ import print_function
 import serial
 import struct
 import numpy as np
@@ -69,8 +71,8 @@ class OpenBCICyton(object):
       aux, impedance: unused, for compatibility with ganglion API
     """
 
-    def __init__(self, port=None, baud=115200, filter_data=True,
-                 scaled_output=True, daisy=False, aux=False, impedance=False, log=True, timeout=None):
+    def __init__(self, port=None, baud=115200, filter_data=True, scaled_output=True,
+                 daisy=False, aux=False, impedance=False, log=True, timeout=None):
         self.log = log  # print_incoming_text needs log
         self.streaming = False
         self.baudrate = baud
@@ -162,8 +164,8 @@ class OpenBCICyton(object):
         for every single sample that is processed (every two samples with daisy module).
 
         Args:
-          callback: A callback function -- or a list of functions -- that will receive a single argument of the
-              OpenBCISample object captured.
+          callback: A callback function, or a list of functions, that will receive a single
+           argument of the OpenBCISample object captured.
         """
         if not self.streaming:
             self.ser.write(b'b')
@@ -182,17 +184,22 @@ class OpenBCICyton(object):
 
             # read current sample
             sample = self._read_serial_binary()
-            # if a daisy module is attached, wait to concatenate two samples (main board + daisy) before passing it to callback
+            # if a daisy module is attached, wait to concatenate two samples
+            # (main board + daisy) before passing it to callback
             if self.daisy:
                 # odd sample: daisy sample, save for later
                 if ~sample.id % 2:
                     self.last_odd_sample = sample
-                # even sample: concatenate and send if last sample was the fist part, otherwise drop the packet
+                # even sample: concatenate and send if last sample was the fist part,
+                #  otherwise drop the packet
                 elif sample.id - 1 == self.last_odd_sample.id:
-                    # the aux data will be the average between the two samples, as the channel samples themselves have been averaged by the board
+                    # the aux data will be the average between the two samples, as the channel
+                    #  samples themselves have been averaged by the board
                     avg_aux_data = list(
                         (np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
-                    whole_sample = OpenBCISample(sample.id, sample.channel_data + self.last_odd_sample.channel_data,
+                    whole_sample = OpenBCISample(sample.id,
+                                                 sample.channel_data +
+                                                 self.last_odd_sample.channel_data,
                                                  avg_aux_data)
                     for call in callback:
                         call(whole_sample)
@@ -200,7 +207,7 @@ class OpenBCICyton(object):
                 for call in callback:
                     call(sample)
 
-            if (lapse > 0 and timeit.default_timer() - start_time > lapse):
+            if lapse > 0 and (timeit.default_timer() - start_time) > lapse:
                 self.stop()
             if self.log:
                 self.log_packet_count = self.log_packet_count + 1
@@ -263,7 +270,8 @@ class OpenBCICyton(object):
 
                     literal_read = pre_fix + literal_read
 
-                    # unpack little endian(>) signed integer(i) (makes unpacking platform independent)
+                    # unpack little endian(>) signed integer(i)
+                    # (makes unpacking platform independent)
                     myInt = struct.unpack('>i', literal_read)[0]
 
                     if self.scaling_output:
@@ -456,7 +464,8 @@ class OpenBCICyton(object):
                 else:
                     skipped_str = skipped_str + "%03d" % (b) + '.'
 
-            if self.attempt_reconnect and (timeit.default_timer() - self.last_reconnect) > self.reconnect_freq:
+            if self.attempt_reconnect and \
+                    (timeit.default_timer() - self.last_reconnect) > self.reconnect_freq:
                 self.last_reconnect = timeit.default_timer()
                 self.warn('Reconnecting')
                 self.reconnect()
@@ -615,7 +624,9 @@ class OpenBCICyton(object):
 
 
 class OpenBCISample(object):
-    """Object encapulsating a single sample from the OpenBCI board. NB: dummy imp for plugin compatiblity"""
+    """Object encapulsating a single sample from the OpenBCI board.
+    NB: dummy imp for plugin compatiblity
+    """
 
     def __init__(self, packet_id, channel_data, aux_data):
         self.id = packet_id

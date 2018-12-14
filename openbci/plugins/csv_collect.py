@@ -1,3 +1,4 @@
+from __future__ import print_function
 import csv
 import timeit
 import datetime
@@ -8,7 +9,8 @@ import plugin_interface as plugintypes
 class PluginCSVCollect(plugintypes.IPluginExtended):
     def __init__(self, file_name="collect.csv", delim=",", verbose=False):
         now = datetime.datetime.now()
-        self.time_stamp = '%d-%d-%d_%d-%d-%d' % (now.year, now.month, now.day, now.hour, now.minute, now.second)
+        self.time_stamp = '%d-%d-%d_%d-%d-%d' \
+                          % (now.year, now.month, now.day, now.hour, now.minute, now.second)
         self.file_name = self.time_stamp
         self.start_time = timeit.default_timer()
         self.delim = delim

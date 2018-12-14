@@ -1,5 +1,6 @@
 """A sample client for the OpenBCI UDP server."""
 
+from __future__ import print_function
 import argparse
 
 try:

@@ -1,4 +1,5 @@
-import sys;
+from __future__ import print_function
+import sys
 
 sys.path.append('..')  # help python find cyton.py relative to scripts folder
 from openbci import cyton as bci
@@ -95,7 +96,7 @@ def streamData(sample):
     if (SAMPLING_RATE > 0):
         # elapsed time since last call, update tick
         now = timeit.default_timer()
-        elapsed_time = now - tick;
+        elapsed_time = now - tick
         # now we have to compute how many times we should send data to keep up with sample rate (oversampling)
         leftover_duplications = SAMPLING_RATE * elapsed_time + leftover_duplications - 1
         tick = now

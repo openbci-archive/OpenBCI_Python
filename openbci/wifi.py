@@ -16,6 +16,7 @@ TODO: Ganglion Raw
 TODO: Cyton Raw
 
 """
+from __future__ import print_function
 import asyncore
 import atexit
 import json
@@ -32,7 +33,7 @@ except ImportError:
 import requests
 import xmltodict
 
-from openbci.utils import k, ParseRaw, OpenBCISample, ssdp
+from openbci.utils import Constants, ParseRaw, OpenBCISample, ssdp
 
 SAMPLE_RATE = 0  # Hz
 
@@ -50,12 +51,15 @@ class OpenBCIWiFi(object):
 
     Args:
       ip_address: The IP address of the WiFi Shield, "None" to attempt auto-detect.
-      shield_name: The unique name of the WiFi Shield, such as `OpenBCI-2AD4`, will use SSDP to get IP address still,
-        if `shield_name` is "None" and `ip_address` is "None", will connect to the first WiFi Shield found using SSDP
-      sample_rate: The sample rate to set the attached board to. If the sample rate picked is not a sample rate the attached
-        board can support, i.e. you send 300 to Cyton, then error will be thrown.
+      shield_name: The unique name of the WiFi Shield, such as `OpenBCI-2AD4`, will use SSDP to
+        get IP address still, if `shield_name` is "None" and `ip_address` is "None",
+        will connect to the first WiFi Shield found using SSDP
+      sample_rate: The sample rate to set the attached board to. If the sample rate picked
+        is not a sample rate the attached board can support, i.e. you send 300 to Cyton,
+        then error will be thrown.
       log:
-      timeout: in seconds, disconnect / reconnect after a period without new data -- should be high if impedance check
+      timeout: in seconds, disconnect / reconnect after a period without new data
+        should be high if impedance check
       max_packets_to_skip: will try to disconnect / reconnect after too many packets are skipped
     """
 
@@ -169,14 +173,14 @@ class OpenBCIWiFi(object):
                       (self.board_type, self.eeg_channels_per_sample))
 
         self.gains = None
-        if self.board_type == k.BOARD_CYTON:
+        if self.board_type == Constants.BOARD_CYTON:
             self.gains = [24, 24, 24, 24, 24, 24, 24, 24]
             self.daisy = False
-        elif self.board_type == k.BOARD_DAISY:
+        elif self.board_type == Constants.BOARD_DAISY:
             self.gains = [24, 24, 24, 24, 24, 24, 24,
                           24, 24, 24, 24, 24, 24, 24, 24, 24]
             self.daisy = True
-        elif self.board_type == k.BOARD_GANGLION:
+        elif self.board_type == Constants.BOARD_GANGLION:
             self.gains = [51, 51, 51, 51]
             self.daisy = False
         self.local_wifi_server.set_daisy(daisy=self.daisy)
@@ -201,7 +205,8 @@ class OpenBCIWiFi(object):
                 if self.log:
                     print("WiFi Shield to Python TCP Socket Established")
             else:
-                raise RuntimeWarning("WiFi Shield is not able to connect to local server. Please open an issue.")
+                raise RuntimeWarning("WiFi Shield is not able to connect to local server."
+                                     "Please open an issue.")
 
     def init_streaming(self):
         """ Tell the board to record like crazy. """
@@ -212,11 +217,12 @@ class OpenBCIWiFi(object):
             self.packets_dropped = 0
             self.time_last_packet = timeit.default_timer()
         else:
-            raise EnvironmentError(
-                "Unable to start streaming. Check API for status code %d on /stream/start" % res_stream_start.status_code)
+            raise EnvironmentError("Unable to start streaming."
+                                   "Check API for status code %d on /stream/start"
+                                   % res_stream_start.status_code)
 
     def find_wifi_shield(self, shield_name=None, wifi_shield_cb=None):
-        """Detects Ganglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
+        """Detects Ganglion board MAC address if more than 1, will select first. Needs root."""
 
         if self.log:
             print("Try to find WiFi shields on your local wireless network")
@@ -295,8 +301,8 @@ class OpenBCIWiFi(object):
         for every single sample that is processed
 
         Args:
-          callback: A callback function -- or a list of functions -- that will receive a single argument of the
-              OpenBCISample object captured.
+          callback: A callback function, or a list of functions, that will receive a single
+            argument of the OpenBCISample object captured.
         """
         start_time = timeit.default_timer()
 
@@ -428,12 +434,12 @@ class OpenBCIWiFi(object):
             print("Something went wrong while setting channels: " + str(e))
 
     # See Cyton SDK for options
-    def set_channel_settings(self, channel, enabled=True, gain=24, input_type=0, include_bias=True, use_srb2=True,
-                             use_srb1=True):
+    def set_channel_settings(self, channel, enabled=True, gain=24, input_type=0,
+                             include_bias=True, use_srb2=True, use_srb1=True):
         try:
             if channel > self.num_channels:
                 raise ValueError('Cannot set non-existant channel')
-            if self.board_type == k.BOARD_GANGLION:
+            if self.board_type == Constants.BOARD_GANGLION:
                 raise ValueError('Cannot use with Ganglion')
             ch_array = list("12345678QWERTYUI")
             # defaults
@@ -483,7 +489,7 @@ class OpenBCIWiFi(object):
     def set_sample_rate(self, sample_rate):
         """ Change sample rate """
         try:
-            if self.board_type == k.BOARD_CYTON or self.board_type == k.BOARD_DAISY:
+            if self.board_type == Constants.BOARD_CYTON or self.board_type == Constants.BOARD_DAISY:
                 if sample_rate == 250:
                     self.wifi_write('~6')
                 elif sample_rate == 500:
@@ -500,7 +506,7 @@ class OpenBCIWiFi(object):
                     self.wifi_write('~0')
                 else:
                     print("Sample rate not supported: " + str(sample_rate))
-            elif self.board_type == k.BOARD_GANGLION:
+            elif self.board_type == Constants.BOARD_GANGLION:
                 if sample_rate == 200:
                     self.wifi_write('~7')
                 elif sample_rate == 400:
@@ -527,7 +533,7 @@ class OpenBCIWiFi(object):
     def set_accelerometer(self, toggle_position):
         """ Enable / disable accelerometer """
         try:
-            if self.board_type == k.BOARD_GANGLION:
+            if self.board_type == Constants.BOARD_GANGLION:
                 # Commands to set toggle to on position
                 if toggle_position == 1:
                     self.wifi_write('n')
@@ -583,8 +589,10 @@ class OpenBCIWiFi(object):
         print("Warning: %s" % text)
 
     def check_connection(self):
-        """ Check connection quality in term of lag and number of packets drop. Reinit connection if necessary.
-        FIXME: parameters given to the board will be lost."""
+        """ Check connection quality in term of lag and number of packets drop.
+        Reinit connection if necessary.
+        FIXME: parameters given to the board will be lost.
+        """
         # stop checking when we're no longer streaming
         if not self.streaming:
             return
@@ -628,22 +636,25 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                 raw_data_packets = []
                 for i in range(packets):
                     raw_data_packets.append(
-                        bytearray(data[i * k.RAW_PACKET_SIZE: i * k.RAW_PACKET_SIZE + k.RAW_PACKET_SIZE]))
+                        bytearray(data[i * Constants.RAW_PACKET_SIZE: i * Constants.RAW_PACKET_SIZE +
+                                                                      Constants.RAW_PACKET_SIZE]))
                 samples = self.parser.transform_raw_data_packets_to_sample(
                     raw_data_packets=raw_data_packets)
 
                 for sample in samples:
-                    # if a daisy module is attached, wait to concatenate two samples (main board + daisy)
-                    #  before passing it to callback
+                    # if a daisy module is attached, wait to concatenate two samples
+                    # (main board + daisy) before passing it to callback
                     if self.daisy:
                         # odd sample: daisy sample, save for later
                         if ~sample.sample_number % 2:
                             self.last_odd_sample = sample
-                        # even sample: concatenate and send if last sample was the first part, otherwise drop the packet
+                        # even sample: concatenate and send if last sample was the first part,
+                        #  otherwise drop the packet
                         elif sample.sample_number - 1 == self.last_odd_sample.sample_number:
-                            # the aux data will be the average between the two samples, as the channel
-                            # samples themselves have been averaged by the board
-                            daisy_sample = self.parser.make_daisy_sample_object_wifi(self.last_odd_sample, sample)
+                            # the aux data will be the average between the two samples, as the
+                            # channel samples themselves have been averaged by the board
+                            daisy_sample = self.parser.make_daisy_sample_object_wifi(
+                                self.last_odd_sample, sample)
                             if self.callback is not None:
                                 self.callback(daisy_sample)
                     else:

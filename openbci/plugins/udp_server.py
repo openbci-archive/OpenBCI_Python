@@ -7,6 +7,7 @@ Requires:
   - websockets
 """
 
+from __future__ import print_function
 try:
     import cPickle as pickle
 except ImportError:
@@ -32,7 +33,8 @@ import plugin_interface as plugintypes
 
 #   # called with each new sample
 #   def __call__(self, sample):
-#     sample_string = "ID: %f\n%s\n%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1])
+#     sample_string =
+#         "ID: %f\n%s\n%s" %(sample.id, str(sample.channel_data)[1:-1], str(sample.aux_data)[1:-1])
 #     print("---------------------------------")
 #     print(sample_string)
 #     print("---------------------------------")

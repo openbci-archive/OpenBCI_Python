@@ -1,3 +1,4 @@
+from __future__ import print_function
 # requires python-osc
 from pythonosc import osc_message_builder
 from pythonosc import udp_client
@@ -32,7 +33,8 @@ class StreamerOSC(plugintypes.IPluginExtended):
         if len(self.args) > 2:
             self.address = self.args[2]
         # init network
-        print("Selecting OSC streaming. IP: " + self.ip + ", port: " + str(self.port) + ", address: " + self.address)
+        print("Selecting OSC streaming. IP: " + self.ip + ", port: " +
+              str(self.port) + ", address: " + self.address)
         self.client = udp_client.SimpleUDPClient(self.ip, self.port)
 
     # From IPlugin: close connections, send message to client

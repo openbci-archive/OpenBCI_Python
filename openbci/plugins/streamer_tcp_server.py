@@ -1,3 +1,4 @@
+from __future__ import print_function
 from threading import Thread
 import socket
 import select
@@ -13,7 +14,9 @@ import plugin_interface as plugintypes
 
 # Handling new client in separate thread
 class MonitorStreamer(Thread):
-    """Launch and monitor a "Streamer" entity (incoming connections if implemented, current sampling rate)."""
+    """Launch and monitor a "Streamer" entity
+    (incoming connections if implemented, current sampling rate).
+    """
 
     # tcp_server: the TCPServer instance that will be used
     def __init__(self, streamer):
@@ -79,7 +82,8 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
 
     # From Streamer, to be called each time we're willing to accept new connections
     def check_connections(self):
-        # First listen for new connections, and new connections only -- this is why we pass only server_socket
+        # First listen for new connections, and new connections only,
+        # this is why we pass only server_socket
         read_sockets, write_sockets, error_sockets = select.select([self.server_socket], [], [], 0)
         for sock in read_sockets:
             # New connection
@@ -122,7 +126,8 @@ class StreamerTCPServer(plugintypes.IPluginExtended):
                     sock.send(packed_data)
                     # TODO: should check if the correct number of bytes passed through
             except:
-                # sometimes (always?) it's only during the second write to a close socket that an error is raised?
+                # sometimes (always?) it's only during the second write to a close socket
+                #  that an error is raised?
                 print("Something bad happened, will close socket")
                 outdated_list.append(sock)
         # now we are outside of the main list, it's time to remove outdated sockets, if any

@@ -7,6 +7,7 @@ Requires:
   - websockets
 """
 
+from __future__ import print_function
 import argparse
 
 try:
@@ -14,7 +15,7 @@ try:
 except ImportError:
     import _pickle as pickle
 import json
-import sys;
+import sys
 
 sys.path.append('..')  # help python find cyton.py relative to scripts folder
 from openbci import cyton as open_bci

@@ -14,6 +14,7 @@ board.start(handle_sample)
 TODO: support impedance
 TODO: reset board with 'v'?
 """
+from __future__ import print_function
 import struct
 import time
 import timeit
@@ -52,7 +53,8 @@ class OpenBCIGanglion(object):
       port: MAC address of the Ganglion Board. "None" to attempt auto-detect.
       aux: enable on not aux channels (i.e. switch to 18bit mode if set)
       impedance: measures impedance when start streaming
-      timeout: in seconds, if set will try to disconnect / reconnect after a period without new data -- should be high if impedance check
+      timeout: in seconds, if set will try to disconnect / reconnect after a period without new data
+       -- should be high if impedance check
       max_packets_to_skip: will try to disconnect / reconnect after too many packets are skipped
       baud, filter_data, daisy: Not used, for compatibility with v3
     """
@@ -104,26 +106,26 @@ class OpenBCIGanglion(object):
 
     def connect(self):
         """ Connect to the board and configure it. Note: recreates various objects upon call. """
-        print ("Init BLE connection with MAC: " + self.port)
-        print ("NB: if it fails, try with root privileges.")
+        print("Init BLE connection with MAC: " + self.port)
+        print("NB: if it fails, try with root privileges.")
         self.gang = Peripheral(self.port, 'random')  # ADDR_TYPE_RANDOM
 
-        print ("Get mainservice...")
+        print("Get mainservice...")
         self.service = self.gang.getServiceByUUID(BLE_SERVICE)
-        print ("Got:" + str(self.service))
+        print("Got:" + str(self.service))
 
-        print ("Get characteristics...")
+        print("Get characteristics...")
         self.char_read = self.service.getCharacteristics(BLE_CHAR_RECEIVE)[0]
-        print ("receive, properties: " + str(self.char_read.propertiesToString()) + ", supports read: " + str(
-            self.char_read.supportsRead()))
+        print("receive, properties: " + str(self.char_read.propertiesToString()) +
+              ", supports read: " + str(self.char_read.supportsRead()))
 
         self.char_write = self.service.getCharacteristics(BLE_CHAR_SEND)[0]
-        print ("write, properties: " + str(self.char_write.propertiesToString()) + ", supports read: " + str(
-            self.char_write.supportsRead()))
+        print("write, properties: " + str(self.char_write.propertiesToString()) +
+              ", supports read: " + str(self.char_write.supportsRead()))
 
         self.char_discon = self.service.getCharacteristics(BLE_CHAR_DISCONNECT)[0]
-        print ("disconnect, properties: " + str(self.char_discon.propertiesToString()) + ", supports read: " + str(
-            self.char_discon.supportsRead()))
+        print("disconnect, properties: " + str(self.char_discon.propertiesToString()) +
+              ", supports read: " + str(self.char_discon.supportsRead()))
 
         # set delegate to handle incoming data
         self.delegate = GanglionDelegate(self.scaling_output)
@@ -162,10 +164,13 @@ class OpenBCIGanglion(object):
         self.time_last_packet = timeit.default_timer()
 
     def find_port(self):
-        """Detects Ganglion board MAC address -- if more than 1 around, will select first. Needs root privilege."""
+        """Detects Ganglion board MAC address
+        If more than 1 around, will select first. Needs root privilege.
+        """
 
         print("Try to detect Ganglion MAC address. "
-              "NB: Turn on bluetooth and run as root for this to work! Might not work with every BLE dongles.")
+              "NB: Turn on bluetooth and run as root for this to work!"
+              "Might not work with every BLE dongles.")
         scan_time = 5
         print("Scanning for 5 seconds nearby devices...")
 
@@ -176,9 +181,9 @@ class OpenBCIGanglion(object):
 
             def handleDiscovery(self, dev, isNewDev, isNewData):
                 if isNewDev:
-                    print ("Discovered device: " + dev.addr)
+                    print("Discovered device: " + dev.addr)
                 elif isNewData:
-                    print ("Received new data from: " + dev.addr)
+                    print("Received new data from: " + dev.addr)
 
         scanner = Scanner().withDelegate(ScanDelegate())
         devices = scanner.scan(scan_time)
@@ -193,7 +198,8 @@ class OpenBCIGanglion(object):
             list_id = []
 
             for dev in devices:
-                # "Ganglion" should appear inside the "value" associated to "Complete Local Name", e.g. "Ganglion-b2a6"
+                # "Ganglion" should appear inside the "value" associated
+                # to "Complete Local Name", e.g. "Ganglion-b2a6"
                 for (adtype, desc, value) in dev.getScanData():
                     if desc == "Complete Local Name" and value.startswith("Ganglion"):
                         list_mac.append(dev.addr)
@@ -251,8 +257,8 @@ class OpenBCIGanglion(object):
         for every single sample that is processed
 
         Args:
-          callback: A callback function -- or a list of functions -- that will receive a single argument of the
-              OpenBCISample object captured.
+          callback: A callback function or a list of functions that will receive a single argument
+                    of the OpenBCISample object captured.
         """
         if not self.streaming:
             self.init_streaming()
@@ -264,7 +270,8 @@ class OpenBCIGanglion(object):
             callback = [callback]
 
         while self.streaming:
-            # should the board get disconnected and we could not wait for notification anymore, a reco should be attempted through timeout mechanism
+            # should the board get disconnected and we could not wait for notification
+            # anymore, a reco should be attempted through timeout mechanism
             try:
                 # at most we will get one sample per packet
                 self.waitForNotifications(1. / self.getSampleRate())
@@ -388,8 +395,10 @@ class OpenBCIGanglion(object):
         print("Warning: %s" % text)
 
     def check_connection(self):
-        """ Check connection quality in term of lag and number of packets drop. Reinit connection if necessary.
-         FIXME: parameters given to the board will be lost."""
+        """ Check connection quality in term of lag and number of packets drop.
+         Reinit connection if necessary.
+         FIXME: parameters given to the board will be lost.
+         """
         # stop checking when we're no longer streaming
         if not self.streaming:
             return
@@ -466,7 +475,8 @@ class GanglionDelegate(DefaultDelegate):
 
         start_byte = unpac[0]
 
-        # Give the informative part of the packet to proper handler -- split between ID and data bytes
+        # Give the informative part of the packet to proper handler
+        # split between ID and data bytes
         # Raw uncompressed
         if start_byte == 0:
             self.receiving_ASCII = False
@@ -492,7 +502,7 @@ class GanglionDelegate(DefaultDelegate):
             # End of ASCII message
         elif start_byte == 207:
             print("%\t" + str(packet[1:]))
-            print ("$$$")
+            print("$$$")
             self.receiving_ASCII = False
         else:
             print("Warning: unknown type of packet: " + str(start_byte))
@@ -572,7 +582,9 @@ class GanglionDelegate(DefaultDelegate):
         self.updatePacketsCount(packet_id)
 
     def parseImpedance(self, packet_id, packet):
-        """ Dealing with impedance data. packet: ASCII data. NB: will take few packet (seconds) to fill"""
+        """ Dealing with impedance data. packet: ASCII data.
+        NB: will take few packet (seconds) to fill
+        """
         if packet[-2:] != b"Z\n":
             print('Wrong format for impedance check, should be ASCII ending with "Z\\n"')
 
@@ -656,10 +668,11 @@ def conv19bitToInt32(threeByteBuffer):
     # if LSB is 1, negative number, some hasty unsigned to signed conversion to do
     if threeByteBuffer[2] & 0x01 > 0:
         prefix = 0b1111111111111
-        return ((prefix << 19) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[
-            2]) | ~0xFFFFFFFF
+        return ((prefix << 19) | (threeByteBuffer[0] << 16) |
+                (threeByteBuffer[1] << 8) | threeByteBuffer[2]) | ~0xFFFFFFFF
     else:
-        return (prefix << 19) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[2]
+        return (prefix << 19) | (threeByteBuffer[0] << 16) |\
+               (threeByteBuffer[1] << 8) | threeByteBuffer[2]
 
 
 def conv18bitToInt32(threeByteBuffer):
@@ -672,10 +685,11 @@ def conv18bitToInt32(threeByteBuffer):
     # if LSB is 1, negative number, some hasty unsigned to signed conversion to do
     if threeByteBuffer[2] & 0x01 > 0:
         prefix = 0b11111111111111
-        return ((prefix << 18) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[
-            2]) | ~0xFFFFFFFF
+        return ((prefix << 18) | (threeByteBuffer[0] << 16) |
+                (threeByteBuffer[1] << 8) | threeByteBuffer[2]) | ~0xFFFFFFFF
     else:
-        return (prefix << 18) | (threeByteBuffer[0] << 16) | (threeByteBuffer[1] << 8) | threeByteBuffer[2]
+        return (prefix << 18) | (threeByteBuffer[0] << 16) |\
+               (threeByteBuffer[1] << 8) | threeByteBuffer[2]
 
 
 def conv8bitToInt8(byte):
@@ -691,7 +705,8 @@ def decompressDeltas19Bit(buffer):
     """
     Called to when a compressed packet is received.
     buffer: Just the data portion of the sample. So 19 bytes.
-    return {Array} - An array of deltas of shape 2x4 (2 samples per packet and 4 channels per sample.)
+    return {Array} - An array of deltas of shape 2x4
+    (2 samples per packet and 4 channels per sample.)
     """
     if len(buffer) != 19:
         raise ValueError("Input should be 19 bytes long.")
@@ -766,7 +781,8 @@ def decompressDeltas18Bit(buffer):
     """
     Called to when a compressed packet is received.
     buffer: Just the data portion of the sample. So 19 bytes.
-    return {Array} - An array of deltas of shape 2x4 (2 samples per packet and 4 channels per sample.)
+    return {Array} - An array of deltas of shape 2x4
+    (2 samples per packet and 4 channels per sample.)
     """
     if len(buffer) != 18:
         raise ValueError("Input should be 18 bytes long.")
