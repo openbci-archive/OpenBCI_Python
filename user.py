@@ -73,7 +73,7 @@ if __name__ == '__main__':
     else:
         print("Port: ", args.port)
     
-    plugins_paths = ["plugins"]
+    plugins_paths = ["openbci/plugins"]
     if args.plugins_path:
         plugins_paths += args.plugins_path
     manager.setPluginPlaces(plugins_paths)
