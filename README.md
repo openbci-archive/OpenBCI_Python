@@ -285,6 +285,10 @@ Select several plugins, e.g. streaming to OSC and displaying effective sample ra
 
 > $python user.py -p /dev/ttyUSB0 --add streamer_osc --add sample_rate
 
+Change the plugin path:
+
+> $python user.py -p /dev/ttyUSB0 --add print --plugins-path /home/user/my_plugins
+
 Note: type `/start` to launch the selected plugins.
 
 #### Create new plugins
