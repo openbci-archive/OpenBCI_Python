@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     if args.board == "cyton":
         print("Board type: OpenBCI Cyton (v3 API)")
-        from openbci import cyton as bci
+        import openbci.cyton as bci
     elif args.board == "ganglion":
         print("Board type: OpenBCI Ganglion")
         import openbci.ganglion as bci
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     else:
         print("Port: ", args.port)
 
-    plugins_paths = ["plugins"]
+    plugins_paths = ["openbci/plugins"]
     if args.plugins_path:
         plugins_paths += args.plugins_path
     manager.setPluginPlaces(plugins_paths)
