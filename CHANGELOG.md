@@ -1,3 +1,11 @@
+# v1.0.2
+
+### Bug Fixes
+
+* Fixed plugin directory in user.py. Calling `python ./user.py --list` lists all the plugins now.
+* Cleaned up BluePy import for ganglion.
+* Test coverage improvements for Cyton.
+
 # v1.0.1
 
 ### Bug Fixes
