@@ -257,7 +257,6 @@ Warning: Connecting pins to high frequency 2x amp signal
 --> a
 Corresponding SD file OBCI_18.TXT$$$
 --> /start T:3
-
 ```
 
 NOTES:
@@ -300,37 +299,37 @@ Note: type `/start` to launch the selected plugins.
 Add new functionalities to user.py by creating new scripts inside the `plugins` folder. You class must inherit from yapsy.IPlugin, see below a minimal example with `print` plugin:
 
 ```python
-	import plugin_interface as plugintypes
+import plugin_interface as plugintypes
 
-	class PluginPrint(plugintypes.IPluginExtended):
-		def activate(self):
-			print "Print activated"
+class PluginPrint(plugintypes.IPluginExtended):
+    def activate(self):
+        print("Print activated")
 
-		def deactivate(self):
-			print "Goodbye"
+    def deactivate(self):
+        print("Goodbye")
 
-		def show_help(self):
-			print "I do not need any parameter, just printing stuff."
+    def show_help(self):
+        print("I do not need any parameter, just printing stuff.")
 
-		# called with each new sample
-		def __call__(self, sample):
-			print "----------------"
-			print("%f" %(sample.id))
-			print sample.channel_data
-			print sample.aux_data
+    # called with each new sample
+    def __call__(self, sample):
+        print("----------------")
+        print("%f" % sample.id)
+        print(sample.channel_data)
+        print(sample.aux_data)
 ```
 
 Describe your plugin with a corresponding `print.yapsy-plugin`:
 
 ```
-	[Core]
-	Name = print
-	Module = print
+[Core]
+Name = print
+Module = print
 
-	[Documentation]
-	Author = Various
-	Version = 0.1
-	Description = Print board values on stdout
+[Documentation]
+Author = Various
+Version = 0.1
+Description = Print board values on stdout
 ```
 
 
