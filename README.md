@@ -114,17 +114,21 @@ NOTE: For comprehensive list see requirments.txt: (https://github.com/OpenBCI/Op
 
 OpenBCI 8 and 32 bit board with 8 or 16 channels.
 
-This library includes the main open_bci_v3 class definition that instantiates an OpenBCI Board object. This object will initialize communication with the board and get the environment ready for data streaming. This library is designed to work with iOS and Linux distributions. To use a Windows OS, change the __init__ function in open_bci_v3.py to establish a serial connection in Windows.
+This library includes the OpenBCICyton and OpenBCIGanglion classes which are drivers for their respective devices. The OpenBCICyton class is designed to work on all systems, while the OpenBCIGanglion class relies on a Bluetooth driver that is only available on Linux, discussed in the next section.
 
 For additional details on connecting your Cyton board visit: http://docs.openbci.com/Hardware/02-Cyton
 
 ### Ganglion Board
 
-The Ganglion board relies on Bluetooth Low Energy connectivity (BLE).
+The Ganglion board relies on Bluetooth Low Energy connectivity (BLE), and our code relies on the BluePy library to communicate with it. The BluePy library currently only works on Linux-based operating systems. To use Ganglion you will need to install it:
 
-You may need to alter the settings of your bluetooth adapter in order to reduce latency and avoid packet drops -- e.g. if the terminal spams "Warning: Dropped 1 packets" several times a seconds, DO THAT.
+`pip install bluepy`
 
-On linux, assuming `hci0` is the name of your bluetooth adapter:
+You may be able to use the Ganglion board from a virtual machine (VM) running Linux on other operating systems, such as MacOS or Windows. See [this thread](https://github.com/OpenBCI/OpenBCI_Python/issues/68) for advice.
+
+You may need to alter the settings of your Bluetooth adapter in order to reduce latency and avoid packet drops -- e.g. if the terminal spams "Warning: Dropped 1 packets" several times a seconds, DO THAT.
+
+On Linux, assuming `hci0` is the name of your bluetooth adapter:
 
 `sudo bash -c 'echo 9 > /sys/kernel/debug/bluetooth/hci0/conn_min_interval'`
 
