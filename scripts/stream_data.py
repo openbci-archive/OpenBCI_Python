@@ -1,4 +1,7 @@
-import sys; sys.path.append('..') # help python find cyton.py relative to scripts folder
+from __future__ import print_function
+import sys
+
+sys.path.append('..')  # help python find cyton.py relative to scripts folder
 from openbci import cyton as bci
 from openbci.plugins import StreamerTCPServer
 import time, timeit
@@ -16,10 +19,10 @@ SAMPLING_FACTOR = -1.024
 # If > 0 will interbolate based on elapsed time
 SAMPLING_RATE = 256
 
-SERVER_PORT=12345
-SERVER_IP="localhost"
+SERVER_PORT = 12345
+SERVER_IP = "localhost"
 
-DEBUG=False
+DEBUG = False
 
 # check packet drop
 last_id = -1
@@ -34,7 +37,8 @@ last_values = [0] * NB_CHANNELS
 # counter to trigger duplications...
 leftover_duplications = 0
 
-tick=timeit.default_timer()
+tick = timeit.default_timer()
+
 
 # try to ease work for main loop
 class Monitor(Thread):
@@ -51,7 +55,7 @@ class Monitor(Thread):
             # check FPS + listen for new connections
             new_tick = timeit.default_timer()
             elapsed_time = new_tick - self.tick
-            current_samples_in =  nb_samples_in
+            current_samples_in = nb_samples_in
             current_samples_out = nb_samples_out
             print("--- at t: ", (new_tick - self.start_tick), " ---")
             print("elapsed_time: ", elapsed_time)
@@ -65,8 +69,8 @@ class Monitor(Thread):
             server.check_connections()
             time.sleep(1)
 
-def streamData(sample):
 
+def streamData(sample):
     global last_values
 
     global tick
@@ -92,20 +96,20 @@ def streamData(sample):
     if (SAMPLING_RATE > 0):
         # elapsed time since last call, update tick
         now = timeit.default_timer()
-        elapsed_time = now - tick;
+        elapsed_time = now - tick
         # now we have to compute how many times we should send data to keep up with sample rate (oversampling)
         leftover_duplications = SAMPLING_RATE * elapsed_time + leftover_duplications - 1
         tick = now
     # second method with a samplin factor (depends on openbci accuracy)
     elif SAMPLING_FACTOR > 0:
         leftover_duplications = SAMPLING_FACTOR + leftover_duplications - 1
-    #print "needed_duplications: ", needed_duplications, "leftover_duplications: ", leftover_duplications
+    # print "needed_duplications: ", needed_duplications, "leftover_duplications: ", leftover_duplications
     # If we need to insert values, will interpolate between current packet and last one
     # FIXME: ok, at the moment because we do packet per packet treatment, only handles nb_duplications == 1 for more interpolation is bad and sends nothing
     if (leftover_duplications > 1):
         leftover_duplications = leftover_duplications - 1
         interpol_values = list(last_values)
-        for i in range(0,len(interpol_values)):
+        for i in range(0, len(interpol_values)):
             # OK, it's a very rough interpolation
             interpol_values[i] = (last_values[i] + sample.channel_data[i]) / 2
         if DEBUG:
@@ -124,6 +128,7 @@ def streamData(sample):
 
     # save current values for possible interpolation
     last_values = list(sample.channel_data)
+
 
 if __name__ == '__main__':
     # init server

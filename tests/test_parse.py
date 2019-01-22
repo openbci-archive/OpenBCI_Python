@@ -1,7 +1,7 @@
 from unittest import TestCase, main, skip
 import mock
 
-from openbci.utils import (k,
+from openbci.utils import (Constants,
                            OpenBCISample,
                            ParseRaw,
                            sample_packet,
@@ -26,7 +26,7 @@ class TestParseRaw(TestCase):
         scale_factors = parser.get_ads1299_scale_factors(expected_gains)
 
         expected_channel_data = []
-        for i in range(k.NUMBER_OF_CHANNELS_CYTON):
+        for i in range(Constants.NUMBER_OF_CHANNELS_CYTON):
             expected_channel_data.append(scale_factors[i] * (i + 1))
 
         parser.raw_data_to_sample.raw_data_packet = data
@@ -43,8 +43,8 @@ class TestParseRaw(TestCase):
         parser = ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24], scaled_output=True)
 
         expected_accel_data = []
-        for i in range(k.RAW_PACKET_ACCEL_NUMBER_AXIS):
-            expected_accel_data.append(k.CYTON_ACCEL_SCALE_FACTOR_GAIN * i)
+        for i in range(Constants.RAW_PACKET_ACCEL_NUMBER_AXIS):
+            expected_accel_data.append(Constants.CYTON_ACCEL_SCALE_FACTOR_GAIN * i)
 
         parser.raw_data_to_sample.raw_data_packet = data
 
@@ -109,7 +109,7 @@ class TestParseRaw(TestCase):
                          'converts a large negative number')
 
     def test_parse_raw_init(self):
-        expected_board_type = k.BOARD_DAISY
+        expected_board_type = Constants.BOARD_DAISY
         expected_gains = [24, 24, 24, 24, 24, 24, 24, 24]
         expected_log = True
         expected_micro_volts = True
@@ -171,8 +171,8 @@ class TestParseRaw(TestCase):
         for i in range(len(sample.channel_data)):
             self.assertEqual(sample.channel_data[i], expected_scale_factor * (i + 1))
         for i in range(len(sample.accel_data)):
-            self.assertEqual(sample.accel_data[i], k.CYTON_ACCEL_SCALE_FACTOR_GAIN * i)
-        self.assertEqual(sample.packet_type, k.RAW_PACKET_TYPE_STANDARD_ACCEL)
+            self.assertEqual(sample.accel_data[i], Constants.CYTON_ACCEL_SCALE_FACTOR_GAIN * i)
+        self.assertEqual(sample.packet_type, Constants.RAW_PACKET_TYPE_STANDARD_ACCEL)
         self.assertEqual(sample.sample_number, 0x45)
         self.assertEqual(sample.start_byte, 0xA0)
         self.assertEqual(sample.stop_byte, 0xC0)
@@ -261,13 +261,13 @@ class TestParseRaw(TestCase):
         upper_sample_object.aux_data = [3, 4, 5]
         upper_sample_object.timestamp = 8
 
-        daisy_sample_object = parser.make_daisy_sample_object_wifi(lower_sample_object, upper_sample_object);
+        daisy_sample_object = parser.make_daisy_sample_object_wifi(lower_sample_object, upper_sample_object)
 
         # should have valid object true
         self.assertTrue(daisy_sample_object.valid)
 
         # should make a channelData array 16 elements long
-        self.assertEqual(len(daisy_sample_object.channel_data), k.NUMBER_OF_CHANNELS_DAISY)
+        self.assertEqual(len(daisy_sample_object.channel_data), Constants.NUMBER_OF_CHANNELS_DAISY)
 
         # should make a channelData array with lower array in front of upper array
         for i in range(16):
