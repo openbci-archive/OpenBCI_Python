@@ -1,6 +1,9 @@
 from unittest import TestCase, main, skip
 import mock
 
+import sys, os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
 from openbci.utils import (Constants,
                            OpenBCISample,
                            ParseRaw,
@@ -176,6 +179,28 @@ class TestParseRaw(TestCase):
         self.assertEqual(sample.sample_number, 0x45)
         self.assertEqual(sample.start_byte, 0xA0)
         self.assertEqual(sample.stop_byte, 0xC0)
+        self.assertTrue(sample.valid)
+
+    def test_parse_packet_standard_raw_aux(self):
+        sample_number = 0x45
+        data = sample_packet_standard_raw_aux(sample_number)
+
+        expected_scale_factor = 4.5 / 24 / (pow(2, 23) - 1)
+
+        parser = ParseRaw(gains=[24, 24, 24, 24, 24, 24, 24, 24], scaled_output=True)
+
+        parser.raw_data_to_sample.raw_data_packet = data
+
+        sample = parser.parse_packet_standard_raw_aux(parser.raw_data_to_sample)
+
+        self.assertIsNotNone(sample)
+        for i in range(len(sample.channel_data)):
+            self.assertEqual(sample.channel_data[i], expected_scale_factor * (i + 1))
+        self.assertEqual(sample.aux_data, bytearray([0, 1, 2, 3, 4, 5]), "Ensure 6 bytes were extracted")
+        self.assertEqual(sample.packet_type, Constants.RAW_PACKET_TYPE_STANDARD_RAW_AUX)
+        self.assertEqual(sample.sample_number, 0x45)
+        self.assertEqual(sample.start_byte, 0xA0)
+        self.assertEqual(sample.stop_byte, 0xC1)
         self.assertTrue(sample.valid)
 
     @mock.patch.object(ParseRaw, 'parse_packet_standard_accel')

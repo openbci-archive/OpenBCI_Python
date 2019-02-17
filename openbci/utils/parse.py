@@ -156,7 +156,51 @@ class ParseRaw(object):
         return sample_object
 
     def parse_packet_standard_raw_aux(self, raw_data_to_sample):
-        pass
+        """
+
+        :param raw_data_to_sample: RawDataToSample
+        :return:
+        """
+        # Check to make sure data is not null.
+        if raw_data_to_sample is None:
+            raise RuntimeError(k.ERROR_UNDEFINED_OR_NULL_INPUT)
+        if raw_data_to_sample.raw_data_packet is None:
+            raise RuntimeError(k.ERROR_UNDEFINED_OR_NULL_INPUT)
+
+        # Check to make sure the buffer is the right size.
+        if len(raw_data_to_sample.raw_data_packet) != k.RAW_PACKET_SIZE:
+            raise RuntimeError(k.ERROR_INVALID_BYTE_LENGTH)
+
+        # Verify the correct stop byte.
+        if raw_data_to_sample.raw_data_packet[0] != k.RAW_BYTE_START:
+            raise RuntimeError(k.ERROR_INVALID_BYTE_START)
+
+        sample_object = OpenBCISample()
+
+        sample_object.aux_data = raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_START_AUX:k.RAW_PACKET_POSITION_STOP_AUX+1]
+
+        sample_object.packet_type = k.RAW_PACKET_TYPE_STANDARD_RAW_AUX
+
+        sample_object.channel_data = self.get_channel_data_array(raw_data_to_sample)
+
+        sample_object.sample_number = raw_data_to_sample.raw_data_packet[
+            k.RAW_PACKET_POSITION_SAMPLE_NUMBER
+        ]
+        sample_object.start_byte = raw_data_to_sample.raw_data_packet[
+            k.RAW_PACKET_POSITION_START_BYTE
+        ]
+        sample_object.stop_byte = raw_data_to_sample.raw_data_packet[
+            k.RAW_PACKET_POSITION_STOP_BYTE
+        ]
+
+        sample_object.valid = True
+
+        now_ms = int(round(time.time() * 1000))
+
+        sample_object.timestamp = now_ms
+        sample_object.boardTime = 0
+
+        return sample_object
 
     def parse_packet_time_synced_accel(self, raw_data_to_sample):
         pass
@@ -370,3 +414,5 @@ class OpenBCISample(object):
         self._timestamps = {}
         self.valid = valid
         self.accel_data = accel_data if accel_data is not None else []
+        self.analog_data = {}
+        self.digital_data = {}

@@ -65,7 +65,7 @@ class OpenBCIWiFi(object):
 
     def __init__(self, ip_address=None, shield_name=None, sample_rate=None, log=True, timeout=3,
                  max_packets_to_skip=20, latency=10000, high_speed=True, ssdp_attempts=5,
-                 num_channels=8, local_ip_address=None):
+                 num_channels=8, local_ip_address=None, aux_mode=Constants.AUX_MODE_DEFAULT):
         # these one are used
         self.daisy = False
         self.gains = None
@@ -81,6 +81,7 @@ class OpenBCIWiFi(object):
         self.ssdp_attempts = ssdp_attempts
         self.streaming = False
         self.timeout = timeout
+        self.aux_mode = aux_mode
 
         # might be handy to know API
         self.board_type = "none"
@@ -99,7 +100,7 @@ class OpenBCIWiFi(object):
             self.local_ip_address = self._get_local_ip_address()
 
         # Intentionally bind to port 0
-        self.local_wifi_server = WiFiShieldServer(self.local_ip_address, 0)
+        self.local_wifi_server = WiFiShieldServer(self.local_ip_address, 0, aux_mode=self.aux_mode)
         self.local_wifi_server_port = self.local_wifi_server.socket.getsockname()[1]
         if self.log:
             print("Opened socket on %s:%d" %
@@ -208,6 +209,10 @@ class OpenBCIWiFi(object):
                 raise RuntimeWarning("WiFi Shield is not able to connect to local server."
                                      "Please open an issue.")
 
+        if self.board_type != Constants.BOARD_GANGLION:
+            self.aux_mode_set(self.aux_mode)
+
+
     def init_streaming(self):
         """ Tell the board to record like crazy. """
         res_stream_start = requests.get(
@@ -287,6 +292,25 @@ class OpenBCIWiFi(object):
                       (res_command_post.status_code, res_command_post.text))
             raise RuntimeError("Error code: %d %s" % (
                 res_command_post.status_code, res_command_post.text))
+
+    def aux_mode_set(self, aux_mode):
+        """
+        Used to configure the cyton to enter digital or analog read mode.
+        NOTE: Does not work on Ganglion
+        :param aux_mode: str
+            Can be either 'default', 'digital', or 'analog'
+        :return: None
+        """
+        if self.board_type == Constants.BOARD_GANGLION:
+            raise RuntimeError("Aux mode not implemented on ganglion")
+        elif aux_mode == Constants.AUX_MODE_DEFAULT:
+            self.wifi_write('/0')
+        elif aux_mode == Constants.AUX_MODE_ANALOG:
+            self.wifi_write('/2')
+        elif aux_mode == Constants.AUX_MODE_DIGITAL:
+            self.wifi_write('/3')
+        else:
+            raise RuntimeError("Invalid aux mode choice")
 
     def getSampleRate(self):
         return self.sample_rate
@@ -617,7 +641,7 @@ class OpenBCIWiFi(object):
 
 class WiFiShieldHandler(asyncore.dispatcher_with_send):
     def __init__(self, sock, callback=None, high_speed=True,
-                 parser=None, daisy=False):
+                 parser=None, daisy=False, aux_mode=Constants.AUX_MODE_DEFAULT):
         asyncore.dispatcher_with_send.__init__(self, sock)
 
         self.callback = callback
@@ -626,6 +650,7 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
         self.last_odd_sample = OpenBCISample()
         self.parser = parser if parser is not None else ParseRaw(
             gains=[24, 24, 24, 24, 24, 24, 24, 24])
+        self.aux_mode = aux_mode
 
     def handle_read(self):
         # 3000 is the max data the WiFi shield is allowed to send over TCP
@@ -657,7 +682,22 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                                 self.last_odd_sample, sample)
                             if self.callback is not None:
                                 self.callback(daisy_sample)
-                    else:
+                    elif len(sample.aux_data) != 0:
+                        if self.aux_mode is Constants.AUX_MODE_ANALOG:
+                            # extract value sample.aux_data
+                            analog_val_A5 = sample.aux_data[0] << 8 | sample.aux_data[1]
+                            analog_val_A6 = sample.aux_data[2] << 8 | sample.aux_data[3]
+                            sample.analog_data = {
+                                'A5': analog_val_A5,
+                                'A6': analog_val_A6
+                            }
+                        elif self.aux_mode is Constants.AUX_MODE_DIGITAL:
+                            sample.digital_data = {
+                                'D11': ((sample.aux_data[0] & 0xFF00) >> 8),
+                                'D12': sample.aux_data[0] & 0xFF,
+                                'D17': sample.aux_data[1] & 0xFF
+                            }
+
                         if self.callback is not None:
                             self.callback(sample)
 
@@ -684,12 +724,13 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
 
 class WiFiShieldServer(asyncore.dispatcher):
 
-    def __init__(self, host, port, callback=None, gains=None, high_speed=True, daisy=False):
+    def __init__(self, host, port, callback=None, gains=None, high_speed=True, daisy=False, aux_mode=Constants.AUX_MODE_DEFAULT):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
         self.bind((host, port))
         self.daisy = daisy
+        self.aux_mode = aux_mode
         self.listen(5)
         self.callback = None
         self.handler = None
@@ -702,7 +743,7 @@ class WiFiShieldServer(asyncore.dispatcher):
             sock, addr = pair
             print('Incoming connection from %s' % repr(addr))
             self.handler = WiFiShieldHandler(sock, self.callback, high_speed=self.high_speed,
-                                             parser=self.parser, daisy=self.daisy)
+                                             parser=self.parser, daisy=self.daisy, aux_mode=self.aux_mode)
 
     def set_callback(self, callback):
         self.callback = callback
