@@ -1,9 +1,6 @@
 from unittest import TestCase, main, skip
 import mock
 
-import sys, os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 from openbci.utils import (Constants,
                            OpenBCISample,
                            ParseRaw,
