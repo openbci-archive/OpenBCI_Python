@@ -681,9 +681,10 @@ class WiFiShieldHandler(asyncore.dispatcher_with_send):
                                 self.last_odd_sample, sample)
                             if self.callback is not None:
                                 self.callback(daisy_sample)
-
+                    else:
                         if self.callback is not None:
                             self.callback(sample)
+
             else:
                 try:
                     possible_chunks = data.split('\r\n')
