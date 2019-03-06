@@ -179,6 +179,18 @@ class ParseRaw(object):
 
         sample_object.aux_data = raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_START_AUX:k.RAW_PACKET_POSITION_STOP_AUX+1]
 
+        if(len(sample_object.aux_data) != 0):
+            # extract value sample_object.aux_data
+            sample_object.analog_data = {
+                'A5': sample_object.aux_data[0] << 8 | sample_object.aux_data[1],
+                'A6': sample_object.aux_data[2] << 8 | sample_object.aux_data[3]
+            }
+            sample_object.digital_data = {
+                'D11': ((sample_object.aux_data[0] & 0xFF00) >> 8),
+                'D12': sample_object.aux_data[0] & 0xFF,
+                'D17': sample_object.aux_data[1] & 0xFF
+            }
+
         sample_object.packet_type = k.RAW_PACKET_TYPE_STANDARD_RAW_AUX
 
         sample_object.channel_data = self.get_channel_data_array(raw_data_to_sample)
