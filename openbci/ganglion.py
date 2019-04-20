@@ -422,7 +422,9 @@ class OpenBCIGanglion(object):
 
 
 class OpenBCISample(object):
-    """Object encapsulating a single sample from the OpenBCI board."""
+    """Object encapulsating a single sample from the OpenBCI board.
+    NB: dummy imp for plugin compatiblity
+    """
 
     def __init__(self, packet_id, channel_data, aux_data, imp_data):
         self.id = packet_id
