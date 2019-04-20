@@ -1,15 +1,15 @@
 """
-Core OpenBCI object for handling connections and samples from the WiFi Shield
-
-Note that the LIB will take care on its own to print incoming ASCII messages if any (FIXME, BTW).
+Core OpenBCI object for handling connections and samples from the WiFi shield.
 
 EXAMPLE USE:
 
 def handle_sample(sample):
-  print(sample.channels_data)
+  print(sample.channel_data)
 
-wifi = OpenBCIWifi()
-wifi.start(handle_sample)
+board = OpenBCIWifi()
+board.start_streaming(handle_sample)
+
+Note that the LIB will take care on its own to print incoming ASCII messages if any (FIXME, BTW).
 
 TODO: Cyton/Ganglion JSON
 TODO: Ganglion Raw
