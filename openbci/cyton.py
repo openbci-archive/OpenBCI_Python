@@ -368,7 +368,10 @@ class OpenBCICyton(object):
                 c = self.ser.read().decode('utf-8',
                                            errors='replace')
                 line += c
-            print(line)
+            try:
+                print(line)
+            except:
+                self.warn("Cannot print debug data")
         else:
             self.warn("No Message")
 
