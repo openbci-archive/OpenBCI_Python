@@ -490,6 +490,8 @@ class OpenBCIWiFi(object):
         """ Change sample rate """
         try:
             if self.board_type == Constants.BOARD_CYTON or self.board_type == Constants.BOARD_DAISY:
+                # update the sample rate, needed for getSampleRate
+                self.sample_rate = sample_rate
                 if sample_rate == 250:
                     self.wifi_write('~6')
                 elif sample_rate == 500:
@@ -506,7 +508,11 @@ class OpenBCIWiFi(object):
                     self.wifi_write('~0')
                 else:
                     print("Sample rate not supported: " + str(sample_rate))
+                    # revert to an unknown sample rate
+                    self.sample_rate = None
             elif self.board_type == Constants.BOARD_GANGLION:
+                # update the sample rate, needed for getSampleRate
+                self.sample_rate = sample_rate
                 if sample_rate == 200:
                     self.wifi_write('~7')
                 elif sample_rate == 400:
@@ -525,8 +531,11 @@ class OpenBCIWiFi(object):
                     self.wifi_write('~0')
                 else:
                     print("Sample rate not supported: " + str(sample_rate))
+                    # revert to an unknown sample rate
+                    self.sample_rate = None
             else:
                 print("Board type not supported for setting sample rate")
+
         except Exception as e:
             print("Something went wrong while setting sample rate: " + str(e))
 
