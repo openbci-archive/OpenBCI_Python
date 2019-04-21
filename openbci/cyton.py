@@ -1,12 +1,12 @@
 """
-Core OpenBCI object for handling connections and samples from the board.
+Core OpenBCI object for handling connections and samples from the Cyton board.
 
 EXAMPLE USE:
 
 def handle_sample(sample):
   print(sample.channel_data)
 
-board = OpenBCIBoard()
+board = OpenBCICyton()
 board.print_register_settings()
 board.start_streaming(handle_sample)
 
@@ -218,7 +218,7 @@ class OpenBCICyton(object):
       Incoming Packet Structure:
       Start Byte(1)|Sample ID(1)|Channel Data(24)|Aux Data(6)|End Byte(1)
       0xA0|0-255|8, 3-byte signed ints|3 2-byte signed ints|0xC0
-  
+
     """
 
     def _read_serial_binary(self, max_bytes_to_skip=3000):
@@ -312,9 +312,9 @@ class OpenBCICyton(object):
                     self.packets_dropped = self.packets_dropped + 1
 
     """
-  
+
     Clean Up (atexit)
-  
+
     """
 
     def stop(self):
@@ -333,9 +333,9 @@ class OpenBCICyton(object):
             logging.warning('serial closed')
 
     """
-  
+
         SETTINGS AND HELPERS
-  
+
     """
 
     def warn(self, text):
@@ -368,7 +368,10 @@ class OpenBCICyton(object):
                 c = self.ser.read().decode('utf-8',
                                            errors='replace')
                 line += c
-            print(line)
+            try:
+                print(line)
+            except:
+                self.warn("Cannot print debug data")
         else:
             self.warn("No Message")
 

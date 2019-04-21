@@ -1,15 +1,15 @@
 """
 Core OpenBCI object for handling connections and samples from the Ganglion board.
 
-Note that the LIB will take care on its own to print incoming ASCII messages if any (FIXME, BTW).
-
 EXAMPLE USE:
 
 def handle_sample(sample):
-  print(sample.channels_data)
+  print(sample.channel_data)
 
-board = OpenBCIBoard()
-board.start(handle_sample)
+board = OpenBCIGanglion()
+board.start_streaming(handle_sample)
+
+Note that the LIB will take care on its own to print incoming ASCII messages if any (FIXME, BTW).
 
 TODO: support impedance
 TODO: reset board with 'v'?
@@ -343,9 +343,9 @@ class OpenBCIGanglion(object):
             print("Something went wrong while setting channels: " + str(e))
 
     """
-  
+
     Clean Up (atexit)
-  
+
     """
 
     def stop(self):
@@ -379,9 +379,9 @@ class OpenBCIGanglion(object):
         logging.warning('BLE closed')
 
     """
-  
+
         SETTINGS AND HELPERS
-  
+
     """
 
     def warn(self, text):
@@ -422,7 +422,9 @@ class OpenBCIGanglion(object):
 
 
 class OpenBCISample(object):
-    """Object encapsulating a single sample from the OpenBCI board."""
+    """Object encapulsating a single sample from the OpenBCI board.
+    NB: dummy imp for plugin compatiblity
+    """
 
     def __init__(self, packet_id, channel_data, aux_data, imp_data):
         self.id = packet_id
@@ -436,7 +438,7 @@ class GanglionDelegate(DefaultDelegate):
 
     def __init__(self, scaling_output=True):
         DefaultDelegate.__init__(self)
-        # holds samples until OpenBCIBoard claims them
+        # holds samples until OpenBCIGanglion claims them
         self.samples = []
         # detect gaps between packets
         self.last_id = -1
@@ -461,7 +463,7 @@ class GanglionDelegate(DefaultDelegate):
 
     """
       PARSER:
-      Parses incoming data packet into OpenBCISample -- see docs. 
+      Parses incoming data packet into OpenBCISample -- see docs.
       Will call the corresponding parse* function depending on the format of the packet.
     """
 
