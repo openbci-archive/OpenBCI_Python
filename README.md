@@ -33,22 +33,34 @@ Currently the Ganglion board can only be used with a Linux OS.
 
 First you need to initialize your board with one of the following commands:
 
-### For Cyton board:
+#### For Cyton board:
 
 ```python
-board = OpenBCICyton()
+# For Windows replace '*' with the port number
+board = OpenBCICyton(port='COM*')
+
+# For MacOS and Linux replace '*' with the port number
+board = OpenBCICyton(port='/dev/ttyUSB*')
 ```
 
 #### For Cyton + Daisy:
 
 ```python
-board = OpenBCICyton(daisy=True)
+# For Windows replace '*' with the port number
+board = OpenBCICyton(port='COM*', daisy=True)
+
+# For MacOS and Linux replace '*' with the port number
+board = OpenBCICyton(port='/dev/ttyUSB*', daisy=True)
 ```
 
 #### For Ganglion:
 
 ```python
-board = OpenBCIGanglion()
+# For Windows replace '*' with the port number
+board = OpenBCIGanglion(port='COM*', daisy=True)
+
+# For MacOS and Linux replace '*' with the port number
+board = OpenBCIGanglion(port='/dev/ttyUSB*', daisy=True)
 ```
 
 #### For Wifi Shield:
