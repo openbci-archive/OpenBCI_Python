@@ -77,9 +77,31 @@ Once you initialize the board you can use the following commands:
 board.write_command(command)
 
 # Start stream
-board.start_stream()
+board.start_stream(callback)
 ```
 
+### Notes
+
+The output of the start_stream function is the OpenBCISample on the callback function. The OpenBCISample object has the following attributes:
+
+* packet_id = The ID of the incomming packet.
+* channels_data = The raw EEG data of each channel. 4 for the Ganglion, 8 for the Cyton, and 16 for the Cyton + Daisy.
+* aux_data = Accelerometer data.
+
+Because the channels_data and aux_data is the raw data in counts read by the board, we need to multiply the data by a scale factor. There is a specific scale factor for each board:
+
+#### For the Cyton and Cyton + Daisy boards:
+
+Multiply uVolts_per_count to convert the channels_data to uVolts.
+
+```python
+uVolts_per_count = 4.5 / float((pow(2, 23) - 1)) / 24.0 * 1000000.
+```
+Multiply accel_G_per_count to convert the aux_data to G.
+
+```python
+accel_G_per_count = 0.002 / (pow(2, 4))
+```
 
 ## Examples
 
