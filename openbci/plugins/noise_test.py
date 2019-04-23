@@ -1,10 +1,10 @@
 from __future__ import print_function
 import timeit
 import numpy as np
-import plugin_interface as plugintypes
+from .plugin_interface import IPluginExtended 
 
 
-class PluginNoiseTest(plugintypes.IPluginExtended):
+class PluginNoiseTest(IPluginExtended):
     # update counters value
     def __call__(self, sample):
         # keep tract of absolute value of

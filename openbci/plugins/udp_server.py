@@ -15,7 +15,7 @@ except ImportError:
 import json
 import socket
 
-import plugin_interface as plugintypes
+from .plugin_interface import IPluginExtended 
 
 
 # class PluginPrint(IPlugin):
@@ -48,7 +48,7 @@ import plugin_interface as plugintypes
 #     #     print(sample_string)
 
 
-class UDPServer(plugintypes.IPluginExtended):
+class UDPServer(IPluginExtended):
     def __init__(self, ip='localhost', port=8888):
         self.ip = ip
         self.port = port

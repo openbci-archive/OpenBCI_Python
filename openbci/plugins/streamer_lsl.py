@@ -2,7 +2,7 @@
 # Eg: ftp://sccn.ucsd.edu/pub/software/LSL/SDK/liblsl-Python-1.10.2.zip
 # put in "lib" folder (same level as user.py)
 from __future__ import print_function
-import plugin_interface as plugintypes
+from .plugin_interface import IPluginExtended 
 from pylsl import StreamInfo, StreamOutlet
 import sys
 
@@ -13,7 +13,7 @@ sys.path.append('lib')
 # Use LSL protocol to broadcast data using one stream for EEG,
 # one stream for AUX, one last for impedance testing
 # (on supported board, if enabled)
-class StreamerLSL(plugintypes.IPluginExtended):
+class StreamerLSL(IPluginExtended):
     # From IPlugin
     def activate(self):
         eeg_stream = "OpenBCI_EEG"

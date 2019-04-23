@@ -3,7 +3,7 @@ import time
 import timeit
 from threading import Thread
 
-import plugin_interface as plugintypes
+from .plugin_interface import IPluginExtended 
 
 # counter for sampling rate
 nb_samples_out = -1
@@ -36,7 +36,7 @@ class Monitor(Thread):
             time.sleep(self.polling_interval)
 
 
-class PluginSampleRate(plugintypes.IPluginExtended):
+class PluginSampleRate(IPluginExtended):
     # update counters value
     def __call__(self, sample):
         global nb_samples_out
