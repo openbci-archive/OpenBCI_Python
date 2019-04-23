@@ -21,8 +21,10 @@ addons:
 install:
   # Install project requirements
   - pip install -r requirements.txt
+  # Install BluePy for Ganglion because Travis runs Linux
+  - pip install bluepy
   # Install test and coverage requirements
-  - pip install codecov mock nose coverage
+  - pip install codecov mock nose coverage pylint
 
 # Run tests
 script:
@@ -30,3 +32,4 @@ script:
   - nosetests  --with-coverage --cover-package=openbci
 after_success:
   - codecov
+  - pylint openbci

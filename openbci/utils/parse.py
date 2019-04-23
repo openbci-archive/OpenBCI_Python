@@ -28,8 +28,8 @@ class ParseRaw(object):
 
     def is_stop_byte(self, byte):
         """
-        Used to check and see if a byte adheres to the stop byte structure of 0xCx where x is the set of numbers
-            from 0-F in hex of 0-15 in decimal.
+        Used to check and see if a byte adheres to the stop byte structure
+            of 0xCx where x is the set of numbers from 0-F in hex of 0-15 in decimal.
         :param byte: {int} - The number to test
         :return: {boolean} - True if `byte` follows the correct form
         """
@@ -64,16 +64,29 @@ class ParseRaw(object):
         # Channel data arrays are always 8 long
 
         for i in range(channels_in_packet):
-            counts = self.interpret_24_bit_as_int_32(raw_data_to_sample.raw_data_packet[(i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START:(i * 3) + k.RAW_PACKET_POSITION_CHANNEL_DATA_START + 3])
-            channel_data.append(raw_data_to_sample.scale_factors[i] * counts if raw_data_to_sample.scale else counts)
+            counts = self.interpret_24_bit_as_int_32(
+                raw_data_to_sample.raw_data_packet[
+                    (i * 3) +
+                    k.RAW_PACKET_POSITION_CHANNEL_DATA_START:(i * 3) +
+                    k.RAW_PACKET_POSITION_CHANNEL_DATA_START + 3
+                ]
+            )
+            channel_data.append(
+                raw_data_to_sample.scale_factors[i] *
+                counts if raw_data_to_sample.scale else counts
+            )
 
         return channel_data
 
     def get_data_array_accel(self, raw_data_to_sample):
         accel_data = []
         for i in range(k.RAW_PACKET_ACCEL_NUMBER_AXIS):
-            counts = self.interpret_16_bit_as_int_32(raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_START_AUX + (i * 2): k.RAW_PACKET_POSITION_START_AUX + (i * 2) + 2])
-            accel_data.append(k.CYTON_ACCEL_SCALE_FACTOR_GAIN * counts if raw_data_to_sample.scale else counts)
+            counts = self.interpret_16_bit_as_int_32(
+                raw_data_to_sample.raw_data_packet[
+                k.RAW_PACKET_POSITION_START_AUX +
+                (i * 2): k.RAW_PACKET_POSITION_START_AUX + (i * 2) + 2])
+            accel_data.append(k.CYTON_ACCEL_SCALE_FACTOR_GAIN *
+                              counts if raw_data_to_sample.scale else counts)
         return accel_data
 
     def get_raw_packet_type(self, stop_byte):
@@ -98,7 +111,6 @@ class ParseRaw(object):
         return struct.unpack('>i', three_byte_buffer)[0]
 
     def parse_packet_standard_accel(self, raw_data_to_sample):
-
         """
 
         :param raw_data_to_sample: RawDataToSample
@@ -124,9 +136,15 @@ class ParseRaw(object):
 
         sample_object.channel_data = self.get_channel_data_array(raw_data_to_sample)
 
-        sample_object.sample_number = raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_SAMPLE_NUMBER]
-        sample_object.start_byte = raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_START_BYTE]
-        sample_object.stop_byte = raw_data_to_sample.raw_data_packet[k.RAW_PACKET_POSITION_STOP_BYTE]
+        sample_object.sample_number = raw_data_to_sample.raw_data_packet[
+            k.RAW_PACKET_POSITION_SAMPLE_NUMBER
+        ]
+        sample_object.start_byte = raw_data_to_sample.raw_data_packet[
+            k.RAW_PACKET_POSITION_START_BYTE
+        ]
+        sample_object.stop_byte = raw_data_to_sample.raw_data_packet[
+            k.RAW_PACKET_POSITION_STOP_BYTE
+        ]
 
         sample_object.valid = True
 
@@ -162,9 +180,11 @@ class ParseRaw(object):
                 sample = self.parse_packet_standard_accel(self.raw_data_to_sample)
             elif packet_type == k.RAW_PACKET_TYPE_STANDARD_RAW_AUX:
                 sample = self.parse_packet_standard_raw_aux(self.raw_data_to_sample)
-            elif packet_type == k.RAW_PACKET_TYPE_ACCEL_TIME_SYNC_SET or packet_type == k.RAW_PACKET_TYPE_ACCEL_TIME_SYNCED:
+            elif packet_type == k.RAW_PACKET_TYPE_ACCEL_TIME_SYNC_SET or \
+                    packet_type == k.RAW_PACKET_TYPE_ACCEL_TIME_SYNCED:
                 sample = self.parse_packet_time_synced_accel(self.raw_data_to_sample)
-            elif packet_type == k.RAW_PACKET_TYPE_RAW_AUX_TIME_SYNC_SET or packet_type == k.RAW_PACKET_TYPE_RAW_AUX_TIME_SYNCED:
+            elif packet_type == k.RAW_PACKET_TYPE_RAW_AUX_TIME_SYNC_SET or \
+                    packet_type == k.RAW_PACKET_TYPE_RAW_AUX_TIME_SYNCED:
                 sample = self.parse_packet_time_synced_raw_aux(self.raw_data_to_sample)
             else:
                 sample = OpenBCISample()
@@ -185,25 +205,33 @@ class ParseRaw(object):
     def make_daisy_sample_object_wifi(self, lower_sample_object, upper_sample_object):
         """
         /**
-         * @description Used to make one sample object from two sample objects. The sample number of the new daisy sample will
-         *      be the upperSampleObject's sample number divded by 2. This allows us to preserve consecutive sample numbers that
-         *      flip over at 127 instead of 255 for an 8 channel. The daisySampleObject will also have one `channelData` array
-         *      with 16 elements inside it, with the lowerSampleObject in the lower indices and the upperSampleObject in the
-         *      upper set of indices. The auxData from both channels shall be captured in an object called `auxData` which
-         *      contains two arrays referenced by keys `lower` and `upper` for the `lowerSampleObject` and `upperSampleObject`,
-         *      respectively. The timestamps shall be averaged and moved into an object called `timestamp`. Further, the
-         *      un-averaged timestamps from the `lowerSampleObject` and `upperSampleObject` shall be placed into an object called
-         *      `_timestamps` which shall contain two keys `lower` and `upper` which contain the original timestamps for their
-         *      respective sampleObjects.
-         * @param lowerSampleObject {Object} - Lower 8 channels with odd sample number
-         * @param upperSampleObject {Object} - Upper 8 channels with even sample number
-         * @returns {Object} - The new merged daisy sample object
-         */
+        * @description Used to make one sample object from two sample
+        *      objects. The sample number of the new daisy sample will be the
+        *      upperSampleObject's sample number divded by 2. This allows us
+        *      to preserve consecutive sample numbers that flip over at 127
+        *      instead of 255 for an 8 channel. The daisySampleObject will
+        *      also have one `channelData` array with 16 elements inside it,
+        *      with the lowerSampleObject in the lower indices and the
+        *      upperSampleObject in the upper set of indices. The auxData from
+        *      both channels shall be captured in an object called `auxData`
+        *      which contains two arrays referenced by keys `lower` and
+        *      `upper` for the `lowerSampleObject` and `upperSampleObject`,
+        *      respectively. The timestamps shall be averaged and moved into
+        *      an object called `timestamp`. Further, the un-averaged
+        *      timestamps from the `lowerSampleObject` and `upperSampleObject`
+        *      shall be placed into an object called `_timestamps` which shall
+        *      contain two keys `lower` and `upper` which contain the original
+        *      timestamps for their respective sampleObjects.
+        * @param lowerSampleObject {Object} - Lower 8 channels with odd sample number
+        * @param upperSampleObject {Object} - Upper 8 channels with even sample number
+        * @returns {Object} - The new merged daisy sample object
+        */
         """
         daisy_sample_object = OpenBCISample()
 
         if lower_sample_object.channel_data is not None:
-            daisy_sample_object.channel_data = lower_sample_object.channel_data + upper_sample_object.channel_data
+            daisy_sample_object.channel_data = lower_sample_object.channel_data + \
+                upper_sample_object.channel_data
 
         daisy_sample_object.sample_number = upper_sample_object.sample_number
         daisy_sample_object.id = daisy_sample_object.sample_number
@@ -224,7 +252,8 @@ class ParseRaw(object):
         }
 
         if lower_sample_object.accel_data:
-            if lower_sample_object.accel_data[0] > 0 or lower_sample_object.accel_data[1] > 0 or lower_sample_object.accel_data[2] > 0:
+            if lower_sample_object.accel_data[0] > 0 or lower_sample_object.accel_data[1] > 0 or \
+                    lower_sample_object.accel_data[2] > 0:
                 daisy_sample_object.accel_data = lower_sample_object.accel_data
             else:
                 daisy_sample_object.accel_data = upper_sample_object.accel_data
@@ -255,6 +284,7 @@ function transformRawDataPacketsToSample (o) {
   return samples;
 }
     """
+
     def transform_raw_data_packets_to_sample(self, raw_data_packets):
         samples = []
 
@@ -268,6 +298,7 @@ function transformRawDataPacketsToSample (o) {
 
 class RawDataToSample(object):
     """Object encapulsating a parsing object."""
+
     def __init__(self,
                  accel_data=None,
                  gains=None,
@@ -310,6 +341,7 @@ class RawDataToSample(object):
 
 class OpenBCISample(object):
     """Object encapulsating a single sample from the OpenBCI board."""
+
     def __init__(self,
                  aux_data=None,
                  board_time=0,
