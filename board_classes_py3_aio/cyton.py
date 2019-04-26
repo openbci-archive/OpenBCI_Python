@@ -1,30 +1,28 @@
 from serial import Serial
+import serial
 from threading import Timer
 import time
 import sys
 import struct
-
+import numpy as np
+import atexit
 # Define variables
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = 0xA0  # start of data packet
 END_BYTE = 0xC0  # end of data packet
-ADS1299_Vref = 4.5  # reference voltage for ADC in ADS1299.  set by its hardware
-ADS1299_gain = 24.0  # assumed gain setting for ADS1299.  set by its Arduino code
-scale_fac_uVolts_per_count = ADS1299_Vref / \ float((pow(2, 23) - 1)) / ADS1299_gain * 1000000.
-scale_fac_accel_G_per_count = 0.002 / \ (pow(2, 4))  # assume set to +/4G, so 2 mG
-
 
 
 class OpenBCICyton():
 
     def __init__(self, daisy=False, port=None, baud=115200, timeout=None):
-        if not port:
-            port = self.find_port()
-        self.port = port
         self.baud = baud
         self.timeout = timeout
         self.daisy = daisy
-
+        self.port = port
+        if self.daisy:
+            self.board_type = "CytonDaisy"
+        else:
+            self.board_type = "Cyton"
 
         # Connecting to the board
         self.ser = Serial(port=self.port, baudrate=self.baud, timeout=self.timeout)
@@ -40,13 +38,12 @@ class OpenBCICyton():
 
         self.packets_dropped = 0
         self.streaming = False
+        self.read_state = 0
+        self.last_odd_sample = OpenBCISample(-1, [], [])  # used for daisy
 
 
         # Disconnects from board when terminated
         atexit.register(self.disconnect)
-
-    def find_port(self):
-        pass
 
     def disconnect(self):
         if self.ser.isOpen():
@@ -93,7 +90,7 @@ class OpenBCICyton():
         Parses the data from the Cyton board into an OpenBCISample object.
         '''
         def read_board(n):
-            bb = self.ser.read(n):
+            bb = self.ser.read(n)
             if not bb:
                 print('Device appears to be stalling. Quitting...')
                 sys.exit()
@@ -149,7 +146,7 @@ class OpenBCICyton():
                 aux_data = []
                 for a in range(3):
 
-                    acc = struct.unpack('>h', read(2))[0]
+                    acc = struct.unpack('>h', read_board(2))[0]
                     log_bytes_in = log_bytes_in + '|' + str(acc)
 
                     # Append to auxiliary data array
@@ -159,7 +156,7 @@ class OpenBCICyton():
 
             # Read End Byte
             elif self.read_state == 3:
-                val = struct.unpack('B', read(1))[0]
+                val = struct.unpack('B', read_board(1))[0]
 
                 log_bytes_in = log_bytes_in + '|' + str(val)
                 self.read_state = 0 # resets to read next packet
@@ -173,7 +170,9 @@ class OpenBCICyton():
                     self.packets_dropped = self.packets_dropped + 1
 
 
-
+    def write_command(self, command):
+        self.ser.write(command.encode())
+        time.sleep(0.5)
 
 
     def start_stream(self, callback):
@@ -218,8 +217,9 @@ class OpenBCICyton():
 
                     sample_with_daisy = OpenBCISample(sample.id, sample.channels_data + self.last_odd_sample.channels_data, avg_aux_data)
 
-                for call in callback:
-                    call(sample_with_daisy)
+                    for call in callback:
+                        call(sample_with_daisy)
+
 
 class OpenBCISample():
 
