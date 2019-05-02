@@ -6,10 +6,12 @@ import sys
 import struct
 import numpy as np
 import atexit
+import datetime
 # Define variables
 SAMPLE_RATE = 250.0  # Hz
 START_BYTE = 0xA0  # start of data packet
 END_BYTE = 0xC0  # end of data packet
+
 
 
 class OpenBCICyton():
@@ -19,6 +21,7 @@ class OpenBCICyton():
         self.timeout = timeout
         self.daisy = daisy
         self.port = port
+        self.start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
         if self.daisy:
             self.board_type = "CytonDaisy"
         else:
@@ -39,7 +42,7 @@ class OpenBCICyton():
         self.packets_dropped = 0
         self.streaming = False
         self.read_state = 0
-        self.last_odd_sample = OpenBCISample(-1, [], [])  # used for daisy
+        self.last_odd_sample = OpenBCISample(-1, [], [], self.start_time, self.board_type)  # used for daisy
 
 
         # Disconnects from board when terminated
@@ -162,7 +165,7 @@ class OpenBCICyton():
                 self.read_state = 0 # resets to read next packet
 
                 if val == END_BYTE:
-                    sample = OpenBCISample(packet_id, channels_data, aux_data)
+                    sample = OpenBCISample(packet_id, channels_data, aux_data, self.start_time, self.board_type)
                     self.packets_dropped = 0
                     return sample
                 else:
@@ -205,7 +208,6 @@ class OpenBCICyton():
 
             # When daisy is connected wait to concatenate two samples
             else:
-
                 # odd sample is daisy sample use later
                 if ~sample.id % 2:
                     self.last_odd_sample = sample
@@ -215,7 +217,13 @@ class OpenBCICyton():
                     # The auxiliary data is the average between the two samples.
                     avg_aux_data = list((np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
 
-                    sample_with_daisy = OpenBCISample(sample.id, sample.channels_data + self.last_odd_sample.channels_data, avg_aux_data)
+                    sample_with_daisy = OpenBCISample(sample.id, sample.channels_data + self.last_odd_sample.channels_data, avg_aux_data, self.start_time, self.board_type)
+
+                    # if sample_with_daisy.channels_data[-1] == -1:
+                    #     print("Daisy not connected or not recognized! Make sure the daisy is properly connected to the Cyton board.\n Output switched to 8 channel only.")
+                    #
+                    #     self.daisy = False
+                    #     continue
 
                     for call in callback:
                         call(sample_with_daisy)
@@ -223,7 +231,9 @@ class OpenBCICyton():
 
 class OpenBCISample():
 
-    def __init__(self, packet_id, channels_data, aux_data):
+    def __init__(self, packet_id, channels_data, aux_data, init_time, board_type):
         self.id = packet_id
         self.channels_data = channels_data
         self.aux_data = aux_data
+        self.start_time = init_time
+        self.board_type = board_type
