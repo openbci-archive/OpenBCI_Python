@@ -29,7 +29,7 @@ pip install openbci
 
 Currently the Ganglion board can only be used with a Linux OS.
 
-## Boards Commands
+### Getting Started
 
 First you need to initialize your board with one of the following commands:
 
@@ -66,22 +66,45 @@ board = OpenBCIGanglion(port='/dev/ttyUSB*', daisy=True)
 #### For Wifi Shield:
 
 ```python
-board = OpenBCIWifi()
+board = OpenBCIWifi(shield_name='OpenBCI-2254', sample_rate=200)
 ```
 
-Once you initialize the board you can use the following commands:
+### Sending commands
+
+Once you initialize the board you can use the commands on the OpenBCI SDKs ([Ganglion](https://docs.openbci.com/OpenBCI%20Software/06-OpenBCI_Ganglion_SDK), [Cyton](https://docs.openbci.com/OpenBCI%20Software/04-OpenBCI_Cyton_SDK), [Wifi Shield](https://docs.openbci.com/OpenBCI%20Software/08-OpenBCI_Wifi_SDK)) to send commands to the board using python (make sure your commands are strings).
 
 ```python
 
 # Write commands to the board
 board.write_command(command)
+```
 
+Here is a table of the most common ones:
+
+|                               | Ganglion SDK | Cyton SDK       | Cyton & Daisy SDK (Additional Commands) | Wifi Shield SDK (Additional Commands)                                                                                                                                    |
+|-------------------------------|--------------|-----------------|-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Turn Channels OFF             | 1 2 3 4      | 1 2 3 4 5 6 7 8 | q w e r t y u i                         |                                                                                                                                                                          |
+| Turn Channels ON              |              | ! @ # $ % ^ & * | Q W E R T Y U I                         |                                                                                                                                                                          |
+| Connect to internal GND       |              | 0               |                                         |                                                                                                                                                                          |
+| Enable Synthetic Square Wave  | [            | [               |                                         |                                                                                                                                                                          |
+| Disable Synthetic Square Wave | ]            | ]               |                                         |                                                                                                                                                                          |
+| Connect to DC Signal          |              | p               |                                         |                                                                                                                                                                          |
+| Set Channels to Default       |              | d               |                                         |                                                                                                                                                                          |
+| Start Streaming Data          | b            | b               |                                         |                                                                                                                                                                          |
+| Stop Streaming Data           | s            | s               |                                         |                                                                                                                                                                          |
+| Soft Reset                    | v            | v               |                                         | ;                                                                                                                                                                        |
+| Enable Accelerometer          | n            |                 |                                         |                                                                                                                                                                          |
+| Disable Accelerometer         | N            |                 |                                         |                                                                                                                                                                          |
+
+
+### Initializing Stream
+
+To start your stream you can use the following command with a callback function. You can look at the examples folder for some pre-written callback functions.
+
+```python
 # Start stream
 board.start_stream(callback)
 ```
-
-### Notes
-
 The output of the start_stream function is the OpenBCISample on the callback function. The OpenBCISample object has the following attributes:
 
 * packet_id = The ID of the incomming packet.
@@ -95,20 +118,57 @@ Because the channels_data and aux_data is the raw data in counts read by the boa
 Multiply uVolts_per_count to convert the channels_data to uVolts.
 
 ```python
-uVolts_per_count = 4.5 / float((pow(2, 23) - 1)) / 24.0 * 1000000.
+uVolts_per_count = (4500000)/24/(2**23-1) #uV/count
 ```
 Multiply accel_G_per_count to convert the aux_data to G.
 
 ```python
-accel_G_per_count = 0.002 / (pow(2, 4))
+accel_G_per_count = 0.002 / (2**4) #G/count
+```
+#### For the Ganglion Board
+
+Multiply Volts_per_count to convert the channels_data to Volts.
+
+```python
+Volts_per_count = 1.2 * 8388607.0 * 1.5 * 51.0 #V/count
+```
+Multiply accel_G_per_count to convert the aux_data to G.
+
+```python
+accel_G_per_count = 0.032 #G/count
 ```
 
-## Examples
+### Example (Simple LSL Streamer)
+```python
+
+from openbci import OpenBCICyton
+from pylsl import StreamInfo, StreamOutlet
+import numpy as np
+
+SCALE_FACTOR_EEG = (4500000)/24/(2**23-1) #uV/count
+SCALE_FACTOR_AUX = 0.002 / (2**4)
 
 
+print("Creating LSL stream for EEG. \nName: OpenBCIEEG\nID: OpenBCItestEEG\n")
 
-## Other useful commands
+info_eeg = StreamInfo('OpenBCIEEG', 'EEG', 8, 250, 'float32', 'OpenBCItestEEG')
 
+print("Creating LSL stream for AUX. \nName: OpenBCIAUX\nID: OpenBCItestEEG\n")
+
+info_aux = StreamInfo('OpenBCIAUX', 'AUX', 3, 250, 'float32', 'OpenBCItestAUX')
+
+outlet_eeg = StreamOutlet(info_eeg)
+outlet_aux = StreamOutlet(info_aux)
+
+def lsl_streamers(sample):
+    outlet_eeg.push_sample(np.array(sample.channels_data)*SCALE_FACTOR_EEG)
+    outlet_aux.push_sample(np.array(sample.aux_data)*SCALE_FACTOR_AUX)
+
+board = OpenBCICyton(port='COM5', daisy=False)
+
+board.start_stream(lsl_streamers)
+
+```
 ### Who are we?
 
 The founder of the OpenBCI Python repository is Jermey Frey. The Python driver is one of the most popular repositories and has the most contributors!
