@@ -27,7 +27,7 @@ pip install openbci
 
 ## Important notes
 
-Currently the Ganglion board can only be used with a Linux OS.
+Currently the Ganglion board can only be used with a Linux OS. The WiFi shield is known to have reliability issues across different computer configurations. Using it effectively requires advanced technical skills and programming knowledge. Note that the code avaiable here has not been tested accross all platforms.
 
 ### Getting Started
 
