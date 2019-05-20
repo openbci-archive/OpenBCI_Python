@@ -76,14 +76,14 @@ Please note that it's very important to us that we maintain a positive and suppo
 
 ## Contact us
 
-If you want to report a problem or suggest an enhancement we'd love for you to [open an issue](../../issues) at this github repository because then we can get right on it. But you can also contact [AJ][link_aj_keller] by email (pushtheworldllc AT gmail DOT com) or on [twitter](https://twitter.com/aj-ptw).
+If you want to report a problem or suggest an enhancement we'd love for you to [open an issue](../../issues) at this github repository because then we can get right on it.
 
 ## Find out more
 
 You might be interested in:
 
 * Purchase a [Cyton][link_shop_cyton] | [Ganglion][link_shop_ganglion] | [WiFi Shield][link_shop_wifi_shield] from [OpenBCI][link_openbci]
-* Get taught how to use OpenBCI devices by [Push The World][link_ptw] BCI Consulting
+* contact us at *contact@openbci.com*
 
 And of course, you'll want to know our:
 
@@ -383,5 +383,4 @@ MIT
 [link_nodejs_ganglion]: https://github.com/openbci/openbci_nodejs_ganglion
 [link_nodejs_wifi]: https://github.com/openbci/openbci_nodejs_wifi
 [link_javascript_utilities]: https://github.com/OpenBCI/OpenBCI_JavaScript_Utilities
-[link_ptw]: https://www.pushtheworldllc.com
 [link_openbci]: http://www.openbci.com
