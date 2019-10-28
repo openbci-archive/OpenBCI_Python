@@ -2,7 +2,7 @@ numpy==1.9.2
 pylsl==1.10.4
 python-osc==1.6.3
 pyserial==2.7
-requests==2.7.0
+requests==2.20.0
 six==1.9.0
 socketIO-client==0.6.5
 websocket-client==0.32.0
