@@ -8,16 +8,6 @@ cache: pip
 sudo: false
 virtualenv:
   system_site_packages: false
-addons:
-  apt:
-    packages:
-      - libatlas-dev
-      - libblas-dev
-      - libglib2.0-dev
-      - liblapack-dev
-      - python-matplotlib
-      - gfortran
-      - python-tk
 install:
   # Install project requirements
   - pip install -r requirements.txt
