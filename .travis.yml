@@ -1,23 +1,13 @@
 language: python
 python:
-  - "2.7"
-  - "3.4"
+  - "3.6"
+  - "3.7"
+  - "3.8"
 # command to install dependencies
 cache: pip
 sudo: false
 virtualenv:
-  system_site_packages: true
-addons:
-  apt:
-    packages:
-      - libatlas-dev
-      - libatlas3gf-base
-      - libblas-dev
-      - libglib2.0-dev
-      - liblapack-dev
-      - python-matplotlib
-      - gfortran
-      - python-tk
+  system_site_packages: false
 install:
   # Install project requirements
   - pip install -r requirements.txt
