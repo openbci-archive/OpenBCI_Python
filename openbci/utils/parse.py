@@ -11,6 +11,7 @@ class ParseRaw(object):
                  log=False,
                  micro_volts=False,
                  scaled_output=True):
+
         self.board_type = board_type
         self.gains = gains
         self.log = log
@@ -38,7 +39,9 @@ class ParseRaw(object):
     def get_ads1299_scale_factors(self, gains, micro_volts=None):
         out = []
         for gain in gains:
-            scale_factor = k.ADS1299_VREF / float((pow(2, 23) - 1)) / float(gain)
+            #according to https://docs.openbci.com/Hardware/03-Cyton_Data_Format#cyton-data-format-binary-format:
+            #Scale Factor (Volts/count) = 4.5 Volts / gain / (2^23 - 1);
+            scale_factor = k.ADS1299_VREF / float(gain) / float((pow(2, 23) - 1))
             if micro_volts is None:
                 if self.micro_volts:
                     scale_factor *= 1000000.

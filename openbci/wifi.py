@@ -24,6 +24,7 @@ import logging
 import re
 import socket
 import timeit
+import time
 
 try:
     import urllib2
@@ -65,7 +66,9 @@ class OpenBCIWiFi(object):
 
     def __init__(self, ip_address=None, shield_name=None, sample_rate=None, log=True, timeout=3,
                  max_packets_to_skip=20, latency=10000, high_speed=True, ssdp_attempts=5,
-                 num_channels=8, local_ip_address=None):
+                 num_channels=8, local_ip_address=None, micro_volts=False,
+                 scaled_output = True, auto_connect = True):
+
         # these one are used
         self.daisy = False
         self.gains = None
@@ -81,6 +84,9 @@ class OpenBCIWiFi(object):
         self.ssdp_attempts = ssdp_attempts
         self.streaming = False
         self.timeout = timeout
+        self.auto_connect = auto_connect
+        self.micro_volts = micro_volts
+        self.scaled_output = scaled_output
 
         # might be handy to know API
         self.board_type = "none"
@@ -119,9 +125,13 @@ class OpenBCIWiFi(object):
 
     def on_shield_found(self, ip_address):
         self.ip_address = ip_address
-        self.connect()
+
         # Disconnects from board when terminated
         atexit.register(self.disconnect)
+
+        if self.auto_connect:
+        	time.sleep(.5)
+            self.connect()
 
     def loop(self):
         asyncore.loop()
@@ -185,7 +195,8 @@ class OpenBCIWiFi(object):
             self.daisy = False
         self.local_wifi_server.set_daisy(daisy=self.daisy)
         self.local_wifi_server.set_parser(
-            ParseRaw(gains=self.gains, board_type=self.board_type))
+            ParseRaw(gains=self.gains, board_type=self.board_type,
+                     micro_volts=self.micro_volts,scaled_output=self.scaled_output))
 
         if self.high_speed:
             output_style = 'raw'
@@ -202,6 +213,7 @@ class OpenBCIWiFi(object):
         if res_tcp_post.status_code == 200:
             tcp_status = res_tcp_post.json()
             if tcp_status['connected']:
+                self.set_sample_rate(self.sample_rate)
                 if self.log:
                     print("WiFi Shield to Python TCP Socket Established")
             else:
