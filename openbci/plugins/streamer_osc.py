@@ -2,13 +2,13 @@ from __future__ import print_function
 # requires python-osc
 from pythonosc import osc_message_builder
 from pythonosc import udp_client
-import plugin_interface as plugintypes
+from .plugin_interface import IPluginExtended 
 
 
 # Use OSC protocol to broadcast data (UDP layer), using "/openbci" stream.
 # (NB. does not check numbers of channel as TCP server)
 
-class StreamerOSC(plugintypes.IPluginExtended):
+class StreamerOSC(IPluginExtended):
     """
     Relay OpenBCI values to OSC clients
 

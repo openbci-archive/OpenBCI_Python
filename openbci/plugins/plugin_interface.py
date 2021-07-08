@@ -1,6 +1,5 @@
 """
 Extends Yapsy IPlugin interface to pass information about the board to plugins.
-
 Fields of interest for plugins:
   args: list of arguments passed to the plugins
   sample_rate: actual sample rate of the board
@@ -8,12 +7,9 @@ Fields of interest for plugins:
   aux_channels: number of AUX channels
   
 If needed, plugins that need to report an error can set self.is_activated to False during activate() call.
-
 NB: because of how yapsy discovery system works, plugins must use the following syntax to inherit to use polymorphism (see http://yapsy.sourceforge.net/Advices.html):
-
-    import plugin_interface as plugintypes
-
-    class PluginExample(plugintypes.IPluginExtended):
+    from .plugin_interface import IPluginExtended 
+    class PluginExample(IPluginExtended):
        ...
 """
 

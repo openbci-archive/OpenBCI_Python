@@ -3,10 +3,10 @@ import csv
 import timeit
 import datetime
 
-import plugin_interface as plugintypes
+from .plugin_interface import IPluginExtended 
 
 
-class PluginCSVCollect(plugintypes.IPluginExtended):
+class PluginCSVCollect(IPluginExtended):
     def __init__(self, file_name="collect.csv", delim=",", verbose=False):
         now = datetime.datetime.now()
         self.time_stamp = '%d-%d-%d_%d-%d-%d' \

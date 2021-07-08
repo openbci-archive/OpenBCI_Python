@@ -1,8 +1,8 @@
 from __future__ import print_function
-import plugin_interface as plugintypes
+from .plugin_interface import IPluginExtended 
 
 
-class PluginPrint(plugintypes.IPluginExtended):
+class PluginPrint(IPluginExtended):
     def activate(self):
         print("Print activated")
 

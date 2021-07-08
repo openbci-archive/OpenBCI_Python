@@ -4,7 +4,7 @@ import socket
 import select
 import struct
 import time
-import plugin_interface as plugintypes
+from .plugin_interface import IPluginExtended 
 
 
 # Simple TCP server to "broadcast" data to clients, handling deconnections.
@@ -34,7 +34,7 @@ class MonitorStreamer(Thread):
             time.sleep(1)
 
 
-class StreamerTCPServer(plugintypes.IPluginExtended):
+class StreamerTCPServer(IPluginExtended):
     """
 
     Relay OpenBCI values to TCP clients

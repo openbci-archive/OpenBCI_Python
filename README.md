@@ -303,9 +303,9 @@ Note: type `/start` to launch the selected plugins.
 Add new functionalities to user.py by creating new scripts inside the `plugins` folder. You class must inherit from yapsy.IPlugin, see below a minimal example with `print` plugin:
 
 ```python
-import plugin_interface as plugintypes
+from .plugin_interface import IPluginExtended 
 
-class PluginPrint(plugintypes.IPluginExtended):
+class PluginPrint(IPluginExtended):
     def activate(self):
         print("Print activated")
 
