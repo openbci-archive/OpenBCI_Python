@@ -92,3 +92,8 @@ class Constants:
     SAMPLE_RATE_6400 = 6400
     SAMPLE_RATE_800 = 800
     SAMPLE_RATE_8000 = 8000
+
+    """Different Aux Modes"""
+    AUX_MODE_ANALOG = 'analog'
+    AUX_MODE_DEFAULT = 'default'
+    AUX_MODE_DIGITAL = 'digital'

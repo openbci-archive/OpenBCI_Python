@@ -17,6 +17,7 @@ class TestOpenBCIWiFi(TestCase):
         expected_latency = 5000
         expected_high_speed = False
         expected_ssdp_attempts = 2
+        expected_aux_mode = 'analog'
 
         wifi = OpenBCIWiFi(ip_address=expected_ip_address,
                            shield_name=expected_shield_name,
@@ -26,7 +27,8 @@ class TestOpenBCIWiFi(TestCase):
                            max_packets_to_skip=expected_max_packets_to_skip,
                            latency=expected_latency,
                            high_speed=expected_high_speed,
-                           ssdp_attempts=expected_ssdp_attempts)
+                           ssdp_attempts=expected_ssdp_attempts,
+                           aux_mode=expected_aux_mode)
 
         self.assertEqual(wifi.ip_address, expected_ip_address)
         self.assertEqual(wifi.shield_name, expected_shield_name)
@@ -37,6 +39,7 @@ class TestOpenBCIWiFi(TestCase):
         self.assertEqual(wifi.latency, expected_latency)
         self.assertEqual(wifi.high_speed, expected_high_speed)
         self.assertEqual(wifi.ssdp_attempts, expected_ssdp_attempts)
+        self.assertEqual(wifi.aux_mode, expected_aux_mode)
 
         mock_on_shield_found.assert_called_with(expected_ip_address)
 

@@ -1,3 +1,9 @@
+# v1.1.0
+
+### New Features
+
+* Now supporting digital and analog reading on cyton wifi
+
 # v1.0.2
 
 ### Bug Fixes

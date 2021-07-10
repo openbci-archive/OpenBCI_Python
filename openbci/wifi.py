@@ -65,7 +65,7 @@ class OpenBCIWiFi(object):
 
     def __init__(self, ip_address=None, shield_name=None, sample_rate=None, log=True, timeout=3,
                  max_packets_to_skip=20, latency=10000, high_speed=True, ssdp_attempts=5,
-                 num_channels=8, local_ip_address=None):
+                 num_channels=8, local_ip_address=None, aux_mode=Constants.AUX_MODE_DEFAULT):
         # these one are used
         self.daisy = False
         self.gains = None
@@ -81,6 +81,7 @@ class OpenBCIWiFi(object):
         self.ssdp_attempts = ssdp_attempts
         self.streaming = False
         self.timeout = timeout
+        self.aux_mode = aux_mode
 
         # might be handy to know API
         self.board_type = "none"
@@ -208,6 +209,10 @@ class OpenBCIWiFi(object):
                 raise RuntimeWarning("WiFi Shield is not able to connect to local server."
                                      "Please open an issue.")
 
+        if self.board_type != Constants.BOARD_GANGLION:
+            self.aux_mode_set(self.aux_mode)
+
+
     def init_streaming(self):
         """ Tell the board to record like crazy. """
         res_stream_start = requests.get(
@@ -287,6 +292,25 @@ class OpenBCIWiFi(object):
                       (res_command_post.status_code, res_command_post.text))
             raise RuntimeError("Error code: %d %s" % (
                 res_command_post.status_code, res_command_post.text))
+
+    def aux_mode_set(self, aux_mode):
+        """
+        Used to configure the cyton to enter digital or analog read mode.
+        NOTE: Does not work on Ganglion
+        :param aux_mode: str
+            Can be either 'default', 'digital', or 'analog'
+        :return: None
+        """
+        if self.board_type == Constants.BOARD_GANGLION:
+            raise RuntimeError("Aux mode not implemented on ganglion")
+        elif aux_mode == Constants.AUX_MODE_DEFAULT:
+            self.wifi_write('/0')
+        elif aux_mode == Constants.AUX_MODE_ANALOG:
+            self.wifi_write('/2')
+        elif aux_mode == Constants.AUX_MODE_DIGITAL:
+            self.wifi_write('/3')
+        else:
+            raise RuntimeError("Invalid aux mode choice")
 
     def getSampleRate(self):
         return self.sample_rate
